@@ -1,0 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+part 'booking_state.dart';
+
+class BookingCubit extends Cubit<BookingState> {
+  BookingCubit() : super(BookingState.initial());
+
+  // Add bookings-specific logic
+}
