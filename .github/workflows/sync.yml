@@ -16,7 +16,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           # Add Repo2 remote (using the secret token)
-          git remote add mirror https://x-access-token:${{ secrets.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 }}@github.com/Tyaran-dev/tayyran-app.git
+          git remote add mirror https://x-access-token:${{ secrets.GH_TOKEN_REPO2 }}@github.com/Tyaran-dev/tayyran-app.git
 
           # Push all branches and tags
           git push --mirror mirror
