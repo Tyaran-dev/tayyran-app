@@ -9,15 +9,16 @@ jobs:
     steps:
       - name: Checkout Repo1
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0   # get all history, not just last commit
+          ref: main        # change if your default branch is "master"
 
       - name: Mirror Repo1 to Repo2
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add Repo2 remote (using the secret token)
+          git remote remove mirror || true
           git remote add mirror https://x-access-token:${{ secrets.GH_TOKEN_REPO2 }}@github.com/Tyaran-dev/tayyran-app.git
 
-          # Push all branches and tags
           git push --mirror mirror
-
