@@ -1,0 +1,22 @@
+on:
+  push:
+    branches:
+      - main   # or master, depending on your default branch
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo1
+        uses: actions/checkout@v3
+
+      - name: Mirror Repo1 to Repo2
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add Repo2 remote (using the secret token)
+          git remote add mirror https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/Tyaran-dev/tayyran-app.git
+
+          # Push all branches and tags
+          git push --mirror mirror
