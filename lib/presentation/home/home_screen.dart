@@ -1,6 +1,7 @@
 // home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/presentation/flight/flight_screen.dart';
 import 'package:tayyran_app/presentation/home/cubit/home_cubit.dart';
 import 'package:tayyran_app/presentation/home/cubit/home_state.dart';
@@ -70,7 +71,7 @@ class HomeScreenContent extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: state.selectedTab == "stay"
-                      ? Colors.black
+                      ? AppColors.splashBackgroundColorEnd
                       : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -82,7 +83,7 @@ class HomeScreenContent extends StatelessWidget {
                       size: 18,
                       color: state.selectedTab == "stay"
                           ? Colors.white
-                          : Colors.black,
+                          : AppColors.splashBackgroundColorEnd,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -90,7 +91,7 @@ class HomeScreenContent extends StatelessWidget {
                       style: TextStyle(
                         color: state.selectedTab == "stay"
                             ? Colors.white
-                            : Colors.black,
+                            : AppColors.splashBackgroundColorEnd,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -109,7 +110,7 @@ class HomeScreenContent extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: state.selectedTab == "flight"
-                      ? Colors.black
+                      ? AppColors.splashBackgroundColorEnd
                       : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -121,7 +122,7 @@ class HomeScreenContent extends StatelessWidget {
                       size: 18,
                       color: state.selectedTab == "flight"
                           ? Colors.white
-                          : Colors.black,
+                          : AppColors.splashBackgroundColorEnd,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -129,7 +130,7 @@ class HomeScreenContent extends StatelessWidget {
                       style: TextStyle(
                         color: state.selectedTab == "flight"
                             ? Colors.white
-                            : Colors.black,
+                            : AppColors.splashBackgroundColorEnd,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

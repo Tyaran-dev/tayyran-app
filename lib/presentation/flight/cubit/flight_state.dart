@@ -15,6 +15,7 @@ class FlightState {
   final bool isLoading;
   final String? errorMessage;
   final List<RecentSearchModel> recentSearches;
+  final List<FlightSegment> flightSegments;
 
   const FlightState({
     this.tripType = "oneway",
@@ -29,6 +30,7 @@ class FlightState {
     this.isLoading = false,
     this.errorMessage,
     this.recentSearches = const [],
+    this.flightSegments = const [],
   });
 
   int get totalPassengers => adults + children + infants;
@@ -46,6 +48,7 @@ class FlightState {
     bool? isLoading,
     String? errorMessage,
     List<RecentSearchModel>? recentSearches,
+    List<FlightSegment>? flightSegments,
   }) {
     return FlightState(
       tripType: tripType ?? this.tripType,
@@ -60,6 +63,7 @@ class FlightState {
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       recentSearches: recentSearches ?? this.recentSearches,
+      flightSegments: flightSegments ?? this.flightSegments,
     );
   }
 
@@ -79,7 +83,8 @@ class FlightState {
         other.cabinClass == cabinClass &&
         other.isLoading == isLoading &&
         other.errorMessage == errorMessage &&
-        listEquals(other.recentSearches, recentSearches);
+        listEquals(other.recentSearches, recentSearches) &&
+        listEquals(other.flightSegments, flightSegments);
   }
 
   @override
@@ -95,7 +100,8 @@ class FlightState {
         cabinClass.hashCode ^
         isLoading.hashCode ^
         errorMessage.hashCode ^
-        recentSearches.hashCode;
+        recentSearches.hashCode ^
+        flightSegments.hashCode;
   }
 
   static FlightState initial() {
