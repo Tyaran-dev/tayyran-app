@@ -1,28 +1,130 @@
-// search_form_widget.dart - Updated multi-city design
+// search_form_widget.dart - Complete with date validation
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
-import 'package:tayyran_app/core/utils/widgets/index.dart';
+import 'package:tayyran_app/core/utils/widgets/airport_text_field.dart';
+import 'package:tayyran_app/core/utils/widgets/date_text_field.dart';
+import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
 import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/home/widgets/passenger_selection_modal.dart';
 
-class SearchFormWidget extends StatelessWidget {
+class SearchFormWidget extends StatefulWidget {
   final FlightState state;
   final FlightCubit cubit;
 
   const SearchFormWidget({super.key, required this.state, required this.cubit});
 
   @override
+  State<SearchFormWidget> createState() => _SearchFormWidgetState();
+}
+
+class _SearchFormWidgetState extends State<SearchFormWidget> {
+  bool _showDateError = false;
+  final GlobalKey _returnDateKey = GlobalKey();
+
+  DateTime _parseDate(String dateString) {
+    try {
+      final parts = dateString.split('-');
+      if (parts.length == 3) {
+        final monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        final day = int.parse(parts[0]);
+        final month = monthNames.indexOf(parts[1]) + 1;
+        final year = int.parse(parts[2]);
+        return DateTime(year, month, day);
+      }
+    } catch (e) {
+      print('Error parsing date: $e');
+    }
+    return DateTime.now();
+  }
+
+  String _formatDate(DateTime date) {
+    final monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return "${date.day}-${monthNames[date.month - 1]}-${date.year}";
+  }
+
+  void _validateDates() {
+    if (widget.state.tripType == "round" &&
+        widget.state.departureDate.isNotEmpty &&
+        widget.state.returnDate.isNotEmpty) {
+      final departure = _parseDate(widget.state.departureDate);
+      final returnDate = _parseDate(widget.state.returnDate);
+
+      setState(() {
+        _showDateError = returnDate.isBefore(
+          departure.add(const Duration(days: 1)),
+        );
+      });
+    } else {
+      setState(() {
+        _showDateError = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Validate dates when widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _validateDates();
+    });
+  }
+
+  @override
+  void didUpdateWidget(SearchFormWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Validate dates when state changes
+    _validateDates();
+
+    // Auto-set return date when switching from oneway to round trip with existing departure date
+    if (widget.state.tripType == "round" &&
+        oldWidget.state.tripType == "oneway" &&
+        widget.state.departureDate.isNotEmpty &&
+        widget.state.returnDate.isEmpty) {
+      final departure = _parseDate(widget.state.departureDate);
+      final nextDay = departure.add(const Duration(days: 1));
+      widget.cubit.setReturnDate(_formatDate(nextDay));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTripTypeSelector(state, cubit),
+        _buildTripTypeSelector(widget.state, widget.cubit),
         const SizedBox(height: 16),
-        _buildFlightForm(state, cubit, context),
+        _buildFlightForm(widget.state, widget.cubit, context),
         const SizedBox(height: 20),
         Center(
-          child: state.isLoading
+          child: widget.state.isLoading
               ? CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(
                     AppColors.splashBackgroundColorEnd,
@@ -33,8 +135,9 @@ class SearchFormWidget extends StatelessWidget {
                   height: 45,
                   width: MediaQuery.of(context).size.width * 0.90,
                   onPressed: () {
-                    if (state.tripType == "multi") {
-                      for (final segment in state.flightSegments) {
+                    // Validate all fields
+                    if (widget.state.tripType == "multi") {
+                      for (final segment in widget.state.flightSegments) {
                         if (segment.from.isEmpty ||
                             segment.to.isEmpty ||
                             segment.date.isEmpty) {
@@ -47,9 +150,9 @@ class SearchFormWidget extends StatelessWidget {
                         }
                       }
                     } else {
-                      if (state.from.isEmpty ||
-                          state.to.isEmpty ||
-                          state.departureDate.isEmpty) {
+                      if (widget.state.from.isEmpty ||
+                          widget.state.to.isEmpty ||
+                          widget.state.departureDate.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Please fill all required fields"),
@@ -58,17 +161,42 @@ class SearchFormWidget extends StatelessWidget {
                         return;
                       }
 
-                      if (state.tripType == "round" &&
-                          state.returnDate.isEmpty) {
+                      if (widget.state.tripType == "round" &&
+                          widget.state.returnDate.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Please select return date"),
+                            duration: Duration(seconds: 2),
                           ),
                         );
                         return;
                       }
+
+                      // Validate that return date is after departure date
+                      if (widget.state.tripType == "round" &&
+                          widget.state.departureDate.isNotEmpty &&
+                          widget.state.returnDate.isNotEmpty) {
+                        final departure = _parseDate(
+                          widget.state.departureDate,
+                        );
+                        final returnDate = _parseDate(widget.state.returnDate);
+
+                        if (returnDate.isBefore(
+                          departure.add(const Duration(days: 1)),
+                        )) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Return date must be after departure date",
+                              ),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+                      }
                     }
-                    cubit.search();
+                    widget.cubit.search(context);
                   },
                 ),
         ),
@@ -174,22 +302,21 @@ class SearchFormWidget extends StatelessWidget {
           children: [
             Column(
               children: [
-                _buildTextField(
-                  "From",
-                  state.from,
-                  Icons.flight_takeoff,
-                  true,
-                  context,
-                  cubit,
+                AirportTextField(
+                  isOrigin: true,
+
+                  label: "From",
+                  value: state.from,
+                  icon: Icons.flight_takeoff,
+                  onTap: () => cubit.showAirportBottomSheet(context, true),
                 ),
                 const SizedBox(height: 12),
-                _buildTextField(
-                  "To",
-                  state.to,
-                  Icons.flight_land,
-                  false,
-                  context,
-                  cubit,
+                AirportTextField(
+                  isOrigin: false,
+                  label: "To",
+                  value: state.to,
+                  icon: Icons.flight_land,
+                  onTap: () => cubit.showAirportBottomSheet(context, false),
                 ),
               ],
             ),
@@ -218,6 +345,12 @@ class SearchFormWidget extends StatelessWidget {
                       color: Colors.black,
                     ),
                     onPressed: () => cubit.switchFromTo(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.splashBackgroundColorEnd,
+                      side: BorderSide(
+                        color: AppColors.splashBackgroundColorEnd,
+                      ),
+                    ),
                     padding: EdgeInsets.zero,
                   ),
                 ),
@@ -228,32 +361,53 @@ class SearchFormWidget extends StatelessWidget {
         const SizedBox(height: 12),
 
         if (state.tripType == "oneway")
-          _buildDateField(
-            "Departure",
-            state.departureDate,
-            Icons.date_range,
-            () => _selectDate(context, cubit, isDeparture: true),
+          DateTextField(
+            label: "Departure",
+            value: state.departureDate,
+            icon: Icons.calendar_today,
+            onTap: () => _selectDate(context, cubit, isDeparture: true),
           )
         else
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: _buildDateField(
-                  "Departure",
-                  state.departureDate,
-                  Icons.date_range,
-                  () => _selectDate(context, cubit, isDeparture: true),
-                ),
+              DateTextField(
+                label: "Departure",
+                value: state.departureDate,
+                icon: Icons.calendar_today,
+                onTap: () => _selectDate(context, cubit, isDeparture: true),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildDateField(
-                  "Return",
-                  state.returnDate,
-                  Icons.date_range,
-                  () => _selectDate(context, cubit, isDeparture: false),
-                ),
+              const SizedBox(height: 12),
+              Stack(
+                key: _returnDateKey,
+                children: [
+                  DateTextField(
+                    label: "Return",
+                    value: state.returnDate,
+                    icon: Icons.calendar_today,
+                    onTap: () =>
+                        _selectDate(context, cubit, isDeparture: false),
+                    hasError: _showDateError,
+                  ),
+                  if (_showDateError)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                    ),
+                ],
               ),
+              if (_showDateError)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    "Return date must be after departure date",
+                    style: TextStyle(color: Colors.red[700], fontSize: 12),
+                  ),
+                ),
             ],
           ),
         const SizedBox(height: 12),
@@ -288,7 +442,7 @@ class SearchFormWidget extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.splashBackgroundColorEnd,
                 side: BorderSide(color: AppColors.splashBackgroundColorEnd),
-                backgroundColor: Colors.white, // Light gray background
+                backgroundColor: Colors.white,
               ),
             ),
           ),
@@ -305,19 +459,18 @@ class SearchFormWidget extends StatelessWidget {
     BuildContext context,
     bool canDelete,
   ) {
-    final index = state.flightSegments.indexOf(segment) + 1;
+    final index = widget.state.flightSegments.indexOf(segment) + 1;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.grey[50], // Light gray background
+        color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with flight icon and number
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -343,13 +496,11 @@ class SearchFormWidget extends StatelessWidget {
                 ),
                 if (canDelete)
                   Container(
-                    width: 28, // Fixed width to prevent container expansion
-                    height: 28, // Fixed height
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
-                      color: Colors.white, // Red background
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(8),
-                      ), // Circular button
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
                     ),
                     child: IconButton(
                       icon: const Icon(
@@ -359,17 +510,12 @@ class SearchFormWidget extends StatelessWidget {
                       ),
                       onPressed: () => cubit.removeFlightSegment(segment.id),
                       padding: EdgeInsets.zero,
-                      constraints:
-                          const BoxConstraints(), // Remove default constraints
-                      iconSize: 18, // Smaller icon
-                      tooltip: 'Remove this flight',
                     ),
                   ),
               ],
             ),
           ),
 
-          // Rest of the method remains the same...
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -379,24 +525,28 @@ class SearchFormWidget extends StatelessWidget {
                   children: [
                     Column(
                       children: [
-                        _buildMultiCityTextField(
-                          "From",
-                          segment.from,
-                          Icons.flight_takeoff,
-                          true,
-                          context,
-                          cubit,
-                          segment.id,
+                        AirportTextField(
+                          isOrigin: true,
+                          label: "From",
+                          value: segment.from,
+                          icon: Icons.flight_takeoff,
+                          onTap: () => cubit.showMultiCityAirportBottomSheet(
+                            context,
+                            true,
+                            segment.id,
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        _buildMultiCityTextField(
-                          "To",
-                          segment.to,
-                          Icons.flight_land,
-                          false,
-                          context,
-                          cubit,
-                          segment.id,
+                        AirportTextField(
+                          isOrigin: false,
+                          label: "To",
+                          value: segment.to,
+                          icon: Icons.flight_land,
+                          onTap: () => cubit.showMultiCityAirportBottomSheet(
+                            context,
+                            false,
+                            segment.id,
+                          ),
                         ),
                       ],
                     ),
@@ -421,7 +571,15 @@ class SearchFormWidget extends StatelessWidget {
                         child: CircleAvatar(
                           backgroundColor: Colors.white,
                           radius: 18,
+
                           child: IconButton(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  AppColors.splashBackgroundColorEnd,
+                              side: BorderSide(
+                                color: AppColors.splashBackgroundColorEnd,
+                              ),
+                            ),
                             icon: Icon(
                               Icons.swap_vert,
                               size: 18,
@@ -444,99 +602,16 @@ class SearchFormWidget extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _buildMultiCityDateField(
-                  "Departure Date",
-                  segment.date,
-                  Icons.calendar_today,
-                  () => _selectMultiCityDate(context, cubit, segment.id),
+                DateTextField(
+                  label: "Departure Date",
+                  value: segment.date,
+                  icon: Icons.calendar_today,
+                  onTap: () => _selectMultiCityDate(context, cubit, segment.id),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMultiCityTextField(
-    String label,
-    String value,
-    IconData icon,
-    bool isOrigin,
-    BuildContext context,
-    FlightCubit cubit,
-    String segmentId,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        cubit.showMultiCityAirportBottomSheet(context, isOrigin, segmentId);
-      },
-      child: AbsorbPointer(
-        child: TextField(
-          controller: TextEditingController(text: value),
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: Colors.grey[600]),
-            labelText: label,
-            labelStyle: TextStyle(color: Colors.grey[600]),
-            floatingLabelStyle: const TextStyle(color: Colors.deepPurple),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(
-                color: Colors.deepPurple,
-                width: 2.0,
-              ),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMultiCityDateField(
-    String label,
-    String value,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AbsorbPointer(
-        child: TextField(
-          controller: TextEditingController(text: value),
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: Colors.grey[600]),
-            labelText: label,
-            labelStyle: TextStyle(color: Colors.grey[600]),
-            floatingLabelStyle: const TextStyle(color: Colors.deepPurple),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(
-                color: Colors.deepPurple,
-                width: 2.0,
-              ),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -572,24 +647,11 @@ class SearchFormWidget extends StatelessWidget {
     );
 
     if (picked != null) {
-      final monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      final formattedDate =
-          "${picked.day}-${monthNames[picked.month - 1]}-${picked.year}";
+      final formattedDate = _formatDate(picked);
 
-      final segment = state.flightSegments.firstWhere((s) => s.id == segmentId);
+      final segment = widget.state.flightSegments.firstWhere(
+        (s) => s.id == segmentId,
+      );
       cubit.updateFlightSegment(
         segmentId,
         segment.from,
@@ -599,72 +661,41 @@ class SearchFormWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildTextField(
-    String label,
-    String value,
-    IconData icon,
-    bool isOrigin,
-    BuildContext context,
-    FlightCubit cubit,
-  ) {
-    return GestureDetector(
-      onTap: () => cubit.showAirportBottomSheet(context, isOrigin),
-      child: AbsorbPointer(
-        child: TextField(
-          controller: TextEditingController(text: value),
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon),
-            labelText: label,
-            floatingLabelStyle: value.isEmpty
-                ? const TextStyle(color: Colors.deepPurple)
-                : const TextStyle(color: Colors.grey),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Colors.deepPurple,
-                width: 2.0,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateField(
-    String label,
-    String value,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AbsorbPointer(
-        child: TextField(
-          controller: TextEditingController(text: value),
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon),
-            labelText: label,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _selectDate(
     BuildContext context,
     FlightCubit cubit, {
     required bool isDeparture,
   }) async {
+    DateTime initialDate = DateTime.now();
+    DateTime firstDate = DateTime.now();
+
+    // Set initial date based on existing selection
+    if (isDeparture && widget.state.departureDate.isNotEmpty) {
+      initialDate = _parseDate(widget.state.departureDate);
+    } else if (!isDeparture && widget.state.returnDate.isNotEmpty) {
+      initialDate = _parseDate(widget.state.returnDate);
+
+      // For return date, ensure firstDate is at least the day after departure
+      if (widget.state.departureDate.isNotEmpty) {
+        final departureDate = _parseDate(widget.state.departureDate);
+        firstDate = departureDate.add(const Duration(days: 1));
+
+        // Ensure initialDate is not before firstDate
+        if (initialDate.isBefore(firstDate)) {
+          initialDate = firstDate;
+        }
+      }
+    }
+
+    // Ensure initialDate is not before firstDate
+    if (initialDate.isBefore(firstDate)) {
+      initialDate = firstDate;
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime(DateTime.now().year + 1),
       builder: (context, child) {
         return Theme(
@@ -687,32 +718,50 @@ class SearchFormWidget extends StatelessWidget {
     );
 
     if (picked != null) {
-      final monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      final formattedDate =
-          "${picked.day}-${monthNames[picked.month - 1]}-${picked.year}";
+      final formattedDate = _formatDate(picked);
 
       if (isDeparture) {
         cubit.setDepartureDate(formattedDate);
+
+        // Auto-set return date to next day when departure date changes in round trip
+        if (widget.state.tripType == "round") {
+          final nextDay = picked.add(const Duration(days: 1));
+          cubit.setReturnDate(_formatDate(nextDay));
+        }
+
+        // If return date exists and is before the new departure date, clear it and show error
+        if (widget.state.tripType == "round" &&
+            widget.state.returnDate.isNotEmpty) {
+          final returnDate = _parseDate(widget.state.returnDate);
+          if (returnDate.isBefore(picked.add(const Duration(days: 1)))) {
+            setState(() {
+              _showDateError = true;
+            });
+          } else {
+            setState(() {
+              _showDateError = false;
+            });
+          }
+        }
       } else {
         cubit.setReturnDate(formattedDate);
+
+        // Validate return date is after departure
+        if (widget.state.departureDate.isNotEmpty) {
+          final departureDate = _parseDate(widget.state.departureDate);
+          if (picked.isBefore(departureDate.add(const Duration(days: 1)))) {
+            setState(() {
+              _showDateError = true;
+            });
+          } else {
+            setState(() {
+              _showDateError = false;
+            });
+          }
+        }
       }
     }
   }
-
-  // Update the _buildPassengerField method in search_form_widget.dart
 
   Widget _buildPassengerField(
     FlightState state,

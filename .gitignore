@@ -54,3 +54,4 @@ Thumbs.db
 
 # Miscellaneous
 /coverage/
+*.zip

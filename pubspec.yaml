@@ -20,7 +20,7 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^4.0.0
   dio: ^5.0.0
-
+  intl: 
 dev_dependencies:
   flutter_test:
     sdk: flutter

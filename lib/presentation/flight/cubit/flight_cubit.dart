@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
+import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
+import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
 import 'package:tayyran_app/presentation/home/model/recentsearch_model.dart';
 import 'package:tayyran_app/presentation/home/widgets/airport_bottom_sheet.dart';
 
@@ -164,7 +166,7 @@ class FlightCubit extends Cubit<FlightState> {
     emit(state.copyWith(cabinClass: cabinClass));
   }
 
-  Future<void> search() async {
+  Future<void> search(BuildContext context) async {
     if (state.tripType == "multi") {
       for (final segment in state.flightSegments) {
         if (segment.from.isEmpty ||
@@ -325,6 +327,9 @@ class FlightCubit extends Cubit<FlightState> {
           print('Error saving flight search: $e');
         }
       }
+      navigateToSearchResults(
+        context,
+      ); // You'll need to pass context to this method
     }
   }
 
@@ -397,6 +402,54 @@ class FlightCubit extends Cubit<FlightState> {
         ),
       ),
     );
+  }
+
+  void navigateToSearchResults(BuildContext context) {
+    if (state.tripType == "multi") {
+      // Prepare multi-city data
+      final searchData = {
+        "type": "multi",
+        "segments": state.flightSegments.map((segment) {
+          return {"from": segment.from, "to": segment.to, "date": segment.date};
+        }).toList(),
+        "adults": state.adults,
+        "children": state.children,
+        "infants": state.infants,
+        "passengers": state.totalPassengers,
+        "cabinClass": state.cabinClass,
+      };
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => FlightSearchCubit(),
+            child: FlightSearchScreen(searchData: searchData),
+          ),
+        ),
+      );
+    } else {
+      final searchData = {
+        "type": state.tripType,
+        "from": state.from,
+        "to": state.to,
+        "departureDate": state.departureDate,
+        "returnDate": state.returnDate,
+        "adults": state.adults,
+        "children": state.children,
+        "infants": state.infants,
+        "passengers": state.totalPassengers,
+        "cabinClass": state.cabinClass,
+      };
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => FlightSearchCubit(),
+            child: FlightSearchScreen(searchData: searchData),
+          ),
+        ),
+      );
+    }
   }
 
   void showMultiCityAirportBottomSheet(

@@ -1,9 +1,12 @@
+// main.dart - Add the flight search route
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tayyran_app/core/localization/localization.dart';
 import 'package:tayyran_app/core/routes/app_routes.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
+import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
 import 'package:tayyran_app/presentation/onboarding/cubit/onboarding_cubit.dart';
 import 'package:tayyran_app/presentation/splash/cubit/splash_cubit.dart';
@@ -21,7 +24,9 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => SplashCubit()),
         BlocProvider(create: (_) => OnboardingCubit()),
-        BlocProvider(create: (_) => MainAppCubit()), // Add this provider
+        BlocProvider(create: (_) => MainAppCubit()),
+        BlocProvider(create: (_) => FlightCubit()),
+        BlocProvider(create: (_) => FlightSearchCubit()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

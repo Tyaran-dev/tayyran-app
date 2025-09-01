@@ -42,11 +42,13 @@ class FlightScreenContent extends StatelessWidget {
                           ),
 
                           // Recent Searches Section
-                          if (state.recentSearches.isNotEmpty) ...[
+                          if (state.recentSearches.isNotEmpty &&
+                              state.tripType != "multi") ...[
                             const SizedBox(height: 24),
                             _buildRecentSearchesHeader(context, state),
                             const SizedBox(height: 12),
                             _buildRecentSearchesList(context, state),
+                            const SizedBox(height: 20),
                           ],
                         ],
                       ),

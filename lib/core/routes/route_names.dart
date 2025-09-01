@@ -8,4 +8,5 @@ class RouteNames {
   static const String stay = '/stay';
   static const String flight = '/flight';
   static const String flightResults = '/flight-results';
+  static const String flightSearch = '/flight-search';
 }

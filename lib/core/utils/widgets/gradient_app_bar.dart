@@ -1,0 +1,291 @@
+// gradient_app_bar.dart - FIXED
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
+import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
+
+class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final bool showBackButton;
+  final bool isHomePage;
+  final bool isFlightResults;
+  final Map<String, dynamic>? searchData;
+  final double? height;
+  final VoidCallback? onBackPressed;
+  final List<Widget>? actions;
+  final Widget? customTitle;
+  final VoidCallback? onDestinationTap;
+
+  // Make gradient available for external use
+  static const LinearGradient gradient = LinearGradient(
+    colors: [
+      AppColors.splashBackgroundColorStart,
+      AppColors.splashBackgroundColorEnd,
+    ],
+    begin: Alignment.bottomRight,
+    end: Alignment.topLeft,
+  );
+
+  const GradientAppBar({
+    super.key,
+    required this.title,
+    this.showBackButton = false,
+    this.isHomePage = false,
+    this.isFlightResults = false,
+    this.searchData,
+    this.height,
+    this.onBackPressed,
+    this.actions,
+    this.customTitle,
+    this.onDestinationTap,
+  });
+
+  @override
+  Size get preferredSize => Size.fromHeight(height ?? kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height ?? kToolbarHeight,
+      decoration: const BoxDecoration(gradient: gradient),
+      child: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: showBackButton,
+        leading: showBackButton
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: onBackPressed ?? () => Navigator.pop(context),
+              )
+            : null,
+        title: isFlightResults
+            ? _buildFlightSearchTitleWithCubit(context)
+            : customTitle ??
+                  (isHomePage
+                      ? _buildHomeAppBarContent()
+                      : Text(
+                          title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )),
+        centerTitle: true,
+        actions: isFlightResults
+            ? [
+                BlocBuilder<FlightSearchCubit, FlightSearchState>(
+                  builder: (context, state) {
+                    return SizedBox(height: 0);
+                  },
+                ),
+              ]
+            : actions ??
+                  (isHomePage
+                      ? const [
+                          Padding(
+                            padding: EdgeInsets.only(right: 16),
+                            child: Icon(
+                              Icons.notifications,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ]
+                      : null),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+      ),
+    );
+  }
+
+  Widget _buildFlightSearchTitleWithCubit(BuildContext context) {
+    return BlocBuilder<FlightSearchCubit, FlightSearchState>(
+      builder: (context, state) {
+        print('GradientAppBar rebuilding with state: ${state.searchData}');
+
+        if (state.isLoading) {
+          return _buildLoadingState();
+        } else {
+          return _buildFlightSearchDetails(state.searchData);
+        }
+      },
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+        ),
+        SizedBox(width: 12),
+        Text(
+          'Searching flights...',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFlightSearchDetails(Map<String, dynamic> searchData) {
+    // Use the safeSearchData method from your state to ensure all keys exist
+    final safeData = {
+      'from': searchData['from'] ?? '',
+      'to': searchData['to'] ?? '',
+      'departureDate': searchData['departureDate'] ?? '',
+      'returnDate': searchData['returnDate'] ?? '',
+      'adults': searchData['adults'] is int ? searchData['adults'] : 1,
+      'children': searchData['children'] is int ? searchData['children'] : 0,
+      'infants': searchData['infants'] is int ? searchData['infants'] : 0,
+      'cabinClass': searchData['cabinClass'] is String
+          ? searchData['cabinClass']
+          : 'Economy',
+      'tripType': searchData['tripType'] is String
+          ? searchData['tripType']
+          : 'oneway',
+    };
+    final from = safeData['from']?.toString() ?? '';
+    final to = safeData['to']?.toString() ?? '';
+    final adults = safeData['adults'] as int;
+    final children = safeData['children'] as int;
+    final infants = safeData['infants'] as int;
+    final totalPassengers = adults + children + infants;
+    final cabinClass = safeData['cabinClass']?.toString() ?? 'Economy';
+    final departureDate = safeData['departureDate']?.toString() ?? '';
+    final isRoundTrip = safeData['tripType'] == 'round';
+    final returnDate = safeData['returnDate']?.toString() ?? '';
+
+    // Extract airport codes if available (format: "DXB - Dubai")
+    final fromCode = from.contains(' - ') ? from.split(' - ').first : from;
+    final toCode = to.contains(' - ') ? to.split(' - ').first : to;
+
+    // Format date from "31-Aug-2025" to "31 Aug"
+    String formatDate(String dateString) {
+      if (dateString.contains('-')) {
+        try {
+          final parts = dateString.split('-');
+          if (parts.length == 3) {
+            final day = parts[0];
+            final monthAbbr = parts[1];
+            return '$day $monthAbbr';
+          }
+          return dateString;
+        } catch (e) {
+          return dateString;
+        }
+      }
+      return dateString;
+    }
+
+    final formattedDepartureDate = formatDate(departureDate);
+    final formattedReturnDate = isRoundTrip ? formatDate(returnDate) : '';
+
+    return GestureDetector(
+      onTap: onDestinationTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // From -> To route
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                fromCode,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                toCode,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_drop_down, size: 20, color: Colors.white),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // Flight details
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              // Passengers
+              Text(
+                '$totalPassengers ${totalPassengers > 1 ? 'Passengers' : 'Passenger'}',
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              const CircleAvatar(radius: 2, backgroundColor: Colors.white),
+              const SizedBox(width: 8),
+              // Cabin class
+              Text(
+                cabinClass,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              const CircleAvatar(radius: 2, backgroundColor: Colors.white),
+              const SizedBox(width: 8),
+              // Dates
+              Text(
+                isRoundTrip
+                    ? '$formattedDepartureDate - $formattedReturnDate'
+                    : formattedDepartureDate,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeAppBarContent() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          "Current location",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 19,
+            fontWeight: FontWeight.w100,
+            fontFamily: 'Almarai',
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.location_on, color: Colors.white, size: 20),
+            SizedBox(width: 4),
+            Text(
+              "Dubai, UAE",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Almarai',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
