@@ -38,15 +38,24 @@ class _ModifySearchSheetState extends State<ModifySearchSheet> {
   @override
   void initState() {
     super.initState();
-    _from = widget.initialData['from'] ?? '';
-    _to = widget.initialData['to'] ?? '';
-    _departureDate = widget.initialData['departureDate'] ?? '';
-    _returnDate = widget.initialData['returnDate'] ?? '';
-    _adults = widget.initialData['adults'] ?? 1;
-    _children = widget.initialData['children'] ?? 0;
-    _infants = widget.initialData['infants'] ?? 0;
-    _cabinClass = widget.initialData['cabinClass'] ?? 'Economy';
-    // Set default to no return date
+    // Use the cubit's current state instead of the initial data
+    final currentState = widget.cubit.state;
+    _from = currentState.searchData['from'] ?? '';
+    _to = currentState.searchData['to'] ?? '';
+    _departureDate = currentState.searchData['departureDate'] ?? '';
+    _returnDate = currentState.searchData['returnDate'] ?? '';
+    _adults = currentState.searchData['adults'] is int
+        ? currentState.searchData['adults']
+        : 1;
+    _children = currentState.searchData['children'] is int
+        ? currentState.searchData['children']
+        : 0;
+    _infants = currentState.searchData['infants'] is int
+        ? currentState.searchData['infants']
+        : 0;
+    _cabinClass = currentState.searchData['cabinClass'] is String
+        ? currentState.searchData['cabinClass']
+        : 'Economy';
     _hasReturnDate = false;
     _showDateError = false;
     _returnDateKey = GlobalKey();

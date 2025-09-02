@@ -148,10 +148,9 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
       'cabinClass': searchData['cabinClass'] is String
           ? searchData['cabinClass']
           : 'Economy',
-      'tripType': searchData['tripType'] is String
-          ? searchData['tripType']
-          : 'oneway',
+      'type': searchData['type'] is String ? searchData['type'] : 'oneway',
     };
+
     final from = safeData['from']?.toString() ?? '';
     final to = safeData['to']?.toString() ?? '';
     final adults = safeData['adults'] as int;
@@ -160,7 +159,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     final totalPassengers = adults + children + infants;
     final cabinClass = safeData['cabinClass']?.toString() ?? 'Economy';
     final departureDate = safeData['departureDate']?.toString() ?? '';
-    final isRoundTrip = safeData['tripType'] == 'round';
+    final isRoundTrip = safeData['type'] == 'round';
     final returnDate = safeData['returnDate']?.toString() ?? '';
 
     // Extract airport codes if available (format: "DXB - Dubai")
@@ -186,17 +185,21 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
 
     final formattedDepartureDate = formatDate(departureDate);
-    final formattedReturnDate = isRoundTrip ? formatDate(returnDate) : '';
+    final formattedReturnDate = isRoundTrip && returnDate.isNotEmpty
+        ? formatDate(returnDate)
+        : '';
 
     return GestureDetector(
       onTap: onDestinationTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // From -> To route
+          // Main route line
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Icon(Icons.flight_takeoff, size: 16, color: Colors.white),
+              const SizedBox(width: 4),
               Text(
                 fromCode,
                 style: const TextStyle(
@@ -206,8 +209,15 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+
+              // Round trip or one-way indicator
+              isRoundTrip
+                  ? Icon(Icons.sync, size: 16, color: Colors.white)
+                  : Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+
               const SizedBox(width: 8),
+              Icon(Icons.flight_land, size: 16, color: Colors.white),
+              const SizedBox(width: 4),
               Text(
                 toCode,
                 style: const TextStyle(
@@ -216,17 +226,17 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.arrow_drop_down, size: 20, color: Colors.white),
             ],
           ),
           const SizedBox(height: 4),
-          // Flight details
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
+
+          // Details row
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Passengers
+              // Passenger icon
+              Icon(Icons.person, size: 12, color: Colors.white),
+              const SizedBox(width: 2),
               Text(
                 '$totalPassengers ${totalPassengers > 1 ? 'Passengers' : 'Passenger'}',
                 style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -234,7 +244,8 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: 8),
               const CircleAvatar(radius: 2, backgroundColor: Colors.white),
               const SizedBox(width: 8),
-              // Cabin class
+
+              // Class
               Text(
                 cabinClass,
                 style: const TextStyle(color: Colors.white, fontSize: 12),
@@ -242,13 +253,22 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: 8),
               const CircleAvatar(radius: 2, backgroundColor: Colors.white),
               const SizedBox(width: 8),
+
+              // Calendar icon
+              Icon(Icons.calendar_today, size: 12, color: Colors.white),
+              const SizedBox(width: 2),
+
               // Dates
-              Text(
-                isRoundTrip
-                    ? '$formattedDepartureDate - $formattedReturnDate'
-                    : formattedDepartureDate,
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
+              if (isRoundTrip && formattedReturnDate.isNotEmpty)
+                Text(
+                  '$formattedDepartureDate → $formattedReturnDate',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                )
+              else
+                Text(
+                  formattedDepartureDate,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
             ],
           ),
         ],

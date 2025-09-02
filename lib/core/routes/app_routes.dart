@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
 import 'package:tayyran_app/presentation/discount/discount_screen.dart';
-import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
 import 'package:tayyran_app/presentation/main_screen/main_app_screen.dart';
@@ -77,13 +76,9 @@ class AppRoutes {
       case RouteNames.flightSearch:
         final searchData = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (_) => FlightSearchCubit(),
-            child: FlightSearchScreen(searchData: searchData),
-          ),
+          builder: (_) => FlightSearchScreen(searchData: searchData),
           settings: const RouteSettings(name: RouteNames.flightSearch),
         );
-
       default:
         return MaterialPageRoute(
           builder: (_) => PopScope(

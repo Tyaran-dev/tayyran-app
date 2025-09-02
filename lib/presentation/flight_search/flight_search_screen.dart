@@ -10,42 +10,58 @@ import 'package:tayyran_app/presentation/flight_search/widgets/flight_ticket_car
 import 'package:tayyran_app/presentation/flight_search/widgets/filter_sort_chip_bar.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/modify_search_sheet.dart';
 
-class FlightSearchScreen extends StatelessWidget {
+class FlightSearchScreen extends StatefulWidget {
   final Map<String, dynamic> searchData;
 
   const FlightSearchScreen({super.key, required this.searchData});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => FlightSearchCubit()..loadFlights(searchData),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: GradientAppBar(
-          height: 120,
-          title: 'Flight Results',
-          showBackButton: true,
-          isFlightResults: true,
-          searchData: searchData,
-          onDestinationTap: () {
-            final cubit = context.read<FlightSearchCubit>();
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) =>
-                  ModifySearchSheet(initialData: searchData, cubit: cubit),
-            );
-          },
-        ),
-        body: BlocBuilder<FlightSearchCubit, FlightSearchState>(
-          builder: (context, state) {
-            print(
-              'FlightSearchScreen rebuilding with state: ${state.searchData}',
-            ); // Add this
+  State<FlightSearchScreen> createState() => _FlightSearchScreenState();
+}
 
-            return _buildContentArea(context, state);
-          },
-        ),
+class _FlightSearchScreenState extends State<FlightSearchScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load flights when the screen is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cubit = context.read<FlightSearchCubit>();
+      if (cubit.state.searchData != widget.searchData &&
+          !cubit.state.isLoading) {
+        cubit.loadFlights(widget.searchData);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<FlightSearchCubit>();
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: GradientAppBar(
+        height: 120,
+        title: 'Flight Results',
+        showBackButton: true,
+        isFlightResults: true,
+        onDestinationTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => ModifySearchSheet(
+              initialData: cubit.state.searchData,
+              cubit: cubit,
+            ),
+          );
+        },
+      ),
+      body: BlocBuilder<FlightSearchCubit, FlightSearchState>(
+        builder: (context, state) {
+          print(
+            'FlightSearchScreen rebuilding with state: ${state.searchData}',
+          );
+          return _buildContentArea(context, state);
+        },
       ),
     );
   }
