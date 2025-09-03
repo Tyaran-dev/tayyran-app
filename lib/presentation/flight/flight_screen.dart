@@ -36,11 +36,7 @@ class FlightScreenContent extends StatelessWidget {
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          SearchFormWidget(
-                            state: state,
-                            cubit: context.read<FlightCubit>(),
-                          ),
-
+                          SearchFormWidget(),
                           // Recent Searches Section
                           if (state.recentSearches.isNotEmpty &&
                               state.tripType != "multi") ...[

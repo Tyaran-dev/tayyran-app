@@ -379,26 +379,11 @@ class FlightCubit extends Cubit<FlightState> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          builder: (_, controller) => AirportBottomSheet(
-            isOrigin: isOrigin,
-            currentValue: isOrigin ? state.from : state.to,
-            onAirportSelected: (airport) {
-              if (isOrigin) {
-                setFrom(airport);
-              } else {
-                setTo(airport);
-              }
-            },
-          ),
+      builder: (context) => BlocProvider.value(
+        value: this, // Provide the existing cubit instance
+        child: AirportBottomSheet(
+          isOrigin: isOrigin,
+          currentValue: isOrigin ? state.from : state.to,
         ),
       ),
     );
@@ -463,36 +448,12 @@ class FlightCubit extends Cubit<FlightState> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          builder: (_, controller) => AirportBottomSheet(
-            isOrigin: isOrigin,
-            currentValue: currentValue,
-            onAirportSelected: (airport) {
-              if (isOrigin) {
-                updateFlightSegment(
-                  segmentId,
-                  airport,
-                  segment.to,
-                  segment.date,
-                );
-              } else {
-                updateFlightSegment(
-                  segmentId,
-                  segment.from,
-                  airport,
-                  segment.date,
-                );
-              }
-            },
-          ),
+      builder: (context) => BlocProvider.value(
+        value: this, // Provide the existing cubit instance
+        child: AirportBottomSheet(
+          isOrigin: isOrigin,
+          currentValue: currentValue,
+          segmentId: segmentId,
         ),
       ),
     );

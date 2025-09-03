@@ -1,4 +1,4 @@
-// gradient_app_bar.dart - FIXED
+// gradient_app_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,14 +11,12 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final bool isHomePage;
   final bool isFlightResults;
-  final Map<String, dynamic>? searchData;
   final double? height;
   final VoidCallback? onBackPressed;
   final List<Widget>? actions;
   final Widget? customTitle;
   final VoidCallback? onDestinationTap;
 
-  // Make gradient available for external use
   static const LinearGradient gradient = LinearGradient(
     colors: [
       AppColors.splashBackgroundColorStart,
@@ -34,7 +32,6 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = false,
     this.isHomePage = false,
     this.isFlightResults = false,
-    this.searchData,
     this.height,
     this.onBackPressed,
     this.actions,
@@ -76,11 +73,8 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
         centerTitle: true,
         actions: isFlightResults
             ? [
-                BlocBuilder<FlightSearchCubit, FlightSearchState>(
-                  builder: (context, state) {
-                    return SizedBox(height: 0);
-                  },
-                ),
+                // Empty actions for flight results
+                const SizedBox(width: 16),
               ]
             : actions ??
                   (isHomePage
@@ -102,8 +96,13 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildFlightSearchTitleWithCubit(BuildContext context) {
     return BlocBuilder<FlightSearchCubit, FlightSearchState>(
+      buildWhen: (previous, current) {
+        // Only rebuild if searchData changes
+        return previous.searchData != current.searchData ||
+            previous.isLoading != current.isLoading;
+      },
       builder: (context, state) {
-        print('GradientAppBar rebuilding with state: ${state.searchData}');
+        print('GradientAppBar rebuilding with searchData: ${state.searchData}');
 
         if (state.isLoading) {
           return _buildLoadingState();

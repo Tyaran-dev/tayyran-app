@@ -50,7 +50,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             isScrollControlled: true,
             builder: (_) => ModifySearchSheet(
               initialData: cubit.state.searchData,
-              cubit: cubit,
+              flightSearchCubit: cubit,
             ),
           );
         },
@@ -109,6 +109,12 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                 '${state.filteredTickets.length} flights found',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
+              // Show current search summary
+              if (state.searchData.isNotEmpty)
+                Text(
+                  _buildSearchSummary(state.searchData),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
             ],
           ),
         ),
@@ -117,6 +123,19 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
         Expanded(child: _buildResults(context, state)),
       ],
     );
+  }
+
+  String _buildSearchSummary(Map<String, dynamic> searchData) {
+    final from = searchData['from']?.split(' - ')[0] ?? '';
+    final to = searchData['to']?.split(' - ')[0] ?? '';
+    final departure = searchData['departureDate'] ?? '';
+    final returnDate = searchData['returnDate'] ?? '';
+
+    if (returnDate.isNotEmpty) {
+      return '$from → $to • $departure ↔ $returnDate';
+    } else {
+      return '$from → $to • $departure';
+    }
   }
 
   Widget _buildResults(BuildContext context, FlightSearchState state) {
