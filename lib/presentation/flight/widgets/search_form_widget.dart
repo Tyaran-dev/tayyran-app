@@ -1,4 +1,4 @@
-// search_form_widget.dart - Fixed version
+// search_form_widget.dart - Complete version
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
@@ -277,7 +277,16 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                   label: "From",
                   value: state.from,
                   icon: Icons.flight_takeoff,
-                  onTap: () => cubit.showAirportBottomSheet(context, true),
+                  onTap: () async {
+                    final selectedAirport = await cubit.showAirportSelection(
+                      context,
+                      true,
+                      state.from,
+                    );
+                    if (selectedAirport != null) {
+                      cubit.setAirportSelection(true, selectedAirport);
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 AirportTextField(
@@ -285,12 +294,21 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                   label: "To",
                   value: state.to,
                   icon: Icons.flight_land,
-                  onTap: () => cubit.showAirportBottomSheet(context, false),
+                  onTap: () async {
+                    final selectedAirport = await cubit.showAirportSelection(
+                      context,
+                      false,
+                      state.to,
+                    );
+                    if (selectedAirport != null) {
+                      cubit.setAirportSelection(false, selectedAirport);
+                    }
+                  },
                 ),
               ],
             ),
             Positioned(
-              right: 16,
+              right: 0,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -298,7 +316,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                   border: Border.all(color: Colors.black, width: 1.5),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 6,
                       offset: const Offset(0, 3),
                     ),
@@ -308,6 +326,12 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                   backgroundColor: Colors.white,
                   radius: 20,
                   child: IconButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.splashBackgroundColorEnd,
+                      side: BorderSide(
+                        color: AppColors.splashBackgroundColorEnd,
+                      ),
+                    ),
                     icon: const Icon(
                       Icons.swap_vert,
                       size: 20,
@@ -383,11 +407,17 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
 
     return Column(
       children: [
-        ...state.flightSegments.map((segment) {
+        ...state.flightSegments.asMap().entries.map((entry) {
+          final index =
+              entry.key; // This is the position in the list (0, 1, 2, ...)
+          final segment = entry.value;
+          final displayIndex = index + 1; // Convert to 1-based numbering
+
           return _buildFlightSegment(
             segment,
             context,
             state.flightSegments.length > 2,
+            displayIndex, // Pass the display index
           );
         }),
 
@@ -416,9 +446,9 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     FlightSegment segment,
     BuildContext context,
     bool canDelete,
+    int displayIndex, // Add this parameter
   ) {
     final cubit = context.read<FlightCubit>();
-    final index = cubit.state.flightSegments.indexOf(segment) + 1;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -445,7 +475,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Flight $index",
+                    "Flight $displayIndex", // Use displayIndex instead of ID-based index
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -521,7 +551,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -571,10 +601,31 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     String segmentId,
   ) async {
     final cubit = context.read<FlightCubit>();
+    final segment = cubit.state.flightSegments.firstWhere(
+      (s) => s.id == segmentId,
+    );
+
+    // Get the segment index to determine minimum date
+    final segmentIndex = cubit.getSegmentIndex(segmentId);
+    final minDate = cubit.getMinDateForSegment(segmentIndex);
+
+    DateTime initialDate = minDate;
+
+    // If the segment already has a date, use it as initial date
+    if (segment.date.isNotEmpty) {
+      try {
+        final currentDate = _parseDate(segment.date);
+        // Ensure initial date is not before the minimum allowed date
+        initialDate = currentDate.isBefore(minDate) ? minDate : currentDate;
+      } catch (e) {
+        print('Error parsing segment date: $e');
+      }
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initialDate,
+      firstDate: minDate, // This is the key fix - use the calculated minDate
       lastDate: DateTime(DateTime.now().year + 1),
       builder: (context, child) {
         return Theme(
@@ -598,9 +649,6 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
 
     if (picked != null) {
       final formattedDate = _formatDate(picked);
-      final segment = cubit.state.flightSegments.firstWhere(
-        (s) => s.id == segmentId,
-      );
       cubit.updateFlightSegment(
         segmentId,
         segment.from,

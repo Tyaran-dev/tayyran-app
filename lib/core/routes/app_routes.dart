@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
+import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
 import 'package:tayyran_app/presentation/discount/discount_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
@@ -72,7 +74,22 @@ class AppRoutes {
           builder: (_) => PopScope(canPop: false, child: const StayScreen()),
           settings: const RouteSettings(name: RouteNames.stay),
         );
-
+      case RouteNames.airportSelection:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (context) => BlocProvider.value(
+            // ✅ Use BlocProvider.value
+            value: BlocProvider.of<AirportSearchCubit>(
+              context,
+            ), // ✅ Use existing cubit
+            child: AirportBottomSheet(
+              isOrigin: args['isOrigin'],
+              currentValue: args['currentValue'],
+              segmentId: args['segmentId'],
+            ),
+          ),
+          settings: const RouteSettings(name: RouteNames.airportSelection),
+        );
       case RouteNames.flightSearch:
         final searchData = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(

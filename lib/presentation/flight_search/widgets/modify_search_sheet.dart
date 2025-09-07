@@ -8,7 +8,7 @@ import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/modify_search/modify_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/modify_search/modify_search_state.dart';
-import 'package:tayyran_app/presentation/home/widgets/airport_bottom_sheet.dart';
+import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/home/widgets/passenger_selection_modal.dart';
 
 class ModifySearchSheet extends StatefulWidget {
