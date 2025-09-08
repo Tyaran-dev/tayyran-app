@@ -139,6 +139,7 @@ class FlightCubit extends Cubit<FlightState> {
           "Feb",
           "Mar",
           "Apr",
+          "Apr",
           "May",
           "Jun",
           "Jul",
@@ -177,6 +178,26 @@ class FlightCubit extends Cubit<FlightState> {
       "Dec",
     ];
     return "${date.day}-${monthNames[date.month - 1]}-${date.year}";
+  }
+
+  // Check if a date string is in the past
+  bool _isDateInPast(String dateString) {
+    try {
+      final date = _parseDate(dateString);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return date.isBefore(today);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking if date is in past: $e');
+      }
+      return false;
+    }
+  }
+
+  // Get current date formatted
+  String get _currentDateFormatted {
+    return _formatDate(DateTime.now());
   }
 
   void initializeFlightSegments() {
@@ -451,37 +472,37 @@ class FlightCubit extends Cubit<FlightState> {
           tripType: state.tripType,
         );
 
-        if (_isDuplicateSearch(newSearch)) {
-          return;
+        // Only save to recent searches if it's not a duplicate
+        if (!_isDuplicateSearch(newSearch)) {
+          final allSearches =
+              await SharedPreferencesService.loadRecentSearches();
+          final flightSearches = allSearches
+              .where((search) => search['type'] == 'flight')
+              .map((json) => RecentSearchModel.fromJson(json))
+              .toList();
+
+          final updatedFlightSearches = List<RecentSearchModel>.from(
+            flightSearches,
+          )..insert(0, newSearch);
+
+          if (updatedFlightSearches.length > 5) {
+            updatedFlightSearches.removeLast();
+          }
+
+          final nonFlightSearches = allSearches
+              .where((search) => search['type'] != 'flight')
+              .toList();
+
+          final allUpdatedSearches = [
+            ...updatedFlightSearches.map((search) => search.toJson()),
+            ...nonFlightSearches,
+          ];
+
+          await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
+          emit(state.copyWith(recentSearches: updatedFlightSearches));
         }
 
-        final allSearches = await SharedPreferencesService.loadRecentSearches();
-        final flightSearches = allSearches
-            .where((search) => search['type'] == 'flight')
-            .map((json) => RecentSearchModel.fromJson(json))
-            .toList();
-
-        final updatedFlightSearches = List<RecentSearchModel>.from(
-          flightSearches,
-        )..insert(0, newSearch);
-
-        if (updatedFlightSearches.length > 10) {
-          updatedFlightSearches.removeLast();
-        }
-
-        final nonFlightSearches = allSearches
-            .where((search) => search['type'] != 'flight')
-            .toList();
-
-        final allUpdatedSearches = [
-          ...updatedFlightSearches.map((search) => search.toJson()),
-          ...nonFlightSearches,
-        ];
-
-        await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
-        emit(state.copyWith(recentSearches: updatedFlightSearches));
-
-        // Prepare multi-city data for backend
+        // Prepare multi-city data for backend (ALWAYS do this, even for duplicates)
         final multiCityData = {
           "destinations": state.flightSegments.map((segment) {
             String fromCode = segment.from.split(' - ')[0];
@@ -530,7 +551,7 @@ class FlightCubit extends Cubit<FlightState> {
         navigateToSearchResults(context);
       } catch (e) {
         if (kDebugMode) {
-          print('Error saving flight search: $e');
+          print('Error in multi-city search: $e');
         }
       }
     } else {
@@ -557,41 +578,43 @@ class FlightCubit extends Cubit<FlightState> {
           tripType: state.tripType,
         );
 
-        if (_isDuplicateSearch(newSearch)) {
-          return;
+        // Only save to recent searches if it's not a duplicate
+        if (!_isDuplicateSearch(newSearch)) {
+          final allSearches =
+              await SharedPreferencesService.loadRecentSearches();
+          final flightSearches = allSearches
+              .where((search) => search['type'] == 'flight')
+              .map((json) => RecentSearchModel.fromJson(json))
+              .toList();
+
+          final updatedFlightSearches = List<RecentSearchModel>.from(
+            flightSearches,
+          )..insert(0, newSearch);
+
+          if (updatedFlightSearches.length > 5) {
+            updatedFlightSearches.removeLast();
+          }
+
+          final nonFlightSearches = allSearches
+              .where((search) => search['type'] != 'flight')
+              .toList();
+
+          final allUpdatedSearches = [
+            ...updatedFlightSearches.map((search) => search.toJson()),
+            ...nonFlightSearches,
+          ];
+
+          await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
+          emit(state.copyWith(recentSearches: updatedFlightSearches));
         }
 
-        final allSearches = await SharedPreferencesService.loadRecentSearches();
-        final flightSearches = allSearches
-            .where((search) => search['type'] == 'flight')
-            .map((json) => RecentSearchModel.fromJson(json))
-            .toList();
-
-        final updatedFlightSearches = List<RecentSearchModel>.from(
-          flightSearches,
-        )..insert(0, newSearch);
-
-        if (updatedFlightSearches.length > 10) {
-          updatedFlightSearches.removeLast();
-        }
-
-        final nonFlightSearches = allSearches
-            .where((search) => search['type'] != 'flight')
-            .toList();
-
-        final allUpdatedSearches = [
-          ...updatedFlightSearches.map((search) => search.toJson()),
-          ...nonFlightSearches,
-        ];
-
-        await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
-        emit(state.copyWith(recentSearches: updatedFlightSearches));
+        // ALWAYS navigate to search results, even for duplicates
+        navigateToSearchResults(context);
       } catch (e) {
         if (kDebugMode) {
-          print('Error saving flight search: $e');
+          print('Error in regular search: $e');
         }
       }
-      navigateToSearchResults(context);
     }
   }
 
@@ -624,12 +647,27 @@ class FlightCubit extends Cubit<FlightState> {
   }
 
   void prefillFromRecentSearch(RecentSearchModel search) {
+    // Check if dates are in past and replace with current date if needed
+    String departureDate = search.date;
+    String returnDate = search.returnDate;
+
+    if (_isDateInPast(departureDate)) {
+      departureDate = _currentDateFormatted;
+    }
+
+    if (returnDate.isNotEmpty && _isDateInPast(returnDate)) {
+      // For return date, set it to one day after departure date
+      final departure = _parseDate(departureDate);
+      final nextDay = departure.add(const Duration(days: 1));
+      returnDate = _formatDate(nextDay);
+    }
+
     emit(
       state.copyWith(
         from: search.from,
         to: search.to,
-        departureDate: search.date,
-        returnDate: search.returnDate,
+        departureDate: departureDate,
+        returnDate: returnDate,
         adults: search.passengers,
         cabinClass: search.flightClass,
         tripType: search.tripType ?? "oneway",
