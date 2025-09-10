@@ -28,7 +28,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       final cubit = context.read<FlightSearchCubit>();
       if (cubit.state.searchData != widget.searchData &&
           !cubit.state.isLoading) {
-        cubit.loadFlights(widget.searchData);
+        cubit.loadFlights(widget.searchData); // No context parameter
       }
     });
   }
@@ -174,7 +174,9 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                context.read<FlightSearchCubit>().loadFlights(state.searchData);
+                context.read<FlightSearchCubit>().loadFlights(
+                  state.searchData,
+                ); // ADD context
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.splashBackgroundColorEnd,

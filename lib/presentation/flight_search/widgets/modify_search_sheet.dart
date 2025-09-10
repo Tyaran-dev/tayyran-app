@@ -9,7 +9,7 @@ import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit
 import 'package:tayyran_app/presentation/flight_search/widgets/modify_search/modify_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/modify_search/modify_search_state.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
-import 'package:tayyran_app/presentation/home/widgets/passenger_selection_modal.dart';
+import 'package:tayyran_app/presentation/flight/widgets/passenger_selection_modal.dart';
 
 class ModifySearchSheet extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -598,7 +598,21 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
       }
     }
 
-    widget.flightSearchCubit.loadFlights(state.toSearchData());
-    Navigator.pop(context);
+    try {
+      // Call loadFlights WITHOUT context parameter
+      widget.flightSearchCubit.loadFlights(state.toSearchData());
+
+      // Close the modal sheet
+      Navigator.pop(context);
+    } catch (e) {
+      // Show error message if loading fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to search flights: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 }

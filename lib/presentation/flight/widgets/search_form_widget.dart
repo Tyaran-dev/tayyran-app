@@ -7,7 +7,7 @@ import 'package:tayyran_app/core/utils/widgets/date_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
 import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
-import 'package:tayyran_app/presentation/home/widgets/passenger_selection_modal.dart';
+import 'package:tayyran_app/presentation/flight/widgets/passenger_selection_modal.dart';
 
 class SearchFormWidget extends StatefulWidget {
   const SearchFormWidget({super.key});

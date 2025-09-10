@@ -1,7 +1,8 @@
-// flight_cubit.dart
+// lib/presentation/flight/cubit/flight_cubit.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
@@ -138,7 +139,6 @@ class FlightCubit extends Cubit<FlightState> {
           "Jan",
           "Feb",
           "Mar",
-          "Apr",
           "Apr",
           "May",
           "Jun",
@@ -502,52 +502,6 @@ class FlightCubit extends Cubit<FlightState> {
           emit(state.copyWith(recentSearches: updatedFlightSearches));
         }
 
-        // Prepare multi-city data for backend (ALWAYS do this, even for duplicates)
-        final multiCityData = {
-          "destinations": state.flightSegments.map((segment) {
-            String fromCode = segment.from.split(' - ')[0];
-            String toCode = segment.to.split(' - ')[0];
-
-            List<String> dateParts = segment.date.split('-');
-            String day = dateParts[0];
-            String month = dateParts[1];
-            String year = dateParts[2];
-
-            Map<String, String> monthMap = {
-              "Jan": "01",
-              "Feb": "02",
-              "Mar": "03",
-              "Apr": "04",
-              "May": "05",
-              "Jun": "06",
-              "Jul": "07",
-              "Aug": "08",
-              "Sep": "09",
-              "Oct": "10",
-              "Nov": "11",
-              "Dec": "12",
-            };
-
-            String formattedDate =
-                "$year-${monthMap[month]}-${day.padLeft(2, '0')}";
-
-            return {
-              "id": segment.id,
-              "from": fromCode,
-              "to": toCode,
-              "date": formattedDate,
-            };
-          }).toList(),
-          "adults": state.adults,
-          "children": state.children,
-          "infants": state.infants,
-          "cabinClass": state.cabinClass,
-        };
-
-        if (kDebugMode) {
-          print('Multi-city search data: $multiCityData');
-        }
-
         navigateToSearchResults(context);
       } catch (e) {
         if (kDebugMode) {
@@ -690,30 +644,26 @@ class FlightCubit extends Cubit<FlightState> {
   }
 
   void navigateToSearchResults(BuildContext context) {
+    Map<String, dynamic> searchData;
+
     if (state.tripType == "multi") {
-      // Prepare multi-city data
-      final searchData = {
+      searchData = {
         "type": "multi",
         "segments": state.flightSegments.map((segment) {
-          return {"from": segment.from, "to": segment.to, "date": segment.date};
+          return {
+            "id": segment.id,
+            "from": segment.from,
+            "to": segment.to,
+            "date": segment.date,
+          };
         }).toList(),
         "adults": state.adults,
         "children": state.children,
         "infants": state.infants,
-        "passengers": state.totalPassengers,
         "cabinClass": state.cabinClass,
       };
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (_) => FlightSearchCubit(),
-            child: FlightSearchScreen(searchData: searchData),
-          ),
-        ),
-      );
     } else {
-      final searchData = {
+      searchData = {
         "type": state.tripType,
         "from": state.from,
         "to": state.to,
@@ -722,19 +672,19 @@ class FlightCubit extends Cubit<FlightState> {
         "adults": state.adults,
         "children": state.children,
         "infants": state.infants,
-        "passengers": state.totalPassengers,
         "cabinClass": state.cabinClass,
       };
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (_) => FlightSearchCubit(),
-            child: FlightSearchScreen(searchData: searchData),
-          ),
-        ),
-      );
     }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => getIt<FlightSearchCubit>(), // FIXED: Use getIt
+          child: FlightSearchScreen(searchData: searchData),
+        ),
+      ),
+    );
   }
 
   void showMultiCityAirportBottomSheet(

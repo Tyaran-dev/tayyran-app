@@ -1,18 +1,20 @@
-// flight_search_cubit.dart - FIXED
+// lib/presentation/flight_search/cubit/flight_search_cubit.dart
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/data/models/flight_search_response.dart';
+import 'package:tayyran_app/data/repositories/flight_search_repository.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
 import 'package:tayyran_app/presentation/flight_search/models/filter_options.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
 
 class FlightSearchCubit extends Cubit<FlightSearchState> {
+  final FlightSearchRepository _repository;
   bool _isLoading = false;
   bool _isDisposed = false;
   Timer? _loadingTimer;
 
-  FlightSearchCubit() : super(FlightSearchState.initial());
+  FlightSearchCubit(this._repository) : super(FlightSearchState.initial());
 
-  // Safe emit method
   void _safeEmit(FlightSearchState newState) {
     if (!isClosed && !_isDisposed) {
       emit(newState);
@@ -27,143 +29,215 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     return super.close();
   }
 
-  void loadFlights(Map<String, dynamic> searchData) async {
+  void selectFlightOffer(FlightOffer flightOffer) {
+    if (isClosed || _isDisposed) return;
+
+    _safeEmit(state.copyWith(selectedFlightOffer: flightOffer));
+  }
+
+  void clearSelectedFlight() {
+    if (isClosed || _isDisposed) return;
+
+    _safeEmit(state.copyWith(selectedFlightOffer: null));
+  }
+
+  Future<void> loadFlights(Map<String, dynamic> searchData) async {
     if (_isLoading || isClosed || _isDisposed) return;
     _isLoading = true;
 
-    // FIXED: Update searchData in state immediately
     _safeEmit(
       state.copyWith(
         isLoading: true,
-        searchData: searchData, // This is crucial!
+        searchData: searchData,
         errorMessage: null,
       ),
     );
 
-    // Cancel any existing timer
-    _loadingTimer?.cancel();
+    try {
+      final apiRequestData = _prepareApiRequestData(searchData);
+      final response = await _repository.searchFlights(apiRequestData);
 
-    // Simulate API call with a timer
-    _loadingTimer = Timer(const Duration(seconds: 2), () {
-      if (isClosed || _isDisposed) return;
+      if (response.success) {
+        // Create tickets without context (remove context dependency)
+        final tickets = response.data.map((offer) {
+          return _createFlightTicket(offer, response.filters);
+        }).toList();
 
-      try {
-        final tickets = _generateFlightTickets(searchData);
-
-        // FIXED: Make sure to update searchData here too
         _safeEmit(
           state.copyWith(
             isLoading: false,
             tickets: tickets,
             filteredTickets: tickets,
-            searchData: searchData, // This is crucial!
+            searchData: searchData,
           ),
         );
-
-        _isLoading = false;
-      } catch (e) {
-        if (isClosed || _isDisposed) return;
+      } else {
         _safeEmit(
           state.copyWith(
             isLoading: false,
-            errorMessage: 'Failed to load flights: $e',
-            searchData: searchData, // Keep the search data even on error
+            errorMessage: response.message ?? 'Failed to load flights',
+            searchData: searchData,
           ),
         );
-        _isLoading = false;
       }
-    });
-  }
-
-  // Rest of the file remains the same...
-  List<FlightTicket> _generateFlightTickets(Map<String, dynamic> searchData) {
-    final airlines = [
-      {
-        'name': 'Flynas',
-        'logo': 'https://logo.clearbit.com/flynas.com',
-        'basePrice': 450.0,
-      },
-      {
-        'name': 'Flyadeal',
-        'logo': 'https://logo.clearbit.com/flyadeal.com',
-        'basePrice': 420.0,
-      },
-      {
-        'name': 'Saudia',
-        'logo': 'https://logo.clearbit.com/saudia.com',
-        'basePrice': 550.0,
-      },
-      {
-        'name': 'Hahn Air',
-        'logo': 'https://logo.clearbit.com/hahnair.com',
-        'basePrice': 600.0,
-      },
-      {
-        'name': 'Egypt Air',
-        'logo': 'https://logo.clearbit.com/egyptair.com',
-        'basePrice': 500.0,
-      },
-    ];
-
-    final List<FlightTicket> tickets = [];
-
-    for (int i = 0; i < 12; i++) {
-      final airline = airlines[i % airlines.length];
-
-      // Generate random seats remaining (1-10) for demo
-      final seatsRemaining = (i % 10) + 1;
-
-      // Parse from and to information
-      final from = searchData['from'] ?? 'DXB - Dubai International';
-      final to = searchData['to'] ?? 'JED - Jeddah International';
-
-      // Parse departure date or use current date
-      DateTime departureDate;
-      if (searchData['departureDate'] != null &&
-          searchData['departureDate'].toString().isNotEmpty) {
-        departureDate = _parseDisplayDate(
-          searchData['departureDate'].toString(),
-        );
-      } else {
-        departureDate = DateTime.now().add(Duration(days: i % 7));
-      }
-
-      // Calculate arrival date (2-5 hours later)
-      final flightHours = 2 + (i % 4);
-      final arrivalDate = departureDate.add(
-        Duration(hours: flightHours, minutes: (i * 15) % 60),
-      );
-
-      tickets.add(
-        FlightTicket(
-          id: 'flight_${DateTime.now().millisecondsSinceEpoch}_$i',
-          airline: airline['name'] as String,
-          airlineLogo: airline['logo'] as String,
-          from: from,
-          to: to,
-          departureTime:
-              '${departureDate.hour.toString().padLeft(2, '0')}:${departureDate.minute.toString().padLeft(2, '0')}',
-          arrivalTime:
-              '${arrivalDate.hour.toString().padLeft(2, '0')}:${arrivalDate.minute.toString().padLeft(2, '0')}',
-          duration: '${flightHours}h ${(i * 15) % 60}m',
-          stops: i % 5 == 0 ? 0 : (i % 5 == 1 ? 1 : 2),
-          price: (airline['basePrice'] as double) + ((i % 4) * 75.0),
-          currency: 'SAR',
-          hasBaggage: i % 3 != 0,
-          isDirect: i % 5 == 0,
-          departureDate: departureDate,
-          arrivalDate: arrivalDate,
-          seatsRemaining: seatsRemaining,
+    } catch (e) {
+      _safeEmit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to load flights: $e',
+          searchData: searchData,
         ),
       );
+    } finally {
+      _isLoading = false;
     }
-
-    return tickets;
   }
 
-  DateTime _parseDisplayDate(String dateString) {
+  FlightTicket _createFlightTicket(FlightOffer offer, Filters filters) {
+    final firstItinerary = offer.itineraries.isNotEmpty
+        ? offer.itineraries.first
+        : null;
+    final firstSegment = firstItinerary?.segments.isNotEmpty == true
+        ? firstItinerary!.segments.first
+        : null;
+
+    // GET CARRIER FULL NAME FROM FILTERS
+    final carrierCode = firstSegment?.carrierCode ?? "";
+    final carrier = filters.findCarrierByCode(carrierCode);
+    String safeValue(String? value, String fallback) {
+      return (value ?? "").isNotEmpty ? value! : fallback;
+    }
+
+    final airlineName = safeValue(carrier?.airLineName, carrierCode);
+    final airlineLogo = safeValue(carrier?.image, "");
+
+    // Use English format by default (remove context dependency)
+    final departureTime = _formatTimeEnglish(firstSegment?.departure.at);
+    final arrivalTime = _formatTimeEnglish(firstSegment?.arrival.at);
+    final departureDateFormatted = _formatDateEnglish(
+      firstSegment?.departure.at,
+    );
+    final arrivalDateFormatted = _formatDateEnglish(firstSegment?.arrival.at);
+
+    return FlightTicket(
+      id: offer.mapping,
+      airline: airlineName,
+      airlineLogo: airlineLogo,
+      from: '${offer.fromLocation} - ${offer.fromName}',
+      to: '${offer.toLocation} - ${offer.toName}',
+      departureTime: departureTime,
+      arrivalTime: arrivalTime,
+      departureDateFormatted: departureDateFormatted,
+      arrivalDateFormatted: arrivalDateFormatted,
+      duration: firstItinerary?.duration ?? "",
+      stops: offer.stops,
+      price: offer.price,
+      currency: offer.currency,
+      hasBaggage: offer.allowedBags.isNotEmpty,
+      isDirect: offer.stops == 0,
+      departureDate: firstSegment?.departure.at ?? DateTime.now(),
+      arrivalDate: firstSegment?.arrival.at ?? DateTime.now(),
+      seatsRemaining: offer.numberOfBookableSeats,
+      flightOffer: offer,
+    );
+  }
+
+  String _formatTimeEnglish(DateTime? dateTime) {
+    if (dateTime == null) return "";
+
+    final hour = dateTime.hour;
+    final minute = dateTime.minute;
+
+    // English time format (12-hour with AM/PM)
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final hour12 = hour % 12;
+    final hourDisplay = hour12 == 0 ? 12 : hour12;
+
+    return '$hourDisplay:${minute.toString().padLeft(2, '0')} $period';
+  }
+
+  String _formatDateEnglish(DateTime? dateTime) {
+    if (dateTime == null) return "";
+
+    final year = dateTime.year;
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+
+    return '$year-$month-$day';
+  }
+
+  Map<String, dynamic> _prepareApiRequestData(Map<String, dynamic> searchData) {
+    final tripType = searchData['type'] ?? 'oneway';
+
+    if (tripType == 'multi') {
+      // Multi-city request
+      final segments = searchData['segments'] as List<dynamic>? ?? [];
+
+      return {
+        'destinations': segments.map((segment) {
+          return {
+            'id': segment['id'] ?? '',
+            'from': _extractAirportCode(segment['from'] ?? ''),
+            'to': _extractAirportCode(segment['to'] ?? ''),
+            'date': _formatDateForApi(segment['date'] ?? ''),
+          };
+        }).toList(),
+        'adults': searchData['adults'] ?? 1,
+        'children': searchData['children'] ?? 0,
+        'infants': searchData['infants'] ?? 0,
+        'cabinClass': searchData['cabinClass'] ?? 'Economy',
+      };
+    } else if (tripType == 'round') {
+      // Round-trip request
+      return {
+        'destinations': [
+          {
+            'id': '1',
+            'from': _extractAirportCode(searchData['from'] ?? ''),
+            'to': _extractAirportCode(searchData['to'] ?? ''),
+            'date': _formatDateForApi(searchData['departureDate'] ?? ''),
+          },
+          {
+            'id': '2',
+            'from': _extractAirportCode(searchData['to'] ?? ''),
+            'to': _extractAirportCode(searchData['from'] ?? ''),
+            'date': _formatDateForApi(searchData['returnDate'] ?? ''),
+          },
+        ],
+        'adults': searchData['adults'] ?? 1,
+        'children': searchData['children'] ?? 0,
+        'infants': searchData['infants'] ?? 0,
+        'cabinClass': searchData['cabinClass'] ?? 'Economy',
+      };
+    } else {
+      // One-way request
+      return {
+        'destinations': [
+          {
+            'id': '1',
+            'from': _extractAirportCode(searchData['from'] ?? ''),
+            'to': _extractAirportCode(searchData['to'] ?? ''),
+            'date': _formatDateForApi(searchData['departureDate'] ?? ''),
+          },
+        ],
+        'adults': searchData['adults'] ?? 1,
+        'children': searchData['children'] ?? 0,
+        'infants': searchData['infants'] ?? 0,
+        'cabinClass': searchData['cabinClass'] ?? 'Economy',
+      };
+    }
+  }
+
+  String _extractAirportCode(String airportInfo) {
+    // Extract airport code from "DXB - Dubai International"
+    final parts = airportInfo.split(' - ');
+    return parts.isNotEmpty ? parts[0] : airportInfo;
+  }
+
+  String _formatDateForApi(String displayDate) {
+    // Convert "28-Sep-2025" to "2025-09-28"
     try {
-      final parts = dateString.split('-');
+      final parts = displayDate.split('-');
       if (parts.length == 3) {
         final monthNames = [
           "Jan",
@@ -180,16 +254,19 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
           "Dec",
         ];
 
-        final day = int.parse(parts[0]);
-        final month = monthNames.indexOf(parts[1]) + 1;
-        final year = int.parse(parts[2]);
+        final day = parts[0].padLeft(2, '0');
+        final month = (monthNames.indexOf(parts[1]) + 1).toString().padLeft(
+          2,
+          '0',
+        );
+        final year = parts[2];
 
-        return DateTime(year, month, day);
+        return '$year-$month-$day';
       }
     } catch (e) {
-      print('Error parsing date: $e');
+      print('Error formatting date: $e');
     }
-    return DateTime.now();
+    return displayDate;
   }
 
   // Apply multiple sort options

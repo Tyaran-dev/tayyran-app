@@ -1,4 +1,4 @@
-// flight_ticket_card.dart
+// lib/presentation/flight_search/widgets/flight_ticket_card.dart (updated)
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
@@ -11,30 +11,51 @@ class FlightTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Color(0xFFF9fafb),
-      elevation: 3,
-      margin: EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Airline Header
-            _buildAirlineHeader(),
-            SizedBox(height: 16),
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-            // Flight Details
-            _buildFlightDetails(),
-            SizedBox(height: 16),
+    return GestureDetector(
+      // onTap: () {
+      //   if (ticket.flightOffer != null) {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (_) => BlocProvider(
+      //           create: (_) => FlightDetailCubit(ticket.flightOffer!),
+      //           child: FlightDetailScreen(),
+      //         ),
+      //       ),
+      //     );
+      //   }
+      // },
+      child: Card(
+        color: Color(0xFFF9fafb),
+        elevation: 3,
+        margin: EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Airline Header
+              _buildAirlineHeader(),
+              SizedBox(height: 8),
 
-            // Seats Remaining and Tax Disclaimer
-            _buildSeatsAndTaxInfo(),
-            SizedBox(height: 16),
+              // NEW LAYOUT: Direction centered with arrow image
+              _buildFlightDirectionWithArrow(context, isArabic),
+              SizedBox(height: 16),
 
-            // Book Now Button
-            // _buildBookButton(),
-          ],
+              // Flight Times and Dates
+              _buildFlightTimesAndDates(isArabic),
+              SizedBox(height: 16),
+
+              // Seats Remaining and Tax Disclaimer
+              _buildSeatsAndTaxInfo(),
+              SizedBox(height: 16),
+
+              // Book Now Button
+              // _buildBookButton(),
+            ],
+          ),
         ),
       ),
     );
@@ -57,7 +78,6 @@ class FlightTicketCard extends StatelessWidget {
         // Price with Currency Icon
         Row(
           children: [
-            // Currency Icon (static SAR image placeholder)
             Image.asset(AppAssets.currencyIcon, height: 25, width: 25),
             SizedBox(width: 4),
             Text(
@@ -74,36 +94,138 @@ class FlightTicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFlightDetails() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildFlightDirectionWithArrow(BuildContext context, bool isArabic) {
+    // Extract airport codes for the main direction
+    final fromParts = ticket.from.split(' - ');
+    final toParts = ticket.to.split(' - ');
+    final fromCode = fromParts.isNotEmpty ? fromParts[0] : '';
+    final toCode = toParts.isNotEmpty ? toParts[0] : '';
+    final fromCity = fromParts.length > 1 ? fromParts[1] : ticket.from;
+    final toCity = toParts.length > 1 ? toParts[1] : ticket.to;
+
+    return Column(
       children: [
-        // Departure
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                ticket.departureTime,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        // Main Direction (Centered)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                fromCity,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.splashBackgroundColorEnd,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 4),
-              _buildAirportText(ticket.from, true),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: Text(
+                "→",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.splashBackgroundColorEnd,
+                ),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                toCity,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.splashBackgroundColorEnd,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+
+        // Arrow image between departure and arrival
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Departure Airport Code
+            Expanded(
+              child: Text(
+                fromCode,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            // Arrow icon
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Image.asset(
+                AppAssets.airplaneIcon,
+                height: 50,
+                width: 165,
+              ),
+            ),
+
+            // Arrival Airport Code
+            Expanded(
+              child: Text(
+                toCode,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFlightTimesAndDates(bool isArabic) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        // Departure Time and Date
+        Column(
+          children: [
+            Text(
+              ticket.departureTime,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 4),
+            Text(
+              ticket.departureDateFormatted,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
         ),
 
-        // Flight Duration and Stops
+        // Flight Duration
         Column(
           children: [
             Text(
               ticket.duration,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
-            SizedBox(height: 8),
-            Image.asset(AppAssets.airplaneIcon, height: 35),
-            SizedBox(height: 8),
-
+            SizedBox(height: 4),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
@@ -111,9 +233,7 @@ class FlightTicketCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                ticket.isDirect
-                    ? 'Direct'
-                    : '${ticket.stops} stop${ticket.stops != 1 ? 's' : ''}',
+                _getStopText(ticket.stops, isArabic),
                 style: TextStyle(
                   color: ticket.isDirect ? Colors.green : Colors.orange,
                   fontSize: 10,
@@ -124,57 +244,49 @@ class FlightTicketCard extends StatelessWidget {
           ],
         ),
 
-        // Arrival
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                ticket.arrivalTime,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 4),
-              _buildAirportText(ticket.to, false),
-            ],
-          ),
+        // Arrival Time and Date
+        Column(
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  ticket.arrivalTime,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                // if (ticket.arrivesNextDay)
+                //   Padding(
+                //     padding: EdgeInsets.only(left: 4),
+                //     child: Text(
+                //       isArabic ? '+١' : '+1',
+                //       style: TextStyle(
+                //         fontSize: 10,
+                //         color: Colors.red,
+                //         fontWeight: FontWeight.bold,
+                //       ),
+                //     ),
+                //   ),
+              ],
+            ),
+            SizedBox(height: 4),
+            Text(
+              ticket.arrivalDateFormatted,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildAirportText(String airportInfo, bool isFrom) {
-    final parts = airportInfo.split(' - ');
-    final code = parts.isNotEmpty ? parts[0] : '';
-    final name = parts.length > 1 ? parts[1] : airportInfo;
-
-    return Container(
-      constraints: BoxConstraints(maxWidth: 100),
-      child: Column(
-        crossAxisAlignment: isFrom
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.end,
-        children: [
-          Text(
-            code,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-              color: Colors.grey[700],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 2),
-          Text(
-            name,
-            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: isFrom ? TextAlign.left : TextAlign.right,
-          ),
-        ],
-      ),
-    );
+  String _getStopText(int stops, bool isArabic) {
+    if (stops == 0) {
+      return isArabic ? 'مباشر' : 'Direct';
+    } else if (stops == 1) {
+      return isArabic ? 'توقف واحد' : '1 Stop';
+    } else {
+      return isArabic ? '$stops توقفات' : '$stops Stops';
+    }
   }
 
   Widget _buildSeatsAndTaxInfo() {
@@ -184,13 +296,13 @@ class FlightTicketCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(Icons.event_seat, size: 16, color: Colors.red),
+            Icon(Icons.event_seat, size: 16, color: Colors.black),
             SizedBox(width: 6),
             Text(
-              'Seats remaining: ${ticket.seatsRemaining ?? 9}',
+              'Seats remaining: ${ticket.seatsRemaining}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.red,
+                color: Colors.black,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -208,31 +320,4 @@ class FlightTicketCard extends StatelessWidget {
       ],
     );
   }
-
-  // Widget _buildBookButton() {
-  //   return SizedBox(
-  //     width: double.infinity,
-  //     child: ElevatedButton(
-  //       onPressed: () {
-  //         _showBookingOptions();
-  //       },
-  //       style: ElevatedButton.styleFrom(
-  //         backgroundColor: AppColors.splashBackgroundColorEnd,
-  //         foregroundColor: Colors.white,
-  //         padding: EdgeInsets.symmetric(vertical: 12),
-  //         shape: RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.circular(12),
-  //         ),
-  //       ),
-  //       child: Text(
-  //         'Book Now',
-  //         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // void _showBookingOptions() {
-  //   // Booking options logic here
-  // }
 }

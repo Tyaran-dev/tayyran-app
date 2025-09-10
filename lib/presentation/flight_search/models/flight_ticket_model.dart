@@ -1,4 +1,7 @@
-// flight_ticket_model.dart
+// lib/presentation/flight_search/models/flight_ticket_model.dart (updated)
+import 'package:tayyran_app/data/models/flight_search_response.dart';
+
+// lib/presentation/flight_search/models/flight_ticket_model.dart
 class FlightTicket {
   final String id;
   final String airline;
@@ -7,6 +10,8 @@ class FlightTicket {
   final String to;
   final String departureTime;
   final String arrivalTime;
+  final String departureDateFormatted; // REQUIRED
+  final String arrivalDateFormatted; // REQUIRED
   final String duration;
   final int stops;
   final double price;
@@ -15,7 +20,8 @@ class FlightTicket {
   final bool isDirect;
   final DateTime departureDate;
   final DateTime arrivalDate;
-  final int? seatsRemaining; // Add this field
+  final int seatsRemaining;
+  final FlightOffer? flightOffer;
 
   const FlightTicket({
     required this.id,
@@ -25,6 +31,8 @@ class FlightTicket {
     required this.to,
     required this.departureTime,
     required this.arrivalTime,
+    required this.departureDateFormatted, // REQUIRED
+    required this.arrivalDateFormatted, // REQUIRED
     required this.duration,
     required this.stops,
     required this.price,
@@ -33,29 +41,13 @@ class FlightTicket {
     required this.isDirect,
     required this.departureDate,
     required this.arrivalDate,
-    this.seatsRemaining, // Make it optional
+    required this.seatsRemaining,
+    this.flightOffer,
   });
 
-  factory FlightTicket.fromJson(Map<String, dynamic> json) {
-    return FlightTicket(
-      id: json['id'],
-      airline: json['airline'],
-      airlineLogo: json['airlineLogo'],
-      from: json['from'],
-      to: json['to'],
-      departureTime: json['departureTime'],
-      arrivalTime: json['arrivalTime'],
-      duration: json['duration'],
-      stops: json['stops'],
-      price: json['price'].toDouble(),
-      currency: json['currency'],
-      hasBaggage: json['hasBaggage'] ?? false,
-      isDirect: json['isDirect'] ?? json['stops'] == 0,
-      departureDate: DateTime.parse(json['departureDate']),
-      arrivalDate: DateTime.parse(json['arrivalDate']),
-      seatsRemaining: json['seatsRemaining'], // Map from API
-    );
-  }
+  // Helper method to check if arrival is on a different day
+  bool get arrivesNextDay => arrivalDate.day != departureDate.day;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -65,6 +57,8 @@ class FlightTicket {
       'to': to,
       'departureTime': departureTime,
       'arrivalTime': arrivalTime,
+      'departureDateFormatted': departureDateFormatted,
+      'arrivalDateFormatted': arrivalDateFormatted,
       'duration': duration,
       'stops': stops,
       'price': price,
@@ -73,6 +67,7 @@ class FlightTicket {
       'isDirect': isDirect,
       'departureDate': departureDate.toIso8601String(),
       'arrivalDate': arrivalDate.toIso8601String(),
+      'seatsRemaining': seatsRemaining,
     };
   }
 }

@@ -1,5 +1,6 @@
-// flight_search_state.dart - FIXED
+// lib/presentation/flight_search/cubit/flight_search_state.dart
 import 'package:flutter/material.dart';
+import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/presentation/flight_search/models/filter_options.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
 
@@ -12,30 +13,34 @@ class FlightSearchState {
   final Set<SortOption> selectedSorts;
   final FilterOptions filters;
   final Map<String, dynamic> searchData;
+  final FlightOffer? selectedFlightOffer; // ADD THIS
+  final List<FlightOffer> flightOffers; // Store full flight offers
 
   const FlightSearchState({
     this.tickets = const [],
     this.filteredTickets = const [],
+    this.flightOffers = const [],
     this.isLoading = false,
     this.errorMessage,
     this.selectedSorts = const {},
     required this.filters,
     this.searchData = const {},
+    this.selectedFlightOffer, // ADD THIS
   });
 
-  // Factory method to create initial state
   factory FlightSearchState.initial() {
     return FlightSearchState(
       tickets: const [],
       filteredTickets: const [],
       isLoading: false,
+      flightOffers: const [],
       selectedSorts: const {},
       filters: FilterOptions(),
       searchData: const {},
+      selectedFlightOffer: null, // ADD THIS
     );
   }
 
-  // Add a method to ensure searchData always has required keys
   Map<String, dynamic> get safeSearchData {
     return {
       'from': searchData['from'] ?? '',
@@ -68,22 +73,25 @@ class FlightSearchState {
   FlightSearchState copyWith({
     List<FlightTicket>? tickets,
     List<FlightTicket>? filteredTickets,
+    List<FlightOffer>? flightOffers,
     bool? isLoading,
     String? errorMessage,
     Set<SortOption>? selectedSorts,
     FilterOptions? filters,
     Map<String, dynamic>? searchData,
+    FlightOffer? selectedFlightOffer, // ADD THIS
   }) {
-    print('Copying state with searchData: $searchData');
-
     return FlightSearchState(
       tickets: tickets ?? this.tickets,
       filteredTickets: filteredTickets ?? this.filteredTickets,
+      flightOffers: flightOffers ?? this.flightOffers,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       selectedSorts: selectedSorts ?? this.selectedSorts,
       filters: filters ?? this.filters,
-      searchData: searchData ?? this.searchData, // FIXED: This was missing
+      searchData: searchData ?? this.searchData,
+      selectedFlightOffer:
+          selectedFlightOffer ?? this.selectedFlightOffer, // ADD THIS
     );
   }
 }

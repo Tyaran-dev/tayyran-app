@@ -1,10 +1,13 @@
+// lib/core/routes/app_routes.dart (updated)
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/dependency_injection.dart'; // ADD THIS IMPORT
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
 import 'package:tayyran_app/presentation/discount/discount_screen.dart';
+import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart'; // ADD THIS IMPORT
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
 import 'package:tayyran_app/presentation/main_screen/main_app_screen.dart';
@@ -19,10 +22,7 @@ class AppRoutes {
     switch (settings.name) {
       case RouteNames.splash:
         return MaterialPageRoute(
-          builder: (_) => PopScope(
-            canPop: false, // ⛔ disables system back
-            child: SplashScreen(),
-          ),
+          builder: (_) => PopScope(canPop: false, child: SplashScreen()),
           settings: const RouteSettings(name: RouteNames.splash),
         );
 
@@ -74,14 +74,12 @@ class AppRoutes {
           builder: (_) => PopScope(canPop: false, child: const StayScreen()),
           settings: const RouteSettings(name: RouteNames.stay),
         );
+
       case RouteNames.airportSelection:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (context) => BlocProvider.value(
-            // ✅ Use BlocProvider.value
-            value: BlocProvider.of<AirportSearchCubit>(
-              context,
-            ), // ✅ Use existing cubit
+            value: BlocProvider.of<AirportSearchCubit>(context),
             child: AirportBottomSheet(
               isOrigin: args['isOrigin'],
               currentValue: args['currentValue'],
@@ -93,7 +91,10 @@ class AppRoutes {
       case RouteNames.flightSearch:
         final searchData = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => FlightSearchScreen(searchData: searchData),
+          builder: (_) => BlocProvider(
+            create: (_) => getIt<FlightSearchCubit>(), // FIXED: Use getIt
+            child: FlightSearchScreen(searchData: searchData),
+          ),
           settings: const RouteSettings(name: RouteNames.flightSearch),
         );
       default:
