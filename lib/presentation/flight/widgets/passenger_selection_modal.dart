@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
-// import 'package:tayyran_app/core/utils/custom_button.dart';
 
 class PassengerSelectionModal extends StatefulWidget {
   final int adults;
@@ -85,7 +85,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                 border: Border.all(color: Colors.grey[300]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 6,
                     offset: Offset(0, 3),
                   ),
@@ -102,14 +102,9 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                       if (_adults > 1) {
                         setState(() {
                           _adults--;
+                          // Ensure infants don't exceed adults
                           if (_infants > _adults) {
                             _infants = _adults;
-                          }
-                          if (_adults == 0) {
-                            _adults = 1;
-                          }
-                          if (_infants == 0 && _adults == 1) {
-                            _infants = 1;
                           }
                           _updatePassengers();
                         });
@@ -164,9 +159,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                       }
                     },
                     onIncrement: () {
-                      if (_infants < _adults &&
-                          _infants < 8 &&
-                          totalPassengers < 9) {
+                      if (_infants < _adults && totalPassengers < 9) {
                         setState(() {
                           _infants++;
                           _updatePassengers();
@@ -189,7 +182,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                 border: Border.all(color: Colors.grey[300]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 6,
                     offset: Offset(0, 3),
                   ),
@@ -203,21 +196,22 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                   SizedBox(height: 12),
+                  // Using custom radio implementation instead of deprecated Radio
                   Column(
                     children: [
-                      _buildCabinClassRadio(
+                      _buildCabinClassOption(
                         'Economy',
                         'The standard seating option',
                       ),
-                      _buildCabinClassRadio(
+                      _buildCabinClassOption(
                         'Premium Economy',
                         'More legroom and amenities',
                       ),
-                      _buildCabinClassRadio(
+                      _buildCabinClassOption(
                         'Business',
                         'Premium service and comfort',
                       ),
-                      _buildCabinClassRadio(
+                      _buildCabinClassOption(
                         'First',
                         'The most luxurious experience',
                       ),
@@ -291,7 +285,9 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
     );
   }
 
-  Widget _buildCabinClassRadio(String value, String description) {
+  Widget _buildCabinClassOption(String value, String description) {
+    final bool isSelected = _cabinClass == value;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: InkWell(
@@ -303,20 +299,34 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
         },
         child: Row(
           children: [
-            Radio<String>(
-              value: value,
-              groupValue: _cabinClass,
-              onChanged: (String? newValue) {
-                if (newValue != null) {
-                  setState(() {
-                    _cabinClass = newValue;
-                  });
-                  widget.onCabinClassChanged(_cabinClass);
-                }
-              },
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors
+                            .splashBackgroundColorEnd // Your custom color
+                      : Colors.grey,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors
+                              .splashBackgroundColorEnd, // Your custom color
+                        ),
+                      ),
+                    )
+                  : null,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
