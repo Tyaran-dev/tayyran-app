@@ -13,8 +13,11 @@ class FlightSearchState {
   final Set<SortOption> selectedSorts;
   final FilterOptions filters;
   final Map<String, dynamic> searchData;
-  final FlightOffer? selectedFlightOffer; // ADD THIS
-  final List<FlightOffer> flightOffers; // Store full flight offers
+  final FlightOffer? selectedFlightOffer;
+  final List<FlightOffer> flightOffers;
+  final List<Carrier> availableCarriers;
+  final double minTicketPrice;
+  final double maxTicketPrice;
 
   const FlightSearchState({
     this.tickets = const [],
@@ -25,7 +28,10 @@ class FlightSearchState {
     this.selectedSorts = const {},
     required this.filters,
     this.searchData = const {},
-    this.selectedFlightOffer, // ADD THIS
+    this.selectedFlightOffer,
+    this.availableCarriers = const [],
+    this.minTicketPrice = 0,
+    this.maxTicketPrice = 10000,
   });
 
   factory FlightSearchState.initial() {
@@ -37,7 +43,10 @@ class FlightSearchState {
       selectedSorts: const {},
       filters: FilterOptions(),
       searchData: const {},
-      selectedFlightOffer: null, // ADD THIS
+      selectedFlightOffer: null,
+      availableCarriers: const [],
+      minTicketPrice: 0,
+      maxTicketPrice: 10000,
     );
   }
 
@@ -79,7 +88,10 @@ class FlightSearchState {
     Set<SortOption>? selectedSorts,
     FilterOptions? filters,
     Map<String, dynamic>? searchData,
-    FlightOffer? selectedFlightOffer, // ADD THIS
+    FlightOffer? selectedFlightOffer,
+    List<Carrier>? availableCarriers,
+    double? minTicketPrice,
+    double? maxTicketPrice,
   }) {
     return FlightSearchState(
       tickets: tickets ?? this.tickets,
@@ -90,8 +102,10 @@ class FlightSearchState {
       selectedSorts: selectedSorts ?? this.selectedSorts,
       filters: filters ?? this.filters,
       searchData: searchData ?? this.searchData,
-      selectedFlightOffer:
-          selectedFlightOffer ?? this.selectedFlightOffer, // ADD THIS
+      selectedFlightOffer: selectedFlightOffer ?? this.selectedFlightOffer,
+      availableCarriers: availableCarriers ?? this.availableCarriers,
+      minTicketPrice: minTicketPrice ?? this.minTicketPrice,
+      maxTicketPrice: maxTicketPrice ?? this.maxTicketPrice,
     );
   }
 }

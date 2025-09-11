@@ -1,6 +1,7 @@
 // filter_sort_chip_bar.dart - UPDATED with airline logos in chips
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
 import 'package:tayyran_app/presentation/flight_search/models/filter_options.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/sort_bottom_sheet.dart';
@@ -12,6 +13,7 @@ class FilterSortChipBar extends StatelessWidget {
   final Function() onFilterPressed;
   final Function(SortOption) onSortRemoved;
   final Function(String, dynamic) onFilterRemoved;
+  final List<Carrier> availableCarriers; // ADD THIS
 
   const FilterSortChipBar({
     super.key,
@@ -21,6 +23,7 @@ class FilterSortChipBar extends StatelessWidget {
     required this.onFilterPressed,
     required this.onSortRemoved,
     required this.onFilterRemoved,
+    required this.availableCarriers, // ADD THIS
   });
 
   @override
@@ -166,7 +169,6 @@ class FilterSortChipBar extends StatelessWidget {
   List<Widget> _buildFilterChips() {
     final chips = <Widget>[];
 
-    // Price range filter
     if (filters.minPrice > 0 || filters.maxPrice < 10000) {
       chips.add(
         Padding(
@@ -187,7 +189,6 @@ class FilterSortChipBar extends StatelessWidget {
         ),
       );
     }
-
     // Stops filter
     for (final stop in filters.stops) {
       chips.add(
@@ -211,7 +212,7 @@ class FilterSortChipBar extends StatelessWidget {
     }
 
     // Airlines filter - UPDATED with logos
-    for (final airline in filters.airlines) {
+    for (final carrier in filters.airlines) {
       chips.add(
         Padding(
           padding: const EdgeInsets.only(right: 8),
@@ -219,7 +220,7 @@ class FilterSortChipBar extends StatelessWidget {
             label: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Airline logo
+                // Airline logo from API
                 Container(
                   width: 16,
                   height: 16,
@@ -227,15 +228,18 @@ class FilterSortChipBar extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: Colors.grey[200],
                     image: DecorationImage(
-                      image: NetworkImage(_getAirlineLogoUrl(airline)),
+                      image: NetworkImage(carrier.image),
                       fit: BoxFit.cover,
+                      onError: (error, stackTrace) {
+                        // Fallback handled by error widget
+                      },
                     ),
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Airline name
+                // Airline name from API
                 Text(
-                  airline,
+                  carrier.airLineName,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.splashBackgroundColorEnd,
@@ -246,7 +250,7 @@ class FilterSortChipBar extends StatelessWidget {
             backgroundColor: Colors.white,
             labelPadding: const EdgeInsets.symmetric(horizontal: 4),
             deleteIcon: const Icon(Icons.close, size: 16),
-            onDeleted: () => onFilterRemoved('airlines', airline),
+            onDeleted: () => onFilterRemoved('airlines', carrier.airLineCode),
           ),
         ),
       );
@@ -323,23 +327,6 @@ class FilterSortChipBar extends StatelessWidget {
     }
 
     return chips;
-  }
-
-  String _getAirlineLogoUrl(String airline) {
-    switch (airline) {
-      case 'Flynas':
-        return 'https://logo.clearbit.com/flynas.com';
-      case 'Flyadeal':
-        return 'https://logo.clearbit.com/flyadeal.com';
-      case 'Saudia':
-        return 'https://logo.clearbit.com/saudia.com';
-      case 'Hahn Air':
-        return 'https://logo.clearbit.com/hahnair.com';
-      case 'Egypt Air':
-        return 'https://logo.clearbit.com/egyptair.com';
-      default:
-        return 'https://logo.clearbit.com/flight.com'; // Fallback
-    }
   }
 
   IconData _getTimeIcon(DepartureTimeFilter time) {

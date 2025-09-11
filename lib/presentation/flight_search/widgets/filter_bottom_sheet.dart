@@ -1,19 +1,27 @@
 // filter_bottom_sheet.dart - ENHANCED with airline logos and time icons
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
+import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
 import 'package:tayyran_app/presentation/flight_search/models/filter_options.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final FilterOptions currentFilters;
   final Function(FilterOptions) onApplyFilters;
+  final List<Carrier> availableCarriers; // ADD THIS
+  final double minAvailablePrice; // ADD THIS
+  final double maxAvailablePrice; // ADD THIS
 
   const FilterBottomSheet({
     super.key,
     required this.currentFilters,
     required this.onApplyFilters,
+    required this.availableCarriers, // ADD THIS
+    required this.minAvailablePrice, // ADD THIS
+    required this.maxAvailablePrice, // ADD THIS
   });
 
   @override
@@ -22,17 +30,29 @@ class FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late FilterOptions _currentFilters;
+  late double _minPriceRange; // ADD THIS
+  late double _maxPriceRange; // ADD THIS
+  late bool _hasUserChangedPrice; // ADD THIS
 
   @override
   void initState() {
     super.initState();
-    // Create a deep copy to ensure we're working with mutable lists
+    _minPriceRange = widget.minAvailablePrice;
+    _maxPriceRange = widget.maxAvailablePrice;
+    _hasUserChangedPrice = false; // INITIALLY FALSE
+
     _currentFilters = FilterOptions(
       departureTimes: List.from(widget.currentFilters.departureTimes),
       stops: List.from(widget.currentFilters.stops),
       airlines: List.from(widget.currentFilters.airlines),
-      minPrice: widget.currentFilters.minPrice,
-      maxPrice: widget.currentFilters.maxPrice,
+      minPrice: widget.currentFilters.minPrice.clamp(
+        _minPriceRange,
+        _maxPriceRange,
+      ),
+      maxPrice: widget.currentFilters.maxPrice.clamp(
+        _minPriceRange,
+        _maxPriceRange,
+      ),
       hasBaggageOnly: widget.currentFilters.hasBaggageOnly,
     );
   }
@@ -40,7 +60,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.90,
+      height: MediaQuery.of(context).size.height * 0.80,
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -101,9 +121,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   _buildDepartureTimeSection(),
                   const SizedBox(height: 24),
 
-                  // Baggage Filter
-                  _buildBaggageSection(),
-                  const SizedBox(height: 32),
+                  // // Baggage Filter
+                  // _buildBaggageSection(),
+                  // const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -171,20 +191,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             _currentFilters.minPrice,
             _currentFilters.maxPrice,
           ),
-          min: 0,
-          max: 10000,
+          min: _minPriceRange,
+          max: _maxPriceRange,
           divisions: 100,
           activeColor: AppColors.splashBackgroundColorEnd,
           inactiveColor: Colors.grey[300],
           labels: RangeLabels(
             'SAR ${_currentFilters.minPrice.round()}',
-
             'SAR ${_currentFilters.maxPrice.round()}',
           ),
           onChanged: (values) {
             setState(() {
               _currentFilters.minPrice = values.start;
               _currentFilters.maxPrice = values.end;
+              _hasUserChangedPrice = true; // MARK AS CHANGED
             });
           },
         ),
@@ -201,6 +221,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               style: const TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
+        ),
+        Text(
+          'Range: SAR ${_minPriceRange.round()} - SAR ${_maxPriceRange.round()}',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -262,14 +287,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   Widget _buildAirlinesSection() {
-    final airlines = [
-      _Airline('Flynas', 'https://logo.clearbit.com/flynas.com'),
-      _Airline('Flyadeal', 'https://logo.clearbit.com/flyadeal.com'),
-      _Airline('Saudia', 'https://logo.clearbit.com/saudia.com'),
-      _Airline('Hahn Air', 'https://logo.clearbit.com/hahnair.com'),
-      _Airline('Egypt Air', 'https://logo.clearbit.com/egyptair.com'),
-    ];
-
+    // USE ACTUAL CARRIERS FROM API
+    final airlines = widget.availableCarriers;
+    // Debug: Print all airline image URLs
+    for (var carrier in airlines) {
+      print('Airline: ${carrier.airLineName}, Image URL: ${carrier.image}');
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,29 +308,43 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: airlines.map((airline) {
-            final isSelected = _currentFilters.airlines.contains(airline.name);
+          children: airlines.map((carrier) {
+            final isSelected = _currentFilters.airlines.any(
+              (c) => c.airLineCode == carrier.airLineCode,
+            );
             return FilterChip(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Airline logo
+                  // Airline logo from API
                   Container(
-                    width: 24,
-                    height: 24,
+                    width: 16,
+                    height: 16,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.grey[200],
-                      image: DecorationImage(
-                        image: NetworkImage(airline.logoUrl),
-                        fit: BoxFit.cover,
+                    ),
+                    child: CachedNetworkImage(
+                      imageUrl: carrier.image,
+                      imageBuilder: (context, imageProvider) => Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
+                      placeholder: (context, url) =>
+                          CircularProgressIndicator(strokeWidth: 2),
+                      errorWidget: (context, url, error) =>
+                          Icon(Icons.airplanemode_active, size: 12),
                     ),
                   ),
                   const SizedBox(width: 6),
-                  // Airline name
+                  // Airline name from API
                   Text(
-                    airline.name,
+                    carrier.airLineName,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black87,
                       fontWeight: FontWeight.w500,
@@ -319,9 +356,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               onSelected: (selected) {
                 setState(() {
                   if (selected) {
-                    _currentFilters.airlines.add(airline.name);
+                    _currentFilters.airlines.add(carrier);
                   } else {
-                    _currentFilters.airlines.remove(airline.name);
+                    _currentFilters.airlines.removeWhere(
+                      (c) => c.airLineCode == carrier.airLineCode,
+                    );
                   }
                 });
               },
@@ -439,62 +478,64 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildBaggageSection() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.luggage, size: 20, color: Colors.black87),
-              const SizedBox(width: 8),
-              const Text(
-                'Baggage Included',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          Switch(
-            value: _currentFilters.hasBaggageOnly,
-            onChanged: (value) {
-              setState(() {
-                _currentFilters.hasBaggageOnly = value;
-              });
-            },
-            activeThumbColor: AppColors.splashBackgroundColorEnd,
-            activeTrackColor: AppColors.splashBackgroundColorEnd.withOpacity(
-              0.3,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildBaggageSection() {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[50],
+  //       borderRadius: BorderRadius.circular(12),
+  //       border: Border.all(color: Colors.grey[200]!),
+  //     ),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       children: [
+  //         Row(
+  //           children: [
+  //             const Icon(Icons.luggage, size: 20, color: Colors.black87),
+  //             const SizedBox(width: 8),
+  //             const Text(
+  //               'Baggage Included',
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 fontWeight: FontWeight.w500,
+  //                 color: Colors.black87,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         Switch(
+  //           value: _currentFilters.hasBaggageOnly,
+  //           onChanged: (value) {
+  //             setState(() {
+  //               _currentFilters.hasBaggageOnly = value;
+  //             });
+  //           },
+  //           activeThumbColor: AppColors.splashBackgroundColorEnd,
+  //           activeTrackColor: AppColors.splashBackgroundColorEnd.withValues(
+  //             alpha: 0.3,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void _clearAllFilters() {
     setState(() {
-      _currentFilters = FilterOptions();
+      _currentFilters = FilterOptions(
+        minPrice: _minPriceRange, // Reset to actual min
+        maxPrice: _maxPriceRange, // Reset to actual max
+      );
     });
   }
 
   void _applyFilters() {
-    // Create a new instance to ensure we're passing mutable lists
     final newFilters = FilterOptions(
       departureTimes: List.from(_currentFilters.departureTimes),
       stops: List.from(_currentFilters.stops),
       airlines: List.from(_currentFilters.airlines),
-      minPrice: _currentFilters.minPrice,
-      maxPrice: _currentFilters.maxPrice,
+      minPrice: _hasUserChangedPrice ? _currentFilters.minPrice : 0,
+      maxPrice: _hasUserChangedPrice ? _currentFilters.maxPrice : 10000,
       hasBaggageOnly: _currentFilters.hasBaggageOnly,
     );
 
@@ -514,12 +555,4 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         return '2+ Stops';
     }
   }
-}
-
-// Helper class for airline data
-class _Airline {
-  final String name;
-  final String logoUrl;
-
-  _Airline(this.name, this.logoUrl);
 }

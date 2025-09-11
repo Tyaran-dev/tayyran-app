@@ -21,6 +21,38 @@ class FlightSearchResponse {
       message: json['message'],
     );
   }
+  Map<String, double> getPriceRange() {
+    if (data.isEmpty) return {'min': 0, 'max': 10000};
+
+    final prices = data.map((offer) => offer.price).toList();
+    final minPrice = prices.reduce((a, b) => a < b ? a : b);
+    final maxPrice = prices.reduce((a, b) => a > b ? a : b);
+
+    return {'min': minPrice, 'max': maxPrice};
+  }
+
+  List<Carrier> getAvailableCarriers() {
+    // Get all unique airline codes from the flight data
+    final Set<String> availableAirlineCodes = data
+        .expand((flight) => flight.itineraries)
+        .expand((itinerary) => itinerary.segments)
+        .map((segment) => segment.carrierCode)
+        .where((code) => code.isNotEmpty)
+        .toSet();
+
+    // Filter carriers to only include those with available flights
+    return filters.carriers
+        .where((carrier) => availableAirlineCodes.contains(carrier.airLineCode))
+        .toList();
+  }
+
+  // You might also want this helper method
+  Carrier? getCarrierByCode(String code) {
+    return filters.carriers.firstWhere(
+      (carrier) => carrier.airLineCode == code,
+      orElse: () => Carrier.empty(),
+    );
+  }
 }
 
 class Filters {

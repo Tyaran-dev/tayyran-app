@@ -6,12 +6,13 @@ class FlightTicket {
   final String id;
   final String airline;
   final String airlineLogo;
+  final String airlineCode; // ADD THIS FIELD
   final String from;
   final String to;
   final String departureTime;
   final String arrivalTime;
-  final String departureDateFormatted; // REQUIRED
-  final String arrivalDateFormatted; // REQUIRED
+  final String departureDateFormatted;
+  final String arrivalDateFormatted;
   final String duration;
   final int stops;
   final double price;
@@ -21,18 +22,19 @@ class FlightTicket {
   final DateTime departureDate;
   final DateTime arrivalDate;
   final int seatsRemaining;
-  final FlightOffer? flightOffer;
+  final FlightOffer flightOffer;
 
-  const FlightTicket({
+  FlightTicket({
     required this.id,
     required this.airline,
     required this.airlineLogo,
+    required this.airlineCode, // ADD THIS
     required this.from,
     required this.to,
     required this.departureTime,
     required this.arrivalTime,
-    required this.departureDateFormatted, // REQUIRED
-    required this.arrivalDateFormatted, // REQUIRED
+    required this.departureDateFormatted,
+    required this.arrivalDateFormatted,
     required this.duration,
     required this.stops,
     required this.price,
@@ -42,8 +44,56 @@ class FlightTicket {
     required this.departureDate,
     required this.arrivalDate,
     required this.seatsRemaining,
-    this.flightOffer,
+    required this.flightOffer,
   });
+
+  // Add copyWith method if you don't have it
+  FlightTicket copyWith({
+    String? id,
+    String? airline,
+    String? airlineLogo,
+    String? airlineCode, // ADD THIS
+    String? from,
+    String? to,
+    String? departureTime,
+    String? arrivalTime,
+    String? departureDateFormatted,
+    String? arrivalDateFormatted,
+    String? duration,
+    int? stops,
+    double? price,
+    String? currency,
+    bool? hasBaggage,
+    bool? isDirect,
+    DateTime? departureDate,
+    DateTime? arrivalDate,
+    int? seatsRemaining,
+    FlightOffer? flightOffer,
+  }) {
+    return FlightTicket(
+      id: id ?? this.id,
+      airline: airline ?? this.airline,
+      airlineLogo: airlineLogo ?? this.airlineLogo,
+      airlineCode: airlineCode ?? this.airlineCode, // ADD THIS
+      from: from ?? this.from,
+      to: to ?? this.to,
+      departureTime: departureTime ?? this.departureTime,
+      arrivalTime: arrivalTime ?? this.arrivalTime,
+      departureDateFormatted:
+          departureDateFormatted ?? this.departureDateFormatted,
+      arrivalDateFormatted: arrivalDateFormatted ?? this.arrivalDateFormatted,
+      duration: duration ?? this.duration,
+      stops: stops ?? this.stops,
+      price: price ?? this.price,
+      currency: currency ?? this.currency,
+      hasBaggage: hasBaggage ?? this.hasBaggage,
+      isDirect: isDirect ?? this.isDirect,
+      departureDate: departureDate ?? this.departureDate,
+      arrivalDate: arrivalDate ?? this.arrivalDate,
+      seatsRemaining: seatsRemaining ?? this.seatsRemaining,
+      flightOffer: flightOffer ?? this.flightOffer,
+    );
+  }
 
   // Helper method to check if arrival is on a different day
   bool get arrivesNextDay => arrivalDate.day != departureDate.day;

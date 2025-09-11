@@ -58,7 +58,9 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       final response = await _repository.searchFlights(apiRequestData);
 
       if (response.success) {
-        // Create tickets without context (remove context dependency)
+        final availableCarriers = response.getAvailableCarriers();
+        final priceRange = response.getPriceRange();
+
         final tickets = response.data.map((offer) {
           return _createFlightTicket(offer, response.filters);
         }).toList();
@@ -69,6 +71,14 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
             tickets: tickets,
             filteredTickets: tickets,
             searchData: searchData,
+            availableCarriers: availableCarriers,
+            minTicketPrice: priceRange['min'] ?? 0, // Store for reference
+            maxTicketPrice: priceRange['max'] ?? 10000, // Store for reference
+            filters: FilterOptions(
+              // RESET FILTERS TO DEFAULT
+              minPrice: 0, // DEFAULT MIN
+              maxPrice: 10000, // DEFAULT MAX
+            ),
           ),
         );
       } else {
@@ -104,6 +114,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     // GET CARRIER FULL NAME FROM FILTERS
     final carrierCode = firstSegment?.carrierCode ?? "";
     final carrier = filters.findCarrierByCode(carrierCode);
+
     String safeValue(String? value, String fallback) {
       return (value ?? "").isNotEmpty ? value! : fallback;
     }
@@ -123,6 +134,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       id: offer.mapping,
       airline: airlineName,
       airlineLogo: airlineLogo,
+      airlineCode: carrierCode, // ADD THIS LINE
       from: '${offer.fromLocation} - ${offer.fromName}',
       to: '${offer.toLocation} - ${offer.toName}',
       departureTime: departureTime,
@@ -338,13 +350,24 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
 
     try {
       List<FlightTicket> filtered = state.tickets.where((ticket) {
-        // 1. Price Filter
+        // 1. Price Filter - ONLY APPLY IF ACTIVE
         if (ticket.price < newFilters.minPrice ||
             ticket.price > newFilters.maxPrice) {
           return false;
         }
 
-        // 2. Departure Time Filter
+        // 2. Airlines Filter (use carrier codes)
+        if (newFilters.airlines.isNotEmpty) {
+          final ticketCarrierCode = ticket.airlineCode;
+          final hasMatchingCarrier = newFilters.airlines.any(
+            (carrier) => carrier.airLineCode == ticketCarrierCode,
+          );
+          if (!hasMatchingCarrier) {
+            return false;
+          }
+        }
+
+        // 3. Departure Time Filter
         if (newFilters.departureTimes.isNotEmpty) {
           final hour = ticket.departureDate.hour;
           bool matchesTime = false;
@@ -368,7 +391,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
           if (!matchesTime) return false;
         }
 
-        // 3. Stops Filter
+        // 4. Stops Filter
         if (newFilters.stops.isNotEmpty) {
           bool matchesStops = false;
 
@@ -391,13 +414,6 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
           if (!matchesStops) return false;
         }
 
-        // 4. Airlines Filter
-        if (newFilters.airlines.isNotEmpty) {
-          if (!newFilters.airlines.contains(ticket.airline)) {
-            return false;
-          }
-        }
-
         // 5. Baggage Filter
         if (newFilters.hasBaggageOnly && !ticket.hasBaggage) {
           return false;
@@ -407,8 +423,6 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       }).toList();
 
       _safeEmit(state.copyWith(filteredTickets: filtered, filters: newFilters));
-
-      // Reapply current sorts to the filtered results
       applySorts(state.selectedSorts);
     } catch (e) {
       print('Error applying filters: $e');
@@ -421,18 +435,18 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
   void removeFilter(String filterType, dynamic value) {
     if (isClosed || _isDisposed) return;
 
-    // Create a new copy of the current filters
     final newFilters = FilterOptions(
       departureTimes: List.from(state.filters.departureTimes),
       stops: List.from(state.filters.stops),
       airlines: List.from(state.filters.airlines),
-      minPrice: state.filters.minPrice,
-      maxPrice: state.filters.maxPrice,
+      minPrice: state.filters.minPrice, // Keep current values
+      maxPrice: state.filters.maxPrice, // Keep current values
       hasBaggageOnly: state.filters.hasBaggageOnly,
     );
 
     switch (filterType) {
       case 'price':
+        // Reset price to default range (0-10000)
         newFilters.minPrice = 0;
         newFilters.maxPrice = 10000;
         break;
@@ -440,7 +454,13 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
         newFilters.stops.remove(value);
         break;
       case 'airlines':
-        newFilters.airlines.remove(value);
+        if (value is String) {
+          newFilters.airlines.removeWhere(
+            (carrier) => carrier.airLineCode == value,
+          );
+        } else if (value is Carrier) {
+          newFilters.airlines.remove(value);
+        }
         break;
       case 'departureTimes':
         newFilters.departureTimes.remove(value);
@@ -456,7 +476,11 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
   void clearFilters() {
     if (isClosed || _isDisposed) return;
 
-    final newFilters = FilterOptions();
+    final newFilters = FilterOptions(
+      minPrice: 0, // Reset to default min
+      maxPrice: 10000, // Reset to default max
+    );
+
     _safeEmit(
       state.copyWith(filteredTickets: state.tickets, filters: newFilters),
     );

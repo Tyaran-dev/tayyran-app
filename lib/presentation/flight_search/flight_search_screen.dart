@@ -68,13 +68,14 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
   Widget _buildContentArea(BuildContext context, FlightSearchState state) {
     final cubit = context.read<FlightSearchCubit>();
-
+    print("Empty availableCarriers ${state.availableCarriers}");
     return Column(
       children: [
         // Filter & Sort Chip Bar
         FilterSortChipBar(
           selectedSorts: state.selectedSorts,
           filters: state.filters,
+          availableCarriers: state.availableCarriers, // ADD THIS
           onSortChanged: (sorts) => cubit.applySorts(sorts),
           onFilterPressed: () {
             showModalBottomSheet(
@@ -85,6 +86,9 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
                 onApplyFilters: (filters) {
                   cubit.applyFilters(filters);
                 },
+                availableCarriers: state.availableCarriers,
+                minAvailablePrice: state.minTicketPrice,
+                maxAvailablePrice: state.maxTicketPrice,
               ),
             );
           },
