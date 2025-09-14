@@ -144,6 +144,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       duration: firstItinerary?.duration ?? "",
       stops: offer.stops,
       price: offer.price,
+      basePrice: offer.basePrice,
       currency: offer.currency,
       hasBaggage: offer.allowedBags.isNotEmpty,
       isDirect: offer.stops == 0,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
@@ -440,7 +441,7 @@ class FlightCubit extends Cubit<FlightState> {
   }
 
   void setCabinClass(String cabinClass) {
-    emit(state.copyWith(cabinClass: cabinClass));
+    emit(state.copyWith(cabinClass: cabinClass.toCabinClassBackendValue));
   }
 
   Future<void> search(BuildContext context) async {

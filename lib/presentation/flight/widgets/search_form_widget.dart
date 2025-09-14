@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/core/utils/widgets/airport_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/date_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
@@ -772,7 +773,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "${state.totalPassengers} Passenger${state.totalPassengers > 1 ? 's' : ''} • ${state.cabinClass}",
+                    "${state.totalPassengers} Passenger${state.totalPassengers > 1 ? 's' : ''} • ${state.cabinClass.toCabinClassDisplayName}",
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,

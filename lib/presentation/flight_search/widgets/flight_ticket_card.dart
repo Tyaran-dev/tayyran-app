@@ -1,7 +1,10 @@
 // lib/presentation/flight_search/widgets/flight_ticket_card.dart (updated)
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
+import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
 
 class FlightTicketCard extends StatelessWidget {
@@ -14,19 +17,17 @@ class FlightTicketCard extends StatelessWidget {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return GestureDetector(
-      // onTap: () {
-      //   if (ticket.flightOffer != null) {
-      //     Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //         builder: (_) => BlocProvider(
-      //           create: (_) => FlightDetailCubit(ticket.flightOffer!),
-      //           child: FlightDetailScreen(),
-      //         ),
-      //       ),
-      //     );
-      //   }
-      // },
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider(
+              create: (_) => FlightDetailCubit(ticket.flightOffer),
+              child: FlightDetailScreen(),
+            ),
+          ),
+        );
+      },
       child: Card(
         color: Color(0xFFF9fafb),
         elevation: 3,
@@ -81,7 +82,7 @@ class FlightTicketCard extends StatelessWidget {
             Image.asset(AppAssets.currencyIcon, height: 25, width: 25),
             SizedBox(width: 4),
             Text(
-              ticket.price.toStringAsFixed(0),
+              ticket.basePrice.toStringAsFixed(0),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,

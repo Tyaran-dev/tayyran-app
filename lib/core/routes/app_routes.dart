@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart'; // ADD THIS IMPORT
 import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
 import 'package:tayyran_app/presentation/discount/discount_screen.dart';
+import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
+import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart'; // ADD THIS IMPORT
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
@@ -97,6 +100,16 @@ class AppRoutes {
           ),
           settings: const RouteSettings(name: RouteNames.flightSearch),
         );
+      case RouteNames.flightDetail:
+        final flightOffer = settings.arguments as FlightOffer;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => FlightDetailCubit(flightOffer),
+            child: const FlightDetailScreen(),
+          ),
+          settings: const RouteSettings(name: RouteNames.flightDetail),
+        );
+
       default:
         return MaterialPageRoute(
           builder: (_) => PopScope(

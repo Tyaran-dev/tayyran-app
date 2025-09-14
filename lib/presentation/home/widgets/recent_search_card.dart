@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/presentation/home/model/recentsearch_model.dart';
 
 class RecentSearchCard extends StatelessWidget {
@@ -20,8 +21,8 @@ class RecentSearchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      elevation: 1,
-      color: Colors.blue[40],
+      elevation: 3,
+      color: Color(0xFFF9fafb),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
@@ -144,7 +145,7 @@ class RecentSearchCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    ticket.flightClass,
+                                    ticket.flightClass.toCabinClassDisplayName,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[700],

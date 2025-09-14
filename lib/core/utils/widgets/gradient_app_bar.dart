@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
 
@@ -246,7 +247,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
 
               // Class
               Text(
-                cabinClass,
+                cabinClass.toCabinClassDisplayName,
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               const SizedBox(width: 8),

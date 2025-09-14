@@ -1,5 +1,6 @@
 // recentsearch_model.dart
 // import 'dart:convert';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 
 class RecentSearchModel {
   final String from;
@@ -34,7 +35,7 @@ class RecentSearchModel {
       'date': date,
       'returnDate': returnDate,
       'passengers': passengers,
-      'flightClass': flightClass,
+      'flightClass': flightClass.toCabinClassBackendValue,
       'timestamp': timestamp.toIso8601String(),
       'type': type,
       'tripType': tripType,
@@ -131,8 +132,3 @@ class RecentSearchModel {
         rooms.hashCode;
   }
 }
-
-
-///
-///
-///

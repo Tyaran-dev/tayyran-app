@@ -16,6 +16,7 @@ class FlightTicket {
   final String duration;
   final int stops;
   final double price;
+  final double basePrice;
   final String currency;
   final bool hasBaggage;
   final bool isDirect;
@@ -38,6 +39,7 @@ class FlightTicket {
     required this.duration,
     required this.stops,
     required this.price,
+    required this.basePrice,
     required this.currency,
     required this.hasBaggage,
     required this.isDirect,
@@ -62,6 +64,7 @@ class FlightTicket {
     String? duration,
     int? stops,
     double? price,
+    double? basePrice,
     String? currency,
     bool? hasBaggage,
     bool? isDirect,
@@ -85,6 +88,7 @@ class FlightTicket {
       duration: duration ?? this.duration,
       stops: stops ?? this.stops,
       price: price ?? this.price,
+      basePrice: basePrice ?? this.basePrice,
       currency: currency ?? this.currency,
       hasBaggage: hasBaggage ?? this.hasBaggage,
       isDirect: isDirect ?? this.isDirect,
@@ -112,6 +116,7 @@ class FlightTicket {
       'duration': duration,
       'stops': stops,
       'price': price,
+      'basePrice': basePrice,
       'currency': currency,
       'hasBaggage': hasBaggage,
       'isDirect': isDirect,
