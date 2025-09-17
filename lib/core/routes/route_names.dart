@@ -11,4 +11,5 @@ class RouteNames {
   static const String flightSearch = '/flight-search';
   static const String airportSelection = '/airport-selection';
   static const String flightDetail = '/flight-detail';
+  static const String passengerInfo = '/passenger-info';
 }

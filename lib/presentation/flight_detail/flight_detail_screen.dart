@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_app_bar.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
@@ -710,7 +711,11 @@ class FlightDetailScreen extends StatelessWidget {
                 width: context.widthPct(0.55),
                 child: GradientButton(
                   onPressed: () {
-                    // Handle booking logic
+                    Navigator.pushNamed(
+                      context,
+                      RouteNames.passengerInfo,
+                      arguments: flight,
+                    );
                   },
                   text: 'Book',
                   height: 50,

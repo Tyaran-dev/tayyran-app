@@ -6,6 +6,7 @@ import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/localization/localization.dart';
 import 'package:tayyran_app/core/routes/app_routes.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/core/theme/app_theme.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
         title: 'Tayyran',
         localizationsDelegates: [
           AppLocalizations.delegate,

@@ -66,6 +66,7 @@ class FlightTicketCard extends StatelessWidget {
     return Row(
       children: [
         CircleAvatar(
+          backgroundColor: Colors.transparent,
           backgroundImage: NetworkImage(ticket.airlineLogo),
           radius: 16,
         ),
