@@ -281,30 +281,30 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const Text(
-          "Current location",
+          "Home Flight",
           style: TextStyle(
             color: Colors.white,
-            fontSize: 19,
-            fontWeight: FontWeight.w100,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
             fontFamily: 'Almarai',
           ),
         ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.location_on, color: Colors.white, size: 20),
-            SizedBox(width: 4),
-            Text(
-              "Dubai, UAE",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Almarai',
-              ),
-            ),
-          ],
-        ),
+        // Row(
+        //   mainAxisSize: MainAxisSize.min,
+        //   children: const [
+        //     Icon(Icons.location_on, color: Colors.white, size: 20),
+        //     SizedBox(width: 4),
+        //     Text(
+        //       "Dubai, UAE",
+        //       style: TextStyle(
+        //         color: Colors.white,
+        //         fontSize: 19,
+        //         fontWeight: FontWeight.w700,
+        //         fontFamily: 'Almarai',
+        //       ),
+        //     ),
+        //   ],
+        // ),
       ],
     );
   }

@@ -1,5 +1,4 @@
 // recentsearch_model.dart
-// import 'dart:convert';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 
 class RecentSearchModel {
@@ -8,6 +7,10 @@ class RecentSearchModel {
   final String date;
   final String returnDate;
   final int passengers;
+  final int adults;
+  final int children;
+  final int infants;
+
   final String flightClass;
   final DateTime timestamp;
   final String type;
@@ -20,6 +23,9 @@ class RecentSearchModel {
     required this.date,
     required this.returnDate,
     required this.passengers,
+    required this.adults,
+    required this.children,
+    required this.infants,
     required this.flightClass,
     required this.timestamp,
     required this.type,
@@ -27,7 +33,7 @@ class RecentSearchModel {
     this.rooms,
   });
 
-  // Convert to JSON for storage
+  /// Convert to JSON for storage
   Map<String, dynamic> toJson() {
     return {
       'from': from,
@@ -35,6 +41,9 @@ class RecentSearchModel {
       'date': date,
       'returnDate': returnDate,
       'passengers': passengers,
+      'adults': adults,
+      'children': children,
+      'infants': infants,
       'flightClass': flightClass.toCabinClassBackendValue,
       'timestamp': timestamp.toIso8601String(),
       'type': type,
@@ -43,7 +52,7 @@ class RecentSearchModel {
     };
   }
 
-  // Create from JSON for retrieval
+  /// Create from JSON for retrieval
   factory RecentSearchModel.fromJson(Map<String, dynamic> json) {
     return RecentSearchModel(
       from: json['from'] ?? '',
@@ -51,6 +60,9 @@ class RecentSearchModel {
       date: json['date'] ?? '',
       returnDate: json['returnDate'] ?? '',
       passengers: json['passengers'] ?? 1,
+      adults: json['adults'] ?? 1,
+      children: json['children'] ?? 0,
+      infants: json['infants'] ?? 0,
       flightClass: json['flightClass'] ?? 'Economy',
       timestamp: DateTime.parse(json['timestamp']),
       type: json['type'] ?? 'flight',
@@ -59,23 +71,26 @@ class RecentSearchModel {
     );
   }
 
-  // Convert to Map for shared preferences
+  /// Convert to Map for shared preferences
   Map<String, dynamic> toMap() {
     return toJson();
   }
 
-  // Create from Map for shared preferences
+  /// Create from Map for shared preferences
   factory RecentSearchModel.fromMap(Map<String, dynamic> map) {
     return RecentSearchModel.fromJson(map);
   }
 
-  // Copy with method for updates
+  /// Copy with method for updates
   RecentSearchModel copyWith({
     String? from,
     String? to,
     String? date,
     String? returnDate,
     int? passengers,
+    int? adults,
+    int? children,
+    int? infants,
     String? flightClass,
     DateTime? timestamp,
     String? type,
@@ -88,6 +103,9 @@ class RecentSearchModel {
       date: date ?? this.date,
       returnDate: returnDate ?? this.returnDate,
       passengers: passengers ?? this.passengers,
+      adults: adults ?? this.adults,
+      children: children ?? this.children,
+      infants: infants ?? this.infants,
       flightClass: flightClass ?? this.flightClass,
       timestamp: timestamp ?? this.timestamp,
       type: type ?? this.type,
@@ -98,7 +116,7 @@ class RecentSearchModel {
 
   @override
   String toString() {
-    return 'RecentSearchModel{from: $from, to: $to, date: $date, returnDate: $returnDate, passengers: $passengers, flightClass: $flightClass, timestamp: $timestamp, type: $type, tripType: $tripType, rooms: $rooms}';
+    return 'RecentSearchModel{from: $from, to: $to, date: $date, returnDate: $returnDate, passengers: $passengers, adults: $adults, children: $children, infants: $infants, flightClass: $flightClass, timestamp: $timestamp, type: $type, tripType: $tripType, rooms: $rooms}';
   }
 
   @override
@@ -111,6 +129,9 @@ class RecentSearchModel {
         other.date == date &&
         other.returnDate == returnDate &&
         other.passengers == passengers &&
+        other.adults == adults &&
+        other.children == children &&
+        other.infants == infants &&
         other.flightClass == flightClass &&
         other.timestamp == timestamp &&
         other.type == type &&
@@ -125,6 +146,9 @@ class RecentSearchModel {
         date.hashCode ^
         returnDate.hashCode ^
         passengers.hashCode ^
+        adults.hashCode ^
+        children.hashCode ^
+        infants.hashCode ^
         flightClass.hashCode ^
         timestamp.hashCode ^
         type.hashCode ^

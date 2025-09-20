@@ -229,9 +229,7 @@ class FlightDetailScreen extends StatelessWidget {
                         ),
                         Container(
                           width: 2,
-                          height: context.heightPct(
-                            0.11,
-                          ), // adjust length of line
+                          height: context.heightPct(0.11),
                           color: Colors.grey[300],
                         ),
                         Icon(
@@ -240,9 +238,7 @@ class FlightDetailScreen extends StatelessWidget {
                         ),
                         Container(
                           width: 2,
-                          height: context.heightPct(
-                            0.1,
-                          ), // adjust length of line
+                          height: context.heightPct(0.1),
                           color: Colors.grey[300],
                         ),
                         Icon(
@@ -259,7 +255,6 @@ class FlightDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildTimeDetail(
-                            // icon: null, // handled on left side
                             time: _formatTimeAmPm(
                               itinerary.segments[i].departure.at,
                             ),
@@ -298,7 +293,6 @@ class FlightDetailScreen extends StatelessWidget {
                             ),
                           ),
                           _buildTimeDetail(
-                            // icon: null, // handled on left side
                             time: _formatTimeAmPm(
                               itinerary.segments[i].arrival.at,
                             ),
@@ -333,18 +327,9 @@ class FlightDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.splashBackgroundColorEnd.withValues(
-          alpha: 0.2,
-        ), // Changed to light gray background
+        color: AppColors.splashBackgroundColorEnd.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.white.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [
@@ -383,7 +368,6 @@ class FlightDetailScreen extends StatelessWidget {
   }
 
   Widget _buildTimeDetail({
-    // required IconData icon,
     required String time,
     required String date,
     required Airport airport,
@@ -395,7 +379,6 @@ class FlightDetailScreen extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Icon(icon, size: 20, color: AppColors.splashBackgroundColorEnd),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -660,8 +643,7 @@ class FlightDetailScreen extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize:
-                      MainAxisSize.min, // 👈 important to avoid overflow
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Total Price',
@@ -677,7 +659,7 @@ class FlightDetailScreen extends StatelessWidget {
                             color: AppColors.splashBackgroundColorEnd,
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Image.asset(
                           AppAssets.currencyIcon,
                           width: 30,
@@ -689,9 +671,7 @@ class FlightDetailScreen extends StatelessWidget {
                       onPressed: () =>
                           _showFareBreakdownBottomSheet(context, flight),
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.only(
-                          bottom: 15,
-                        ), // remove extra padding
+                        padding: const EdgeInsets.only(bottom: 15),
                         minimumSize: const Size(0, 0),
                       ),
                       child: Text(
@@ -728,83 +708,380 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
+  // void _showFareBreakdownBottomSheet(BuildContext context, FlightOffer flight) {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: Colors.white,
+  //     isScrollControlled: true,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  //     ),
+  //     builder: (context) {
+  //       // Count occurrences of each traveler type
+  //       final travelerTypeCount = <String, int>{};
+  //       final travelerNumbers = <String, int>{};
+
+  //       for (var pricing in flight.travellerPricing) {
+  //         travelerTypeCount[pricing.travelerType] =
+  //             (travelerTypeCount[pricing.travelerType] ?? 0) + 1;
+  //       }
+
+  //       return Padding(
+  //         padding: EdgeInsets.only(
+  //           bottom: MediaQuery.of(context).viewInsets.bottom,
+  //         ),
+  //         child: Container(
+  //           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               // Fixed Header with close button
+  //               Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   const SizedBox(width: 40), // For balance
+  //                   const Text(
+  //                     'Fare Breakdown',
+  //                     style: TextStyle(
+  //                       fontSize: 20,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                   IconButton(
+  //                     icon: const Icon(Icons.close, size: 24),
+  //                     onPressed: () => Navigator.pop(context),
+  //                     padding: EdgeInsets.zero,
+  //                     constraints: const BoxConstraints(),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 16),
+
+  //               // Passenger fare details
+  //               ...flight.travellerPricing.map((pricing) {
+  //                 // Get the number for this traveler type
+  //                 final travelerType = pricing.travelerType;
+  //                 travelerNumbers[travelerType] =
+  //                     (travelerNumbers[travelerType] ?? 0) + 1;
+  //                 final travelerNumber = travelerNumbers[travelerType]!;
+
+  //                 return Container(
+  //                   margin: const EdgeInsets.only(bottom: 16),
+  //                   padding: const EdgeInsets.all(16),
+  //                   decoration: BoxDecoration(
+  //                     color: Colors.grey[50],
+  //                     borderRadius: BorderRadius.circular(12),
+  //                   ),
+  //                   child: Column(
+  //                     children: [
+  //                       // Passenger type header with numbering
+  //                       Row(
+  //                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                         children: [
+  //                           Text(
+  //                             _formatTravelerTypeWithNumber(
+  //                               pricing.travelerType,
+  //                               travelerNumber,
+  //                             ),
+  //                             style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w600,
+  //                             ),
+  //                           ),
+  //                           Text(
+  //                             '${pricing.total} ${flight.currency}',
+  //                             style: const TextStyle(
+  //                               fontSize: 16,
+  //                               fontWeight: FontWeight.w600,
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       const SizedBox(height: 12),
+
+  //                       // Base fare
+  //                       _buildDetailRow(
+  //                         title: 'Base Fare',
+  //                         value: '${pricing.base} ${flight.currency}',
+  //                       ),
+
+  //                       // Taxes & fees
+  //                       _buildDetailRow(
+  //                         title: 'Taxes & Fees',
+  //                         value: '${pricing.tax} ${flight.currency}',
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 );
+  //               }),
+
+  //               const SizedBox(height: 8),
+
+  //               // Total section
+  //               Container(
+  //                 padding: const EdgeInsets.symmetric(
+  //                   vertical: 16,
+  //                   horizontal: 16,
+  //                 ),
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.splashBackgroundColorEnd.withOpacity(0.1),
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 child: Row(
+  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                   children: [
+  //                     const Text(
+  //                       'Total',
+  //                       style: TextStyle(
+  //                         fontSize: 18,
+  //                         fontWeight: FontWeight.bold,
+  //                       ),
+  //                     ),
+  //                     Text(
+  //                       '${flight.price} ${flight.currency}',
+  //                       style: TextStyle(
+  //                         fontSize: 18,
+  //                         fontWeight: FontWeight.bold,
+  //                         color: AppColors.splashBackgroundColorEnd,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+
+  //               const SizedBox(height: 16),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
   void _showFareBreakdownBottomSheet(BuildContext context, FlightOffer flight) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Fare Breakdown',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              ...flight.travellerPricing.map(
-                (pricing) => Column(
-                  children: [
-                    _buildFareBreakdownRow(
-                      '${pricing.travelerType} Fare',
-                      '${pricing.total} ${flight.currency}',
+        // Count occurrences of each traveler type
+        final travelerTypeCount = <String, int>{};
+        final travelerNumbers = <String, int>{};
+
+        for (var pricing in flight.travellerPricing) {
+          travelerTypeCount[pricing.travelerType] =
+              (travelerTypeCount[pricing.travelerType] ?? 0) + 1;
+        }
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate content height
+            final headerHeight = 80.0; // Estimated header height
+            final footerHeight = 80.0; // Estimated footer height
+            final passengerItemHeight = 140.0; // Estimated height per passenger
+            final spacingHeight = 32.0; // Estimated spacing
+
+            final contentHeight =
+                headerHeight +
+                footerHeight +
+                (flight.travellerPricing.length * passengerItemHeight) +
+                spacingHeight;
+
+            final maxHeight = MediaQuery.of(context).size.height * 0.7;
+            final calculatedHeight = contentHeight < maxHeight
+                ? contentHeight
+                : maxHeight;
+
+            return Container(
+              constraints: BoxConstraints(maxHeight: calculatedHeight),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Fixed Header with close button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40), // For balance
+                      const Text(
+                        'Fare Breakdown',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 24),
+                        onPressed: () => Navigator.pop(context),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Scrollable content area (only if needed)
+                  flight.travellerPricing.length > 2
+                      ? Expanded(
+                          // Use expanded for scrolling when many passengers
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: _buildPassengerItems(
+                                flight,
+                                travelerNumbers,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Column(
+                          // Use regular column when few passengers
+                          mainAxisSize: MainAxisSize.min,
+                          children: _buildPassengerItems(
+                            flight,
+                            travelerNumbers,
+                          ),
+                        ),
+
+                  // Fixed Footer with total price
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 16,
                     ),
-                    _buildFareBreakdownRow(
-                      '  Base fare',
-                      '${pricing.base} ${flight.currency}',
-                      isSubItem: true,
+                    decoration: BoxDecoration(
+                      color: AppColors.splashBackgroundColorEnd.withOpacity(
+                        0.1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    _buildFareBreakdownRow(
-                      '  Taxes & fees',
-                      '${pricing.tax} ${flight.currency}',
-                      isSubItem: true,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${flight.price} ${flight.currency}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.splashBackgroundColorEnd,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 16),
+                ],
               ),
-              const Divider(),
-              _buildFareBreakdownRow(
-                'Total',
-                '${flight.price} ${flight.currency}',
-                isTotal: true,
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildFareBreakdownRow(
-    String title,
-    String value, {
+  // Helper method to build passenger items
+  List<Widget> _buildPassengerItems(
+    FlightOffer flight,
+    Map<String, int> travelerNumbers,
+  ) {
+    return flight.travellerPricing.map((pricing) {
+      // Get the number for this traveler type
+      final travelerType = pricing.travelerType;
+      travelerNumbers[travelerType] = (travelerNumbers[travelerType] ?? 0) + 1;
+      final travelerNumber = travelerNumbers[travelerType]!;
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            // Passenger type header with numbering
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _formatTravelerTypeWithNumber(
+                    pricing.travelerType,
+                    travelerNumber,
+                  ),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '${pricing.total} ${flight.currency}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Base fare
+            _buildDetailRow(
+              title: 'Base Fare',
+              value: '${pricing.base} ${flight.currency}',
+            ),
+
+            // Taxes & fees
+            _buildDetailRow(
+              title: 'Taxes & Fees',
+              value: '${pricing.tax} ${flight.currency}',
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  String _formatTravelerTypeWithNumber(String type, int number) {
+    final baseType = _formatTravelerType(type);
+    return '$baseType $number';
+  }
+
+  Widget _buildDetailRow({
+    required String title,
+    required String value,
     bool isSubItem = false,
-    bool isTotal = false,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: isSubItem ? 2 : 6),
+      padding: EdgeInsets.only(top: isSubItem ? 4 : 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
             style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isSubItem ? Colors.grey[600] : Colors.black,
+              fontSize: 14,
+              color: isSubItem ? Colors.grey[600] : Colors.grey[700],
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
-              color: isTotal
-                  ? AppColors.splashBackgroundColorEnd
-                  : Colors.black,
+              fontSize: 14,
+              fontWeight: isSubItem ? FontWeight.normal : FontWeight.w500,
+              color: isSubItem ? Colors.grey[600] : Colors.grey[700],
             ),
           ),
         ],
@@ -884,6 +1161,21 @@ class FlightDetailScreen extends StatelessWidget {
         return 'Revalidation';
       default:
         return category;
+    }
+  }
+
+  String _formatTravelerType(String type) {
+    switch (type.toUpperCase()) {
+      case 'ADULT':
+        return 'Adult';
+      case 'CHILD':
+        return 'Child';
+      case 'INFANT':
+        return 'Infant';
+      case 'HELD_INFANT':
+        return 'Infant';
+      default:
+        return type;
     }
   }
 }

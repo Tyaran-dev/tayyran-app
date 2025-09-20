@@ -713,15 +713,6 @@ class CountryData {
       'nationality_ar': 'إيرلندي',
     },
     {
-      'code': 'IL',
-      'dial_code': '+972',
-      'name_en': 'Israel',
-      'name_ar': 'إسرائيل',
-      'flag': '🇮🇱',
-      'nationality_en': 'Israeli',
-      'nationality_ar': 'إسرائيلي',
-    },
-    {
       'code': 'IT',
       'dial_code': '+39',
       'name_en': 'Italy',
@@ -729,6 +720,15 @@ class CountryData {
       'flag': '🇮🇹',
       'nationality_en': 'Italian',
       'nationality_ar': 'إيطالي',
+    },
+    {
+      'code': 'CI',
+      'dial_code': '+225',
+      'name_en': 'Ivory Coast',
+      'name_ar': 'ساحل العاج',
+      'flag': '🇨🇮',
+      'nationality_en': 'Ivorian',
+      'nationality_ar': 'إيفواري',
     },
     {
       'code': 'JM',
@@ -1269,6 +1269,15 @@ class CountryData {
       'flag': '🇷🇼',
       'nationality_en': 'Rwandan',
       'nationality_ar': 'رواندي',
+    },
+    {
+      'code': 'SA',
+      'dial_code': '+966',
+      'name_en': 'Saudi Arabia',
+      'name_ar': 'المملكة العربية السعودية',
+      'flag': '🇸🇦',
+      'nationality_en': 'Saudi',
+      'nationality_ar': 'سعودي',
     },
     {
       'code': 'KN',

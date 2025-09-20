@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
-import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
@@ -437,11 +436,15 @@ class FlightCubit extends Cubit<FlightState> {
   }
 
   void setPassengers(int adults, int children, int infants) {
+    print(
+      '🔧 Setting passengers: adults=$adults, children=$children, infants=$infants',
+    );
     emit(state.copyWith(adults: adults, children: children, infants: infants));
   }
 
   void setCabinClass(String cabinClass) {
-    emit(state.copyWith(cabinClass: cabinClass.toCabinClassBackendValue));
+    print('🔧 Setting cabin class to: $cabinClass');
+    emit(state.copyWith(cabinClass: cabinClass));
   }
 
   Future<void> search(BuildContext context) async {
@@ -467,6 +470,9 @@ class FlightCubit extends Cubit<FlightState> {
           date: state.flightSegments.first.date,
           returnDate: "",
           passengers: state.totalPassengers,
+          adults: state.adults,
+          children: state.children,
+          infants: state.infants,
           flightClass: state.cabinClass,
           timestamp: DateTime.now(),
           type: 'flight',
@@ -527,6 +533,9 @@ class FlightCubit extends Cubit<FlightState> {
           date: state.departureDate,
           returnDate: state.tripType == "round" ? state.returnDate : "",
           passengers: state.totalPassengers,
+          adults: state.adults,
+          children: state.children,
+          infants: state.infants,
           flightClass: state.cabinClass,
           timestamp: DateTime.now(),
           type: 'flight',
@@ -611,7 +620,6 @@ class FlightCubit extends Cubit<FlightState> {
     }
 
     if (returnDate.isNotEmpty && _isDateInPast(returnDate)) {
-      // For return date, set it to one day after departure date
       final departure = _parseDate(departureDate);
       final nextDay = departure.add(const Duration(days: 1));
       returnDate = _formatDate(nextDay);
@@ -623,7 +631,9 @@ class FlightCubit extends Cubit<FlightState> {
         to: search.to,
         departureDate: departureDate,
         returnDate: returnDate,
-        adults: search.passengers,
+        adults: search.adults,
+        children: search.children,
+        infants: search.infants,
         cabinClass: search.flightClass,
         tripType: search.tripType ?? "oneway",
       ),

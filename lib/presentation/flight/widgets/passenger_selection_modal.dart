@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
 
 class PassengerSelectionModal extends StatefulWidget {
@@ -29,7 +30,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
   late int _adults;
   late int _children;
   late int _infants;
-  late String _cabinClass;
+  late String _currentCabinClass;
 
   @override
   void initState() {
@@ -37,20 +38,81 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
     _adults = widget.adults;
     _children = widget.children;
     _infants = widget.infants;
-    _cabinClass = widget.cabinClass;
+    _currentCabinClass = widget.cabinClass;
   }
 
-  void _updatePassengers() {
+  @override
+  void didUpdateWidget(PassengerSelectionModal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.adults != widget.adults) {
+      setState(() {
+        _adults = widget.adults;
+      });
+    }
+    if (oldWidget.children != widget.children) {
+      setState(() {
+        _children = widget.children;
+      });
+    }
+    if (oldWidget.infants != widget.infants) {
+      setState(() {
+        _infants = widget.infants;
+      });
+    }
+    if (oldWidget.cabinClass != widget.cabinClass) {
+      setState(() {
+        _currentCabinClass = widget.cabinClass;
+      });
+    }
+  }
+
+  void _updatePassengerCount(String type, int change) {
+    setState(() {
+      switch (type) {
+        case 'adults':
+          final newAdults = _adults + change;
+          if (newAdults >= 1 &&
+              newAdults <= 9 &&
+              _getTotalPassengers() + change <= 9) {
+            _adults = newAdults;
+            // Ensure infants don't exceed adults
+            if (_infants > _adults) {
+              _infants = _adults;
+            }
+          }
+          break;
+        case 'children':
+          final newChildren = _children + change;
+          if (newChildren >= 0 &&
+              newChildren <= 8 &&
+              _getTotalPassengers() + change <= 9) {
+            _children = newChildren;
+          }
+          break;
+        case 'infants':
+          final newInfants = _infants + change;
+          if (newInfants >= 0 &&
+              newInfants <= _adults &&
+              _getTotalPassengers() + change <= 9) {
+            _infants = newInfants;
+          }
+          break;
+      }
+    });
+
+    // Notify parent about the change
     widget.onPassengersChanged(_adults, _children, _infants);
+  }
+
+  int _getTotalPassengers() {
+    return _adults + _children + _infants;
   }
 
   @override
   Widget build(BuildContext context) {
-    final totalPassengers = _adults + _children + _infants;
-
     return Container(
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
@@ -69,134 +131,82 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               "Passengers & Cabin Class",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-            // Passengers Section with border and shadow
+            // Passengers Section
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[300]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 6,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Column(
                 children: [
-                  // Adults
                   _buildPassengerType(
                     title: "Adults",
                     subtitle: "Age 12+",
                     count: _adults,
-                    onDecrement: () {
-                      if (_adults > 1) {
-                        setState(() {
-                          _adults--;
-                          // Ensure infants don't exceed adults
-                          if (_infants > _adults) {
-                            _infants = _adults;
-                          }
-                          _updatePassengers();
-                        });
-                      }
-                    },
-                    onIncrement: () {
-                      if (_adults < 9 && totalPassengers < 9) {
-                        setState(() {
-                          _adults++;
-                          _updatePassengers();
-                        });
-                      }
-                    },
+                    onDecrement: () => _updatePassengerCount('adults', -1),
+                    onIncrement: () => _updatePassengerCount('adults', 1),
                   ),
-                  Divider(height: 20),
-
-                  // Children
+                  const Divider(height: 20),
                   _buildPassengerType(
                     title: "Children",
                     subtitle: "Age 2-11",
                     count: _children,
-                    onDecrement: () {
-                      if (_children > 0) {
-                        setState(() {
-                          _children--;
-                          _updatePassengers();
-                        });
-                      }
-                    },
-                    onIncrement: () {
-                      if (_children < 8 && totalPassengers < 9) {
-                        setState(() {
-                          _children++;
-                          _updatePassengers();
-                        });
-                      }
-                    },
+                    onDecrement: () => _updatePassengerCount('children', -1),
+                    onIncrement: () => _updatePassengerCount('children', 1),
                   ),
-                  Divider(height: 20),
-
-                  // Infants
+                  const Divider(height: 20),
                   _buildPassengerType(
                     title: "Infants",
                     subtitle: "Under 2 years",
                     count: _infants,
-                    onDecrement: () {
-                      if (_infants > 0) {
-                        setState(() {
-                          _infants--;
-                          _updatePassengers();
-                        });
-                      }
-                    },
-                    onIncrement: () {
-                      if (_infants < _adults && totalPassengers < 9) {
-                        setState(() {
-                          _infants++;
-                          _updatePassengers();
-                        });
-                      }
-                    },
+                    onDecrement: () => _updatePassengerCount('infants', -1),
+                    onIncrement: () => _updatePassengerCount('infants', 1),
                   ),
                 ],
               ),
             ),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-            // Cabin Class Section with border and shadow
+            // Cabin Class Section
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[300]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 6,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     "Cabin Class",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
-                  SizedBox(height: 12),
-                  // Using custom radio implementation instead of deprecated Radio
+                  const SizedBox(height: 12),
                   Column(
                     children: [
                       _buildCabinClassOption(
@@ -221,7 +231,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
               ),
             ),
 
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             GradientButton(
               text: 'Confirm',
               height: 50,
@@ -252,9 +262,9 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               subtitle,
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -264,7 +274,13 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
         Row(
           children: [
             IconButton(
-              icon: Icon(Icons.remove_circle_outline, size: 28),
+              icon: Icon(
+                Icons.remove_circle_outline,
+                size: 28,
+                color: onDecrement == _disabledDecrement
+                    ? Colors.grey[400]
+                    : null,
+              ),
               onPressed: onDecrement,
             ),
             Container(
@@ -272,11 +288,20 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
               alignment: Alignment.center,
               child: Text(
                 "$count",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             IconButton(
-              icon: Icon(Icons.add_circle_outline, size: 28),
+              icon: Icon(
+                Icons.add_circle_outline,
+                size: 28,
+                color: onIncrement == _disabledIncrement
+                    ? Colors.grey[400]
+                    : null,
+              ),
               onPressed: onIncrement,
             ),
           ],
@@ -285,17 +310,25 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
     );
   }
 
-  Widget _buildCabinClassOption(String value, String description) {
-    final bool isSelected = _cabinClass == value;
+  // Helper methods to disable buttons when limits are reached
+  VoidCallback get _disabledDecrement => () {};
+  VoidCallback get _disabledIncrement => () {};
+
+  Widget _buildCabinClassOption(String displayValue, String description) {
+    // Convert display value to backend value for comparison
+    final String backendValue = displayValue.toCabinClassBackendValue;
+    final bool isSelected = _currentCabinClass == backendValue;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: InkWell(
         onTap: () {
+          // Update local state for immediate UI feedback
           setState(() {
-            _cabinClass = value;
+            _currentCabinClass = backendValue;
           });
-          widget.onCabinClassChanged(_cabinClass);
+          // Notify parent about the change
+          widget.onCabinClassChanged(backendValue);
         },
         child: Row(
           children: [
@@ -306,8 +339,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isSelected
-                      ? AppColors
-                            .splashBackgroundColorEnd // Your custom color
+                      ? AppColors.splashBackgroundColorEnd
                       : Colors.grey,
                   width: 2,
                 ),
@@ -317,10 +349,9 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                       child: Container(
                         width: 12,
                         height: 12,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors
-                              .splashBackgroundColorEnd, // Your custom color
+                          color: AppColors.splashBackgroundColorEnd,
                         ),
                       ),
                     )
@@ -331,8 +362,8 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 2),
+                  Text(displayValue, style: const TextStyle(fontSize: 15)),
+                  const SizedBox(height: 2),
                   Text(
                     description,
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),

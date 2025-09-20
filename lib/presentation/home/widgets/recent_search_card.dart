@@ -74,7 +74,6 @@ class RecentSearchCard extends StatelessWidget {
                           name: _getAirportName(ticket.from),
                           isFrom: true,
                         ),
-
                         const SizedBox(height: 6),
 
                         // To airport
@@ -194,7 +193,7 @@ class RecentSearchCard extends StatelessWidget {
           children: [
             // Airport code
             Container(
-              width: 40,
+              width: 50,
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
               decoration: BoxDecoration(
