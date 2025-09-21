@@ -17,6 +17,7 @@ import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
 import 'package:tayyran_app/presentation/main_screen/main_app_screen.dart';
 import 'package:tayyran_app/presentation/onboarding/cubit/onboarding_cubit.dart';
 import 'package:tayyran_app/presentation/onboarding/onboarding_screen.dart';
+import 'package:tayyran_app/presentation/passenger_info/cubit/passenger_info_cubit.dart';
 import 'package:tayyran_app/presentation/passenger_info/passenger_info_screen.dart';
 import 'package:tayyran_app/presentation/profile/profile_screen.dart';
 import 'package:tayyran_app/presentation/splash/splash_screen.dart';
@@ -120,7 +121,13 @@ class AppRoutes {
       case RouteNames.passengerInfo:
         final flightOffer = settings.arguments as FlightOffer;
         return MaterialPageRoute(
-          builder: (_) => PassengerInfoScreen(flightOffer: flightOffer),
+          builder: (_) => BlocProvider(
+            create: (_) => PassengerInfoCubit(
+              flightOffer: flightOffer,
+              pricingRepository: getIt<FlightPricingRepository>(),
+            ),
+            child: const PassengerInfoScreen(),
+          ),
           settings: const RouteSettings(name: RouteNames.passengerInfo),
         );
 

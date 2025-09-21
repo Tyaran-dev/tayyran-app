@@ -1,4 +1,6 @@
 // lib/data/models/passenger_model.dart
+import 'package:tayyran_app/data/models/flight_search_response.dart';
+
 enum TravelerType { ADULT, CHILD, INFANT }
 
 extension TravelerTypeExtension on TravelerType {
@@ -26,6 +28,7 @@ class Passenger {
   final String issuingCountry;
   final String passportExpiry;
   final String nationality;
+  final FlightOffer? flightOffer;
 
   const Passenger({
     required this.type,
@@ -37,6 +40,7 @@ class Passenger {
     required this.issuingCountry,
     required this.passportExpiry,
     required this.nationality,
+    this.flightOffer,
   });
 
   Passenger copyWith({
@@ -49,6 +53,7 @@ class Passenger {
     String? issuingCountry,
     String? passportExpiry,
     String? nationality,
+    FlightOffer? flightOffer,
   }) {
     return Passenger(
       type: type ?? this.type,
@@ -60,6 +65,7 @@ class Passenger {
       issuingCountry: issuingCountry ?? this.issuingCountry,
       passportExpiry: passportExpiry ?? this.passportExpiry,
       nationality: nationality ?? this.nationality,
+      flightOffer: flightOffer ?? this.flightOffer,
     );
   }
 

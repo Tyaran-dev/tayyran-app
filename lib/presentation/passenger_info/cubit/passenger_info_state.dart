@@ -5,18 +5,25 @@ class PassengerInfoState {
   final List<Passenger> passengers;
   final String contactEmail;
   final String contactPhone;
-  final bool isSubmitting;
+  final String countryCode; // Add this field
+  final bool isLoading;
   final bool isSubmitted;
+  final FlightOffer originalFlightOffer;
+  final FlightOffer currentFlightOffer;
+  final String? errorMessage;
 
   const PassengerInfoState({
     required this.passengers,
     required this.contactEmail,
     required this.contactPhone,
-    this.isSubmitting = false,
+    required this.countryCode,
+    required this.originalFlightOffer,
+    required this.currentFlightOffer,
+    this.isLoading = false,
     this.isSubmitted = false,
+    this.errorMessage,
   });
 
-  // Update the factory constructor
   factory PassengerInfoState.initial(FlightOffer flightOffer) {
     final passengers = <Passenger>[];
 
@@ -75,9 +82,12 @@ class PassengerInfoState {
       passengers: passengers,
       contactEmail: '',
       contactPhone: '',
+      countryCode: '+966',
+      originalFlightOffer: flightOffer,
+      currentFlightOffer: flightOffer,
     );
   }
-  // Update the isFormValid getter
+
   bool get isFormValid {
     // Check if all passenger fields are filled with valid data
     final allPassengersValid = passengers.every(
@@ -86,53 +96,53 @@ class PassengerInfoState {
           passenger.firstName.length >= 2 &&
           passenger.lastName.length >= 2 &&
           passenger.dateOfBirth.isNotEmpty &&
-          _isValidDate(passenger.dateOfBirth) &&
+          isValidDate(passenger.dateOfBirth) &&
           passenger.nationality.isNotEmpty &&
           passenger.passportNumber.length >= 6 &&
           passenger.issuingCountry.isNotEmpty &&
           passenger.passportExpiry.isNotEmpty &&
-          _isValidDate(passenger.passportExpiry),
+          isValidDate(passenger.passportExpiry),
     );
 
     // Check if contact information is filled
     final contactValid =
         contactEmail.isNotEmpty &&
         contactPhone.isNotEmpty &&
-        _isValidEmail(contactEmail);
+        isValidEmail(contactEmail);
 
     return allPassengersValid && contactValid;
-  }
-
-  bool _isValidDate(String date) {
-    try {
-      final parts = date.split('-');
-      if (parts.length != 3) return false;
-      final year = int.parse(parts[0]);
-      final month = int.parse(parts[1]);
-      final day = int.parse(parts[2]);
-      return year > 1900 && month >= 1 && month <= 12 && day >= 1 && day <= 31;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  bool _isValidEmail(String email) {
-    return RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
   }
 
   PassengerInfoState copyWith({
     List<Passenger>? passengers,
     String? contactEmail,
     String? contactPhone,
-    bool? isSubmitting,
+    String? countryCode,
+    bool? isLoading,
     bool? isSubmitted,
+    FlightOffer? currentFlightOffer,
+    String? errorMessage,
   }) {
     return PassengerInfoState(
       passengers: passengers ?? this.passengers,
       contactEmail: contactEmail ?? this.contactEmail,
       contactPhone: contactPhone ?? this.contactPhone,
-      isSubmitting: isSubmitting ?? this.isSubmitting,
+      countryCode: countryCode ?? this.countryCode,
+      isLoading: isLoading ?? this.isLoading,
       isSubmitted: isSubmitted ?? this.isSubmitted,
+      originalFlightOffer: originalFlightOffer,
+      currentFlightOffer: currentFlightOffer ?? this.currentFlightOffer,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
+  }
+
+  @override
+  String toString() {
+    return 'PassengerInfoState{'
+        'passengers: ${passengers.length}, '
+        'isLoading: $isLoading, '
+        'countryCode: $countryCode, '
+        'errorMessage: $errorMessage'
+        '}';
   }
 }

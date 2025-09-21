@@ -1,6 +1,7 @@
 // lib/presentation/flight_detail/cubit/flight_detail_cubit.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
 
@@ -61,7 +62,7 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
         // Debug the full response structure
         _debugResponseStructure;
         print('🔍 Full response structure:');
-        _printNestedMap(pricingResponse, '');
+        printNestedMap(pricingResponse);
 
         final updatedFlightOffer = _mergeFlightOfferWithPricing(
           _originalFlightOffer,
@@ -358,7 +359,7 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
 
     // Debug: Print the entire pricingData to see the structure
     print('🔍 Full pricing data structure:');
-    _printNestedMap(pricingData as Map<String, dynamic>, '');
+    printNestedMap(pricingData as Map<String, dynamic>);
 
     final priceData = pricingData['price'];
     if (priceData == null) {
@@ -368,7 +369,7 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
 
     // SAFELY extract grandTotal
     final grandTotal =
-        _safeParseDouble(priceData['grandTotal']) ?? original.price;
+        safeParseDouble(priceData['grandTotal']) ?? original.price;
     print('💰 grandTotal: $grandTotal');
 
     // SAFELY extract presentageCommission - check multiple possible locations
@@ -377,20 +378,20 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     // Check multiple possible locations for the commission
     if (pricingData.containsKey('presentageCommission')) {
       presentageCommission =
-          _safeParseDouble(pricingData['presentageCommission']) ??
+          safeParseDouble(pricingData['presentageCommission']) ??
           original.presentageCommission;
       print(
         '✅ Found presentageCommission in flight offer: $presentageCommission',
       );
     } else if (data.containsKey('presentageCommission')) {
       presentageCommission =
-          _safeParseDouble(data['presentageCommission']) ??
+          safeParseDouble(data['presentageCommission']) ??
           original.presentageCommission;
 
       print('✅ Found presentageCommission in data: $presentageCommission');
     } else if (pricingResponse.containsKey('presentageCommission')) {
       presentageCommission =
-          _safeParseDouble(pricingResponse['presentageCommission']) ??
+          safeParseDouble(pricingResponse['presentageCommission']) ??
           original.presentageCommission;
       print('✅ Found presentageCommission in root: $presentageCommission');
     } else {
@@ -419,43 +420,6 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     return updatedOffer;
   }
 
-  // Helper method to print nested map structure
-  void _printNestedMap(Map<String, dynamic> map, String indent) {
-    for (var entry in map.entries) {
-      if (entry.value is Map<String, dynamic>) {
-        print('$indent${entry.key}: {');
-        _printNestedMap(entry.value as Map<String, dynamic>, '$indent  ');
-        print('$indent}');
-      } else if (entry.value is List) {
-        print('$indent${entry.key}: [');
-        final list = entry.value as List;
-        if (list.isNotEmpty && list.first is Map<String, dynamic>) {
-          _printNestedMap(list.first as Map<String, dynamic>, '$indent  ');
-        } else if (list.isNotEmpty) {
-          print('$indent  ${list.first}');
-        }
-        print('$indent]');
-      } else {
-        print('$indent${entry.key}: ${entry.value}');
-      }
-    }
-  }
-
-  // Helper method to safely parse double values
-  double? _safeParseDouble(dynamic value) {
-    if (value == null) return null;
-
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    if (value is String) {
-      return double.tryParse(value);
-    }
-
-    return null;
-  }
-
   List<TravellerPricing> _extractUpdatedTravelerPricing(
     List<dynamic> travelerPricings,
   ) {
@@ -464,12 +428,12 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
 
       // SAFELY extract values - handle both string and numeric values
       final total =
-          _safeParseDouble(priceData?['total'])?.toString() ??
+          safeParseDouble(priceData?['total'])?.toString() ??
           (priceData?['total']?.toString() ?? '0');
       final base =
-          _safeParseDouble(priceData?['base'])?.toString() ??
+          safeParseDouble(priceData?['base'])?.toString() ??
           (priceData?['base']?.toString() ?? '0');
-      final tax = _safeParseDouble(priceData?['tax']) ?? 0.0;
+      final tax = safeParseDouble(priceData?['tax']) ?? 0.0;
 
       return TravellerPricing(
         travelerType: pricing['travelerType']?.toString() ?? '',
