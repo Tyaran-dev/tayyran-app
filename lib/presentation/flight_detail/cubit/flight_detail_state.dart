@@ -7,12 +7,14 @@ class FlightDetailState {
   final int selectedItineraryIndex;
   final Set<SectionType> expandedSections;
   final bool isLoading;
+  final String? errorMessage;
 
   const FlightDetailState({
     required this.flightOffer,
     this.selectedItineraryIndex = 0,
     this.expandedSections = const {},
     this.isLoading = false,
+    this.errorMessage,
   });
 
   factory FlightDetailState.initial(FlightOffer flightOffer) {
@@ -21,6 +23,7 @@ class FlightDetailState {
       selectedItineraryIndex: 0,
       expandedSections: const {SectionType.segments},
       isLoading: false,
+      errorMessage: null,
     );
   }
 
@@ -32,6 +35,7 @@ class FlightDetailState {
     int? selectedItineraryIndex,
     Set<SectionType>? expandedSections,
     bool? isLoading,
+    String? errorMessage,
   }) {
     return FlightDetailState(
       flightOffer: flightOffer ?? this.flightOffer,
@@ -39,6 +43,17 @@ class FlightDetailState {
           selectedItineraryIndex ?? this.selectedItineraryIndex,
       expandedSections: expandedSections ?? this.expandedSections,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
+  }
+
+  @override
+  String toString() {
+    return 'FlightDetailState{'
+        'flightOffer: ${flightOffer.id}, '
+        'selectedItineraryIndex: $selectedItineraryIndex, '
+        'isLoading: $isLoading, '
+        'errorMessage: $errorMessage'
+        '}';
   }
 }

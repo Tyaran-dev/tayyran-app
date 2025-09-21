@@ -1,10 +1,8 @@
 // lib/presentation/flight_search/widgets/flight_ticket_card.dart (updated)
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
-import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
-import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
+import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
 
 class FlightTicketCard extends StatelessWidget {
@@ -18,14 +16,10 @@ class FlightTicketCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
+        Navigator.pushNamed(
           context,
-          MaterialPageRoute(
-            builder: (_) => BlocProvider(
-              create: (_) => FlightDetailCubit(ticket.flightOffer),
-              child: FlightDetailScreen(),
-            ),
-          ),
+          RouteNames.flightDetail,
+          arguments: ticket.flightOffer,
         );
       },
       child: Card(

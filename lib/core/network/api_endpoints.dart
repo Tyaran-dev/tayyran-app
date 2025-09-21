@@ -5,5 +5,7 @@ class ApiEndpoints {
   // endpoints
   static const String getAirport = '/airports/getairport';
   static const String searchFlights = "/flights/flight-search";
+  static const String flightPricing = "/flights/flight-pricing";
+
   // static String getUserById(int id) => '/users/$id';
 }

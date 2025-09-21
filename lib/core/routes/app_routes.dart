@@ -1,16 +1,17 @@
 // lib/core/routes/app_routes.dart (updated)
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tayyran_app/core/dependency_injection.dart'; // ADD THIS IMPORT
+import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
+import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
 import 'package:tayyran_app/presentation/discount/discount_screen.dart';
 import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
 import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
-import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart'; // ADD THIS IMPORT
+import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
 import 'package:tayyran_app/presentation/main_screen/main_app_screen.dart';
@@ -92,30 +93,37 @@ class AppRoutes {
           ),
           settings: const RouteSettings(name: RouteNames.airportSelection),
         );
+
       case RouteNames.flightSearch:
         final searchData = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => getIt<FlightSearchCubit>(), // FIXED: Use getIt
+            create: (_) => getIt<FlightSearchCubit>(),
             child: FlightSearchScreen(searchData: searchData),
           ),
           settings: const RouteSettings(name: RouteNames.flightSearch),
         );
+
       case RouteNames.flightDetail:
         final flightOffer = settings.arguments as FlightOffer;
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
-            create: (_) => FlightDetailCubit(flightOffer),
+            create: (_) => FlightDetailCubit(
+              flightOffer: flightOffer,
+              pricingRepository: getIt<FlightPricingRepository>(),
+            ),
             child: const FlightDetailScreen(),
           ),
           settings: const RouteSettings(name: RouteNames.flightDetail),
         );
+
       case RouteNames.passengerInfo:
         final flightOffer = settings.arguments as FlightOffer;
         return MaterialPageRoute(
           builder: (_) => PassengerInfoScreen(flightOffer: flightOffer),
           settings: const RouteSettings(name: RouteNames.passengerInfo),
         );
+
       default:
         return MaterialPageRoute(
           builder: (_) => PopScope(

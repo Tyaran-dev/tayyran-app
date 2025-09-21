@@ -1,4 +1,3 @@
-// lib/presentation/flight_detail/screens/flight_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
@@ -16,50 +15,155 @@ class FlightDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: GradientAppBar(
-        title: 'Flight Details',
-        height: 120,
-        showBackButton: true,
-      ),
-      body: BlocBuilder<FlightDetailCubit, FlightDetailState>(
-        builder: (context, state) {
-          final flight = state.flightOffer;
-          final itinerary = state.selectedItinerary;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Virtual flight path
-                _buildFlightCard(itinerary, flight),
-                const SizedBox(height: 16),
-
-                // Departure and arrival details
-                _buildAirportDetails(itinerary, context),
-                const SizedBox(height: 16),
-
-                // Flight duration and stops
-                _buildFlightSummary(itinerary, flight),
-                const SizedBox(height: 16),
-
-                // Baggage information
-                _buildBaggageInformation(flight),
-                const SizedBox(height: 16),
-
-                // Fare rules
-                _buildFareRulesCard(flight, context),
-                const SizedBox(height: 16),
-
-                // Spacer for bottom button
-                const SizedBox(height: 20),
-              ],
+    return BlocListener<FlightDetailCubit, FlightDetailState>(
+      listener: (context, state) {
+        // Handle error states
+        if (state.errorMessage != null && !state.isLoading) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () {
+                  context.read<FlightDetailCubit>().retryPricingUpdate();
+                },
+              ),
             ),
           );
-        },
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: GradientAppBar(
+          title: 'Flight Details',
+          height: 120,
+          showBackButton: true,
+        ),
+        body: BlocBuilder<FlightDetailCubit, FlightDetailState>(
+          builder: (context, state) {
+            // Show loading overlay when updating pricing
+            if (state.isLoading) {
+              return Stack(
+                children: [
+                  _buildContent(context, state),
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.splashBackgroundColorEnd,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Updating prices...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return _buildContent(context, state);
+          },
+        ),
+        bottomNavigationBar: _buildBottomBookingBar(context),
       ),
-      bottomNavigationBar: _buildBottomBookingBar(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, FlightDetailState state) {
+    final flight = state.flightOffer;
+    final itinerary = state.selectedItinerary;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Error banner if there's an error
+          if (state.errorMessage != null) _buildErrorBanner(context),
+
+          // Virtual flight path
+          _buildFlightCard(itinerary, flight),
+          const SizedBox(height: 16),
+
+          // Departure and arrival details
+          _buildAirportDetails(itinerary, context),
+          const SizedBox(height: 16),
+
+          // Flight duration and stops
+          _buildFlightSummary(itinerary, flight),
+          const SizedBox(height: 16),
+
+          // Baggage information
+          _buildBaggageInformation(flight),
+          const SizedBox(height: 16),
+
+          // Fare rules
+          _buildFareRulesCard(flight, context),
+          const SizedBox(height: 16),
+
+          // Retry button if there was an error
+          if (state.errorMessage != null) _buildRetryButton(context),
+
+          // Spacer for bottom button
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Failed to update prices. Showing cached prices.',
+              style: TextStyle(color: Colors.red[700], fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRetryButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: ElevatedButton.icon(
+        onPressed: () => context.read<FlightDetailCubit>().retryPricingUpdate(),
+        icon: const Icon(Icons.refresh),
+        label: const Text('Retry Price Update'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.splashBackgroundColorEnd,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
     );
   }
 
@@ -71,7 +175,7 @@ class FlightDetailScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: 3.0.toBoxDecoration(color: Color(0xFFF9fafb)),
+      decoration: 3.0.toBoxDecoration(color: const Color(0xFFF9fafb)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -205,7 +309,7 @@ class FlightDetailScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: 3.0.toBoxDecoration(color: Color(0xFFF9fafb)),
+      decoration: 3.0.toBoxDecoration(color: const Color(0xFFF9fafb)),
       child: Column(
         children: [
           for (int i = 0; i < itinerary.segments.length; i++)
@@ -327,7 +431,7 @@ class FlightDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.splashBackgroundColorEnd.withValues(alpha: 0.2),
+        color: AppColors.splashBackgroundColorEnd.withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),
@@ -434,7 +538,7 @@ class FlightDetailScreen extends StatelessWidget {
   Widget _buildFlightSummary(Itinerary itinerary, FlightOffer flight) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: 3.0.toBoxDecoration(color: Color(0xFFF9fafb)),
+      decoration: 3.0.toBoxDecoration(color: const Color(0xFFF9fafb)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
@@ -451,7 +555,7 @@ class FlightDetailScreen extends StatelessWidget {
           _buildSummaryItem(
             icon: Icons.airline_seat_recline_normal,
             title: 'Class',
-            value: flight.cabinClass.toCabinClassDisplayName,
+            value: flight.cabinClass,
           ),
         ],
       ),
@@ -480,7 +584,7 @@ class FlightDetailScreen extends StatelessWidget {
   Widget _buildBaggageInformation(FlightOffer flight) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: 3.0.toBoxDecoration(color: Color(0xFFF9fafb)),
+      decoration: 3.0.toBoxDecoration(color: const Color(0xFFF9fafb)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -540,7 +644,6 @@ class FlightDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Show all if <= 3, otherwise show only 3
           ...flight.fareRules
               .take(flight.fareRules.length > 3 ? 3 : flight.fareRules.length)
               .map(
@@ -552,7 +655,6 @@ class FlightDetailScreen extends StatelessWidget {
                 ),
               ),
 
-          // Show "View all" button only if more than 3
           if (flight.fareRules.length > 3)
             TextButton(
               onPressed: () => _showFareRulesBottomSheet(context, flight),
@@ -624,13 +726,27 @@ class FlightDetailScreen extends StatelessWidget {
       builder: (context, state) {
         final flight = state.flightOffer;
 
+        double presentageCommission = 0.0;
+        double administrationFee = 0.0;
+        double totalWithCommission = flight.price;
+
+        try {
+          presentageCommission = flight.presentageCommission;
+          administrationFee = flight.price * (presentageCommission / 100);
+          totalWithCommission = flight.price + administrationFee;
+        } catch (e) {
+          presentageCommission = 0.0;
+          administrationFee = 0.0;
+          totalWithCommission = flight.price;
+        }
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.2),
+                color: Colors.grey.withOpacity(0.2),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -651,14 +767,21 @@ class FlightDetailScreen extends StatelessWidget {
                     ),
                     Row(
                       children: [
-                        Text(
-                          '${flight.price}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.splashBackgroundColorEnd,
+                        if (state.isLoading)
+                          const SizedBox(
+                            width: 60,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          Text(
+                            totalWithCommission.toStringAsFixed(2),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.splashBackgroundColorEnd,
+                            ),
                           ),
-                        ),
                         const SizedBox(width: 10),
                         Image.asset(
                           AppAssets.currencyIcon,
@@ -668,8 +791,10 @@ class FlightDetailScreen extends StatelessWidget {
                       ],
                     ),
                     TextButton(
-                      onPressed: () =>
-                          _showFareBreakdownBottomSheet(context, flight),
+                      onPressed: state.isLoading
+                          ? null
+                          : () =>
+                                _showFareBreakdownBottomSheet(context, flight),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.only(bottom: 15),
                         minimumSize: const Size(0, 0),
@@ -678,7 +803,9 @@ class FlightDetailScreen extends StatelessWidget {
                         'Price details',
                         style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.splashBackgroundColorEnd,
+                          color: state.isLoading
+                              ? Colors.grey[400]
+                              : AppColors.splashBackgroundColorEnd,
                         ),
                       ),
                     ),
@@ -690,14 +817,18 @@ class FlightDetailScreen extends StatelessWidget {
               SizedBox(
                 width: context.widthPct(0.55),
                 child: GradientButton(
-                  onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      RouteNames.passengerInfo,
-                      arguments: flight,
-                    );
-                  },
-                  text: 'Book',
+                  onPressed: state.isLoading
+                      ? null
+                      : () {
+                          Navigator.pushNamed(
+                            context,
+                            RouteNames.passengerInfo,
+                            arguments: flight.copyWith(
+                              price: totalWithCommission,
+                            ),
+                          );
+                        },
+                  text: state.isLoading ? 'Updating...' : 'Book',
                   height: 50,
                 ),
               ),
@@ -708,157 +839,6 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  // void _showFareBreakdownBottomSheet(BuildContext context, FlightOffer flight) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     backgroundColor: Colors.white,
-  //     isScrollControlled: true,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-  //     ),
-  //     builder: (context) {
-  //       // Count occurrences of each traveler type
-  //       final travelerTypeCount = <String, int>{};
-  //       final travelerNumbers = <String, int>{};
-
-  //       for (var pricing in flight.travellerPricing) {
-  //         travelerTypeCount[pricing.travelerType] =
-  //             (travelerTypeCount[pricing.travelerType] ?? 0) + 1;
-  //       }
-
-  //       return Padding(
-  //         padding: EdgeInsets.only(
-  //           bottom: MediaQuery.of(context).viewInsets.bottom,
-  //         ),
-  //         child: Container(
-  //           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               // Fixed Header with close button
-  //               Row(
-  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                 children: [
-  //                   const SizedBox(width: 40), // For balance
-  //                   const Text(
-  //                     'Fare Breakdown',
-  //                     style: TextStyle(
-  //                       fontSize: 20,
-  //                       fontWeight: FontWeight.bold,
-  //                     ),
-  //                   ),
-  //                   IconButton(
-  //                     icon: const Icon(Icons.close, size: 24),
-  //                     onPressed: () => Navigator.pop(context),
-  //                     padding: EdgeInsets.zero,
-  //                     constraints: const BoxConstraints(),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 16),
-
-  //               // Passenger fare details
-  //               ...flight.travellerPricing.map((pricing) {
-  //                 // Get the number for this traveler type
-  //                 final travelerType = pricing.travelerType;
-  //                 travelerNumbers[travelerType] =
-  //                     (travelerNumbers[travelerType] ?? 0) + 1;
-  //                 final travelerNumber = travelerNumbers[travelerType]!;
-
-  //                 return Container(
-  //                   margin: const EdgeInsets.only(bottom: 16),
-  //                   padding: const EdgeInsets.all(16),
-  //                   decoration: BoxDecoration(
-  //                     color: Colors.grey[50],
-  //                     borderRadius: BorderRadius.circular(12),
-  //                   ),
-  //                   child: Column(
-  //                     children: [
-  //                       // Passenger type header with numbering
-  //                       Row(
-  //                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                         children: [
-  //                           Text(
-  //                             _formatTravelerTypeWithNumber(
-  //                               pricing.travelerType,
-  //                               travelerNumber,
-  //                             ),
-  //                             style: const TextStyle(
-  //                               fontSize: 16,
-  //                               fontWeight: FontWeight.w600,
-  //                             ),
-  //                           ),
-  //                           Text(
-  //                             '${pricing.total} ${flight.currency}',
-  //                             style: const TextStyle(
-  //                               fontSize: 16,
-  //                               fontWeight: FontWeight.w600,
-  //                             ),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                       const SizedBox(height: 12),
-
-  //                       // Base fare
-  //                       _buildDetailRow(
-  //                         title: 'Base Fare',
-  //                         value: '${pricing.base} ${flight.currency}',
-  //                       ),
-
-  //                       // Taxes & fees
-  //                       _buildDetailRow(
-  //                         title: 'Taxes & Fees',
-  //                         value: '${pricing.tax} ${flight.currency}',
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 );
-  //               }),
-
-  //               const SizedBox(height: 8),
-
-  //               // Total section
-  //               Container(
-  //                 padding: const EdgeInsets.symmetric(
-  //                   vertical: 16,
-  //                   horizontal: 16,
-  //                 ),
-  //                 decoration: BoxDecoration(
-  //                   color: AppColors.splashBackgroundColorEnd.withOpacity(0.1),
-  //                   borderRadius: BorderRadius.circular(12),
-  //                 ),
-  //                 child: Row(
-  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                   children: [
-  //                     const Text(
-  //                       'Total',
-  //                       style: TextStyle(
-  //                         fontSize: 18,
-  //                         fontWeight: FontWeight.bold,
-  //                       ),
-  //                     ),
-  //                     Text(
-  //                       '${flight.price} ${flight.currency}',
-  //                       style: TextStyle(
-  //                         fontSize: 18,
-  //                         fontWeight: FontWeight.bold,
-  //                         color: AppColors.splashBackgroundColorEnd,
-  //                       ),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-
-  //               const SizedBox(height: 16),
-  //             ],
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
   void _showFareBreakdownBottomSheet(BuildContext context, FlightOffer flight) {
     showModalBottomSheet(
       context: context,
@@ -868,30 +848,30 @@ class FlightDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        // Count occurrences of each traveler type
-        final travelerTypeCount = <String, int>{};
-        final travelerNumbers = <String, int>{};
+        // Calculate commission values
+        double presentageCommission = 0.0;
+        double administrationFee = 0.0;
+        double totalWithCommission = flight.price;
 
-        for (var pricing in flight.travellerPricing) {
-          travelerTypeCount[pricing.travelerType] =
-              (travelerTypeCount[pricing.travelerType] ?? 0) + 1;
+        try {
+          presentageCommission = flight.presentageCommission;
+          administrationFee = flight.price * (presentageCommission / 100);
+          totalWithCommission = flight.price + administrationFee;
+        } catch (e) {
+          presentageCommission = 0.0;
+          administrationFee = 0.0;
+          totalWithCommission = flight.price;
         }
+
+        final travelerNumbers = <String, int>{};
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            // Calculate content height
-            final headerHeight = 80.0; // Estimated header height
-            final footerHeight = 80.0; // Estimated footer height
-            final passengerItemHeight = 140.0; // Estimated height per passenger
-            final spacingHeight = 32.0; // Estimated spacing
-
-            final contentHeight =
-                headerHeight +
-                footerHeight +
-                (flight.travellerPricing.length * passengerItemHeight) +
-                spacingHeight;
-
-            final maxHeight = MediaQuery.of(context).size.height * 0.7;
+            final maxHeight = MediaQuery.of(context).size.height * 0.8;
+            final baseContentHeight = 315.0; // Increased for commission section
+            final passengerContentHeight =
+                flight.travellerPricing.length * 120.0;
+            final contentHeight = baseContentHeight + passengerContentHeight;
             final calculatedHeight = contentHeight < maxHeight
                 ? contentHeight
                 : maxHeight;
@@ -903,11 +883,10 @@ class FlightDetailScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Fixed Header with close button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SizedBox(width: 40), // For balance
+                      const SizedBox(width: 40),
                       const Text(
                         'Fare Breakdown',
                         style: TextStyle(
@@ -925,10 +904,9 @@ class FlightDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Scrollable content area (only if needed)
+                  // Passenger fare details
                   flight.travellerPricing.length > 2
                       ? Expanded(
-                          // Use expanded for scrolling when many passengers
                           child: SingleChildScrollView(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -940,7 +918,6 @@ class FlightDetailScreen extends StatelessWidget {
                           ),
                         )
                       : Column(
-                          // Use regular column when few passengers
                           mainAxisSize: MainAxisSize.min,
                           children: _buildPassengerItems(
                             flight,
@@ -948,35 +925,91 @@ class FlightDetailScreen extends StatelessWidget {
                           ),
                         ),
 
-                  // Fixed Footer with total price
+                  const SizedBox(height: 16),
+
+                  // Total section with breakdown
                   Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 16,
                       horizontal: 16,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.splashBackgroundColorEnd.withOpacity(
-                        0.1,
+                      color: AppColors.splashBackgroundColorEnd.withValues(
+                        alpha: 0.1,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
                       children: [
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        // Subtotal (sum of all passenger fares)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Subtotal',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              '${flight.price} ${flight.currency}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${flight.price} ${flight.currency}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.splashBackgroundColorEnd,
+
+                        // Administration fee breakdown
+                        if (presentageCommission > 0) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Administration Fee ($presentageCommission%)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Text(
+                                '${administrationFee.toStringAsFixed(2)} ${flight.currency}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
                           ),
+                        ],
+
+                        const SizedBox(height: 8),
+                        const Divider(),
+                        const SizedBox(height: 8),
+
+                        // Grand Total
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Total',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${totalWithCommission.toStringAsFixed(2)} ${flight.currency}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.splashBackgroundColorEnd,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -992,16 +1025,20 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to build passenger items
   List<Widget> _buildPassengerItems(
     FlightOffer flight,
     Map<String, int> travelerNumbers,
   ) {
-    return flight.travellerPricing.map((pricing) {
-      // Get the number for this traveler type
+    double subtotal = 0.0;
+
+    final passengerWidgets = flight.travellerPricing.map((pricing) {
       final travelerType = pricing.travelerType;
       travelerNumbers[travelerType] = (travelerNumbers[travelerType] ?? 0) + 1;
       final travelerNumber = travelerNumbers[travelerType]!;
+
+      // Calculate passenger total (convert string to double)
+      final passengerTotal = double.tryParse(pricing.total) ?? 0.0;
+      subtotal += passengerTotal;
 
       return Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -1012,7 +1049,6 @@ class FlightDetailScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Passenger type header with numbering
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -1036,14 +1072,10 @@ class FlightDetailScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Base fare
             _buildDetailRow(
               title: 'Base Fare',
               value: '${pricing.base} ${flight.currency}',
             ),
-
-            // Taxes & fees
             _buildDetailRow(
               title: 'Taxes & Fees',
               value: '${pricing.tax} ${flight.currency}',
@@ -1052,6 +1084,15 @@ class FlightDetailScreen extends StatelessWidget {
         ),
       );
     }).toList();
+
+    // Update the flight price to match the calculated subtotal
+    // This ensures consistency between passenger totals and the displayed price
+    if (flight.price != subtotal) {
+      // If there's a discrepancy, we might want to use the calculated subtotal
+      // But for now, we'll just use the flight.price from the API
+    }
+
+    return passengerWidgets;
   }
 
   String _formatTravelerTypeWithNumber(String type, int number) {
@@ -1063,6 +1104,7 @@ class FlightDetailScreen extends StatelessWidget {
     required String title,
     required String value,
     bool isSubItem = false,
+    bool isBold = false,
   }) {
     return Padding(
       padding: EdgeInsets.only(top: isSubItem ? 4 : 8),
@@ -1074,13 +1116,16 @@ class FlightDetailScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               color: isSubItem ? Colors.grey[600] : Colors.grey[700],
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           Text(
             value,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: isSubItem ? FontWeight.normal : FontWeight.w500,
+              fontWeight: isBold
+                  ? FontWeight.bold
+                  : (isSubItem ? FontWeight.normal : FontWeight.w500),
               color: isSubItem ? Colors.grey[600] : Colors.grey[700],
             ),
           ),
@@ -1119,24 +1164,15 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  String _formatTimeAmPm(DateTime dateTime) {
-    return DateFormat('h:mm a').format(dateTime);
-  }
-
-  String _formatDate(DateTime dateTime) {
-    return DateFormat('MMM dd, yyyy').format(dateTime);
-  }
-
-  String _getStopText(int stops) {
-    switch (stops) {
-      case 0:
-        return 'Direct';
-      case 1:
-        return '1 stop';
-      default:
-        return '$stops stops';
-    }
-  }
+  String _formatTimeAmPm(DateTime dateTime) =>
+      DateFormat('h:mm a').format(dateTime);
+  String _formatDate(DateTime dateTime) =>
+      DateFormat('MMM dd, yyyy').format(dateTime);
+  String _getStopText(int stops) => stops == 0
+      ? 'Direct'
+      : stops == 1
+      ? '1 stop'
+      : '$stops stops';
 
   IconData _getFareRuleIcon(String category) {
     switch (category) {

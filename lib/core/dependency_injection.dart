@@ -3,8 +3,10 @@ import 'package:get_it/get_it.dart';
 import 'package:tayyran_app/core/network/api_endpoints.dart';
 import 'package:tayyran_app/core/network/dio_client.dart';
 import 'package:tayyran_app/data/api/airport_api_service.dart';
+import 'package:tayyran_app/data/api/flight_pricing_api_service.dart'; // ADD THIS
 import 'package:tayyran_app/data/api/flight_search_api_service.dart';
 import 'package:tayyran_app/data/repositories/airport_repository.dart';
+import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart'; // ADD THIS
 import 'package:tayyran_app/data/repositories/flight_search_repository.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
@@ -19,6 +21,9 @@ void setupDependencies() {
   // 2. Register API Services
   getIt.registerLazySingleton(() => AirportApiService(getIt<DioClient>()));
   getIt.registerLazySingleton(() => FlightSearchApiService(getIt<DioClient>()));
+  getIt.registerLazySingleton(
+    () => FlightPricingApiService(getIt<DioClient>()),
+  ); // ADD THIS
 
   // 3. Register Repositories
   getIt.registerLazySingleton(
@@ -27,10 +32,14 @@ void setupDependencies() {
   getIt.registerLazySingleton(
     () => FlightSearchRepository(getIt<FlightSearchApiService>()),
   );
+  getIt.registerLazySingleton(
+    () => FlightPricingRepository(getIt<FlightPricingApiService>()),
+  ); // ADD THIS
 
   // 4. Register Cubits/Blocs
   getIt.registerFactory(() => AirportSearchCubit(getIt<AirportRepository>()));
   getIt.registerFactory(
     () => FlightSearchCubit(getIt<FlightSearchRepository>()),
   );
+  // FlightDetailCubit is registered as factoryParam in app_routes.dart
 }

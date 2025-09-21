@@ -4,11 +4,12 @@ class FlightSearchResponse {
   final List<FlightOffer> data;
   final Filters filters;
   final String? message;
-
+  final double presentageCommission;
   FlightSearchResponse({
     required this.success,
     required this.data,
     required this.filters,
+    required this.presentageCommission,
     this.message,
   });
 
@@ -18,11 +19,18 @@ class FlightSearchResponse {
       success: json['success'] ?? false,
       data: (json['data'] as List<dynamic>? ?? [])
           .map(
-            (x) => FlightOffer.fromJson(x, filters: filters),
+            (x) => FlightOffer.fromJson(
+              x,
+              filters: filters,
+              presentageCommission:
+                  (json['presentageCommission'] as num?)?.toDouble() ?? 0.0,
+            ),
           ) // Pass filters here
           .toList(),
       filters: Filters.fromJson(json['filters'] ?? {}),
       message: json['message'],
+      presentageCommission:
+          (json['presentageCommission'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -159,6 +167,7 @@ class FlightOffer {
   final List<String> origins;
   final List<String> destinations;
   final Map<String, dynamic> originalResponse;
+  final double presentageCommission;
 
   FlightOffer({
     required this.id,
@@ -199,9 +208,100 @@ class FlightOffer {
     required this.origins,
     required this.destinations,
     required this.originalResponse,
+    required this.presentageCommission,
   });
 
-  factory FlightOffer.fromJson(Map<String, dynamic> json, {Filters? filters}) {
+  FlightOffer copyWith({
+    double? presentageCommission,
+    String? id,
+    String? mapping,
+    String? type,
+    String? source,
+    String? fromLocation,
+    String? toLocation,
+    String? fromName,
+    String? toName,
+    String? flightType,
+    int? adults,
+    int? children,
+    int? infants,
+    int? numberOfBookableSeats,
+    String? airline,
+    String? airlineLogo,
+    String? airlineName,
+    String? flightNumber,
+    int? stops,
+    double? originalPrice,
+    double? basePrice,
+    double? price,
+    String? currency,
+    bool? refund,
+    bool? exchange,
+    String? cabinClass,
+    String? allowedBags,
+    int? allowedCabinBags,
+    String? provider,
+    List<Itinerary>? itineraries,
+    List<FareRule>? fareRules,
+    PricingOptions? pricingOptions,
+    List<TravellerPricing>? travellerPricing,
+    List<BaggageDetail>? baggageDetails,
+    Map<String, dynamic>? totalPricingByTravellerType,
+    Charges? charges,
+    List<String>? origins,
+    List<String>? destinations,
+    Map<String, dynamic>? originalResponse,
+  }) {
+    return FlightOffer(
+      presentageCommission: presentageCommission ?? this.presentageCommission,
+      id: id ?? this.id,
+      mapping: mapping ?? this.mapping,
+      type: type ?? this.type,
+      source: source ?? this.source,
+      fromLocation: fromLocation ?? this.fromLocation,
+      toLocation: toLocation ?? this.toLocation,
+      fromName: fromName ?? this.fromName,
+      toName: toName ?? this.toName,
+      flightType: flightType ?? this.flightType,
+      adults: adults ?? this.adults,
+      children: children ?? this.children,
+      infants: infants ?? this.infants,
+      numberOfBookableSeats:
+          numberOfBookableSeats ?? this.numberOfBookableSeats,
+      airline: airline ?? this.airline,
+      airlineName: airlineName ?? this.airlineName,
+      airlineLogo: airlineLogo ?? this.airlineLogo,
+      flightNumber: flightNumber ?? this.flightNumber,
+      stops: stops ?? this.stops,
+      originalPrice: originalPrice ?? this.originalPrice,
+      basePrice: basePrice ?? this.basePrice,
+      price: price ?? this.price,
+      currency: currency ?? this.currency,
+      refund: refund ?? this.refund,
+      exchange: exchange ?? this.exchange,
+      cabinClass: cabinClass ?? this.cabinClass,
+      allowedBags: allowedBags ?? this.allowedBags,
+      allowedCabinBags: allowedCabinBags ?? this.allowedCabinBags,
+      provider: provider ?? this.provider,
+      itineraries: itineraries ?? this.itineraries,
+      fareRules: fareRules ?? this.fareRules,
+      pricingOptions: pricingOptions ?? this.pricingOptions,
+      travellerPricing: travellerPricing ?? this.travellerPricing,
+      baggageDetails: baggageDetails ?? this.baggageDetails,
+      totalPricingByTravellerType:
+          totalPricingByTravellerType ?? this.totalPricingByTravellerType,
+      charges: charges ?? this.charges,
+      origins: origins ?? this.origins,
+      destinations: destinations ?? this.destinations,
+      originalResponse: originalResponse ?? this.originalResponse,
+    );
+  }
+
+  factory FlightOffer.fromJson(
+    Map<String, dynamic> json, {
+    Filters? filters,
+    double presentageCommission = 0.0,
+  }) {
     final firstItinerary =
         (json["itineraries_formated"] as List<dynamic>? ?? []).isNotEmpty
         ? Itinerary.fromJson(json["itineraries_formated"][0])
@@ -287,6 +387,9 @@ class FlightOffer {
       originalResponse: Map<String, dynamic>.from(
         json['originalResponse'] ?? {},
       ),
+      presentageCommission:
+          (json['presentageCommission'] as num?)?.toDouble() ??
+          presentageCommission,
     );
   }
 
