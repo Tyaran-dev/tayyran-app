@@ -10,8 +10,6 @@ import 'package:tayyran_app/core/theme/app_theme.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
-import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
-import 'package:tayyran_app/presentation/onboarding/cubit/onboarding_cubit.dart';
 import 'package:tayyran_app/presentation/splash/cubit/splash_cubit.dart';
 
 void main() {
@@ -28,8 +26,6 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => SplashCubit()),
-        BlocProvider(create: (_) => OnboardingCubit()),
-        BlocProvider(create: (_) => MainAppCubit()),
         BlocProvider(create: (_) => FlightCubit()),
         BlocProvider(create: (_) => getIt<FlightSearchCubit>()),
         BlocProvider(create: (_) => getIt<AirportSearchCubit>()),
@@ -55,6 +51,7 @@ class MyApp extends StatelessWidget {
         },
         onGenerateRoute: AppRoutes.generateRoute,
         initialRoute: RouteNames.splash,
+        // home: PaymentScreen(),
       ),
     );
   }

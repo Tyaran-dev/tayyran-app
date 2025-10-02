@@ -1,9 +1,9 @@
-// lib/presentation/passenger_info/screens/passenger_info_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_app_bar.dart';
@@ -13,6 +13,7 @@ import 'package:tayyran_app/presentation/passenger_info/cubit/passenger_info_cub
 import 'package:tayyran_app/presentation/passenger_info/widgets/country_code_selection_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/passenger_info/widgets/passenger_card.dart';
 import 'package:tayyran_app/presentation/passenger_info/widgets/passenger_form_bottom_sheet.dart';
+import 'package:tayyran_app/presentation/payment/model/payment_arguments.dart';
 
 class PassengerInfoScreen extends StatelessWidget {
   const PassengerInfoScreen({super.key});
@@ -38,7 +39,11 @@ class PassengerInfoScreen extends StatelessWidget {
             ),
           );
         }
+        if (state.isSubmitted && !state.isLoading) {
+          _navigateToPaymentScreen(context);
+        }
       },
+
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: GradientAppBar(
@@ -48,37 +53,6 @@ class PassengerInfoScreen extends StatelessWidget {
         ),
         body: BlocBuilder<PassengerInfoCubit, PassengerInfoState>(
           builder: (context, state) {
-            // if (state.isLoading) {
-            //   return Stack(
-            //     children: [
-            //       buildContent(context, state),
-            //       Container(
-            //         color: Colors.black.withValues(alpha: 0.3),
-            //         child: Center(
-            //           child: Column(
-            //             mainAxisAlignment: MainAxisAlignment.center,
-            //             children: [
-            //               CircularProgressIndicator(
-            //                 valueColor: AlwaysStoppedAnimation<Color>(
-            //                   AppColors.splashBackgroundColorEnd,
-            //                 ),
-            //               ),
-            //               const SizedBox(height: 16),
-            //               const Text(
-            //                 'Updating prices...',
-            //                 style: TextStyle(
-            //                   color: Colors.white,
-            //                   fontSize: 16,
-            //                   fontWeight: FontWeight.bold,
-            //                 ),
-            //               ),
-            //             ],
-            //           ),
-            //         ),
-            //       ),
-            //     ],
-            //   );
-            // }
             return buildContent(context, state);
           },
         ),
@@ -89,9 +63,8 @@ class PassengerInfoScreen extends StatelessWidget {
 
   Widget buildContent(BuildContext context, PassengerInfoState state) {
     final cubit = context.read<PassengerInfoCubit>();
-    final currentFlightOffer = state.currentFlightOffer;
 
-    // Trigger pricing update when screen loads
+    // Initialize pricing when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       cubit.updateFlightPricing();
     });
@@ -105,7 +78,7 @@ class PassengerInfoScreen extends StatelessWidget {
           if (state.errorMessage != null) buildErrorBanner(context),
 
           // Flight summary
-          buildFlightSummary(context, currentFlightOffer),
+          buildFlightSummary(context, state.currentFlightOffer),
           const SizedBox(height: 24),
 
           // Passenger list title
@@ -128,6 +101,51 @@ class PassengerInfoScreen extends StatelessWidget {
           const SizedBox(height: 30),
         ],
       ),
+    );
+  }
+
+  void _navigateToPaymentScreen(BuildContext context) {
+    final cubit = context.read<PassengerInfoCubit>();
+    final state = cubit.state;
+
+    cubit.resetSubmission();
+
+    final flightOffer = state.currentFlightOffer;
+    double presentageCommission = flightOffer.presentageCommission;
+    double administrationFee = flightOffer.price * (presentageCommission / 100);
+    double totalWithCommission = flightOffer.price + administrationFee;
+
+    // Debug: Print what we're passing to payment
+    debugPrint("🚀 Navigating to payment with:");
+    debugPrint("  - Passengers count: ${state.passengers.length}");
+    debugPrint("  - Email: ${state.contactEmail}");
+    debugPrint("  - Phone: ${state.contactPhone}");
+    debugPrint("  - Country Code: ${state.countryCode}");
+    debugPrint(
+      "  - Pricing Response Available: ${state.pricingResponse != null}",
+    );
+
+    for (int i = 0; i < state.passengers.length; i++) {
+      final passenger = state.passengers[i];
+      debugPrint(
+        "  Passenger ${i + 1}: ${passenger.firstName} ${passenger.lastName}",
+      );
+    }
+
+    final paymentArgs = PaymentArguments(
+      amount: totalWithCommission,
+      email: state.contactEmail,
+      phoneNumber: state.contactPhone,
+      countryCode: state.countryCode,
+      flightOffer: flightOffer,
+      passengers: state.passengers,
+      pricingResponse: state.pricingResponse!,
+    );
+
+    Navigator.pushReplacementNamed(
+      context,
+      RouteNames.payment,
+      arguments: paymentArgs,
     );
   }
 
@@ -489,17 +507,26 @@ class PassengerInfoScreen extends StatelessWidget {
     });
   }
 
+  void _handleContinueToPayment(BuildContext context) {
+    final cubit = context.read<PassengerInfoCubit>();
+
+    // Validate all passenger data before proceeding
+    if (validateAllPassengers(cubit.state.passengers)) {
+      cubit.submitPassengerInfo();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all passenger information correctly'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   Widget _buildBottomBookingBar(BuildContext context) {
     return BlocBuilder<PassengerInfoCubit, PassengerInfoState>(
       builder: (context, state) {
-        final cubit = context.read<PassengerInfoCubit>();
-        final flightOffer = state.currentFlightOffer;
-
-        double presentageCommission = flightOffer.presentageCommission;
-        double administrationFee =
-            flightOffer.price * (presentageCommission / 100);
-        double totalWithCommission = flightOffer.price + administrationFee;
-
+        final grandTotal = state.grandTotal ?? state.currentFlightOffer.price;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
@@ -531,11 +558,14 @@ class PassengerInfoScreen extends StatelessWidget {
                           const SizedBox(
                             width: 60,
                             height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: AppColors.splashBackgroundColorEnd,
+                              strokeWidth: 2,
+                            ),
                           )
                         else
                           Text(
-                            totalWithCommission.toStringAsFixed(2),
+                            grandTotal.toStringAsFixed(2),
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -560,7 +590,7 @@ class PassengerInfoScreen extends StatelessWidget {
                 width: context.widthPct(0.65),
                 child: GradientButton(
                   onPressed: state.isFormValid && !state.isLoading
-                      ? () => cubit.submitPassengerInfo()
+                      ? () => _handleContinueToPayment(context)
                       : null,
                   text: state.isLoading ? 'Updating...' : 'Continue to Payment',
                   height: 50,

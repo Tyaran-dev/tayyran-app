@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/utils/helpers/helpers.dart';
+import 'package:tayyran_app/data/models/flight_pricing_response.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
 
@@ -35,6 +36,71 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
   //   }
   // }
 
+  // Future<void> updateFlightPricing() async {
+  //   if (state.isLoading) return;
+
+  //   print('🔄 updateFlightPricing() called');
+  //   print('📊 Original price: ${_originalFlightOffer.price}');
+  //   print(
+  //     '📊 Original commission: ${_originalFlightOffer.presentageCommission}%',
+  //   );
+
+  //   emit(state.copyWith(isLoading: true, errorMessage: null));
+
+  //   try {
+  //     final pricingData = _preparePricingRequestData(_originalFlightOffer);
+  //     print('📤 Sending pricing request...');
+
+  //     final pricingResponse = await _pricingRepository.getFlightPricing(
+  //       pricingData,
+  //     );
+
+  //     print('✅ Received pricing response');
+  //     print('📋 Response success: ${pricingResponse['success']}');
+  //     print('📋 Response message: ${pricingResponse['message']}');
+
+  //     if (pricingResponse['success'] == true) {
+  //       // Debug the full response structure
+  //       _debugResponseStructure;
+  //       print('🔍 Full response structure:');
+  //       printNestedMap(pricingResponse);
+
+  //       final updatedFlightOffer = _mergeFlightOfferWithPricing(
+  //         _originalFlightOffer,
+  //         pricingResponse,
+  //       );
+
+  //       print('🎉 Update completed:');
+  //       print('   - New price: ${updatedFlightOffer.price}');
+  //       print(
+  //         '   - New commission: ${updatedFlightOffer.presentageCommission}%',
+  //       );
+
+  //       emit(
+  //         state.copyWith(
+  //           flightOffer: updatedFlightOffer,
+  //           isLoading: false,
+  //           errorMessage: null,
+  //         ),
+  //       );
+  //     } else {
+  //       print('❌ Pricing API returned success: false');
+  //       final errorMessage =
+  //           pricingResponse['message'] ?? 'Failed to update pricing';
+  //       emit(state.copyWith(isLoading: false, errorMessage: errorMessage));
+  //     }
+  //   } catch (e, stackTrace) {
+  //     print('🔥 Error in updateFlightPricing: $e');
+  //     print('📋 Stack trace: $stackTrace');
+  //     emit(
+  //       state.copyWith(
+  //         isLoading: false,
+  //         errorMessage: 'Failed to update flight pricing: $e',
+  //       ),
+  //     );
+  //   }
+  // }
+
   Future<void> updateFlightPricing() async {
     if (state.isLoading) return;
 
@@ -50,19 +116,19 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
       final pricingData = _preparePricingRequestData(_originalFlightOffer);
       print('📤 Sending pricing request...');
 
+      // Use the typed response instead of Map
       final pricingResponse = await _pricingRepository.getFlightPricing(
         pricingData,
       );
 
       print('✅ Received pricing response');
-      print('📋 Response success: ${pricingResponse['success']}');
-      print('📋 Response message: ${pricingResponse['message']}');
+      print('📋 Response success: ${pricingResponse.success}');
+      print('📋 Response message: ${pricingResponse.message}');
 
-      if (pricingResponse['success'] == true) {
+      if (pricingResponse.success) {
         // Debug the full response structure
-        _debugResponseStructure;
         print('🔍 Full response structure:');
-        printNestedMap(pricingResponse);
+        _debugResponseStructure(pricingResponse);
 
         final updatedFlightOffer = _mergeFlightOfferWithPricing(
           _originalFlightOffer,
@@ -85,7 +151,7 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
       } else {
         print('❌ Pricing API returned success: false');
         final errorMessage =
-            pricingResponse['message'] ?? 'Failed to update pricing';
+            pricingResponse.message ?? 'Failed to update pricing';
         emit(state.copyWith(isLoading: false, errorMessage: errorMessage));
       }
     } catch (e, stackTrace) {
@@ -100,40 +166,25 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     }
   }
 
-  void _debugResponseStructure(Map<String, dynamic> response) {
-    print('🔍 Debugging API response structure:');
+  void _debugResponseStructure(FlightPricingResponse response) {
+    print('📦 Response Type: FlightPricingResponse');
+    print('   - Success: ${response.success}');
+    print('   - Commission: ${response.presentageCommission}%');
 
-    if (response.containsKey('data')) {
-      final data = response['data'];
-      if (data is Map<String, dynamic>) {
-        print('📊 Data keys: ${data.keys.toList()}');
+    if (response.data.flightOffers.isNotEmpty) {
+      final offer = response.data.flightOffers.first;
+      print('   - Flight Offer ID: ${offer.id}');
+      print('   - Grand Total: ${offer.price.grandTotal}');
+      print('   - Currency: ${offer.price.currency}');
+      print('   - Traveler Count: ${offer.travelerPricings.length}');
 
-        if (data.containsKey('flightOffers')) {
-          final flightOffers = data['flightOffers'];
-          if (flightOffers is List && flightOffers.isNotEmpty) {
-            final firstOffer = flightOffers[0];
-            if (firstOffer is Map<String, dynamic>) {
-              print('📦 Flight offer keys: ${firstOffer.keys.toList()}');
-
-              if (firstOffer.containsKey('presentageCommission')) {
-                print(
-                  '✅ Found presentageCommission: ${firstOffer['presentageCommission']}',
-                );
-              } else {
-                print('❌ presentageCommission not found in flight offer');
-              }
-
-              if (firstOffer.containsKey('price')) {
-                final price = firstOffer['price'];
-                if (price is Map<String, dynamic>) {
-                  print('💰 Price keys: ${price.keys.toList()}');
-                  print('💰 grandTotal: ${price['grandTotal']}');
-                }
-              }
-            }
-          }
-        }
+      for (final traveler in offer.travelerPricings) {
+        print(
+          '     - Traveler ${traveler.travelerId}: ${traveler.travelerType} - ${traveler.price.total}',
+        );
       }
+    } else {
+      print('   - No flight offers in response');
     }
   }
 
@@ -333,80 +384,28 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
 
   FlightOffer _mergeFlightOfferWithPricing(
     FlightOffer original,
-    Map<String, dynamic> pricingResponse,
+    FlightPricingResponse pricingResponse,
   ) {
     print('🔍 Starting _mergeFlightOfferWithPricing');
 
-    final data = pricingResponse['data'];
-    if (data == null) {
-      print('❌ No data in pricing response');
+    if (pricingResponse.data.flightOffers.isEmpty) {
+      print('❌ No flight offers in pricing response');
       return original;
     }
 
-    if (data['flightOffers'] == null) {
-      print('❌ No flightOffers in data');
-      return original;
-    }
+    final pricingOffer = pricingResponse.data.flightOffers.first;
+    final presentageCommission = pricingResponse.presentageCommission;
 
-    final flightOffers = data['flightOffers'] as List;
-    if (flightOffers.isEmpty) {
-      print('❌ flightOffers list is empty');
-      return original;
-    }
+    print('💰 Commission from response: $presentageCommission');
+    print('💰 Grand Total: ${pricingOffer.price.grandTotal}');
 
-    final pricingData = flightOffers.first;
-    print('📦 First flight offer keys: ${pricingData.keys.toList()}');
-
-    // Debug: Print the entire pricingData to see the structure
-    print('🔍 Full pricing data structure:');
-    printNestedMap(pricingData as Map<String, dynamic>);
-
-    final priceData = pricingData['price'];
-    if (priceData == null) {
-      print('❌ No price data in flight offer');
-      return original;
-    }
-
-    // SAFELY extract grandTotal
-    final grandTotal =
-        safeParseDouble(priceData['grandTotal']) ?? original.price;
-    print('💰 grandTotal: $grandTotal');
-
-    // SAFELY extract presentageCommission - check multiple possible locations
-    double presentageCommission = original.presentageCommission;
-
-    // Check multiple possible locations for the commission
-    if (pricingData.containsKey('presentageCommission')) {
-      presentageCommission =
-          safeParseDouble(pricingData['presentageCommission']) ??
-          original.presentageCommission;
-      print(
-        '✅ Found presentageCommission in flight offer: $presentageCommission',
-      );
-    } else if (data.containsKey('presentageCommission')) {
-      presentageCommission =
-          safeParseDouble(data['presentageCommission']) ??
-          original.presentageCommission;
-
-      print('✅ Found presentageCommission in data: $presentageCommission');
-    } else if (pricingResponse.containsKey('presentageCommission')) {
-      presentageCommission =
-          safeParseDouble(pricingResponse['presentageCommission']) ??
-          original.presentageCommission;
-      print('✅ Found presentageCommission in root: $presentageCommission');
-    } else {
-      print('❌ presentageCommission not found in any location');
-    }
-
-    // SAFELY extract traveler pricing
-    final travelerPricings =
-        pricingData['travelerPricings'] as List<dynamic>? ?? [];
+    // Extract updated traveler pricing if available
     final updatedTravelerPricing = _extractUpdatedTravelerPricing(
-      travelerPricings,
+      pricingOffer.travelerPricings,
     );
 
     final updatedOffer = original.copyWith(
-      price: grandTotal,
+      price: pricingOffer.price.grandTotalAsDouble,
       presentageCommission: presentageCommission,
       travellerPricing: updatedTravelerPricing.isNotEmpty
           ? updatedTravelerPricing
@@ -416,37 +415,40 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     print('🎯 Final updated offer:');
     print('   - Price: ${updatedOffer.price}');
     print('   - Commission: ${updatedOffer.presentageCommission}%');
+    print(
+      '   - Traveler Pricing Count: ${updatedOffer.travellerPricing.length}',
+    );
 
     return updatedOffer;
   }
 
   List<TravellerPricing> _extractUpdatedTravelerPricing(
-    List<dynamic> travelerPricings,
+    List<TravelerPricing> travelerPricings,
   ) {
     return travelerPricings.map((pricing) {
-      final priceData = pricing['price'];
-
-      // SAFELY extract values - handle both string and numeric values
-      final total =
-          safeParseDouble(priceData?['total'])?.toString() ??
-          (priceData?['total']?.toString() ?? '0');
-      final base =
-          safeParseDouble(priceData?['base'])?.toString() ??
-          (priceData?['base']?.toString() ?? '0');
-      final tax = safeParseDouble(priceData?['tax']) ?? 0.0;
-
+      // Convert from TravelerPricing to TravellerPricing
       return TravellerPricing(
-        travelerType: pricing['travelerType']?.toString() ?? '',
-        total: total,
-        base: base,
-        tax: tax,
-        travelClass:
-            pricing['fareDetailsBySegment']?[0]?['cabin']?.toString() ??
-            pricing['class']?.toString() ??
-            '',
+        travelerType: pricing.travelerType,
+        total: pricing.price.total,
+        base: pricing.price.base,
+        tax: calculateTotalTax(pricing.price.taxes),
+        travelClass: pricing.fareDetailsBySegment.isNotEmpty
+            ? pricing.fareDetailsBySegment.first.cabin
+            : '',
         allowedBags: BaggageAllowance(quantity: '', weight: ''),
-        cabinBagsAllowed: 0,
-        fareDetails: [],
+        cabinBagsAllowed: pricing.fareDetailsBySegment.isNotEmpty
+            ? pricing.fareDetailsBySegment.first.includedCheckedBags.quantity
+            : 0,
+        fareDetails: pricing.fareDetailsBySegment.map((segment) {
+          return FareDetail(
+            segmentId: segment.segmentId,
+            cabin: segment.cabin,
+            fareBasis: segment.fareBasis,
+            fareClass: segment.segmentClass,
+            bagsAllowed: segment.includedCheckedBags.quantity.toString(),
+            cabinBagsAllowed: segment.includedCheckedBags.quantity,
+          );
+        }).toList(),
       );
     }).toList();
   }

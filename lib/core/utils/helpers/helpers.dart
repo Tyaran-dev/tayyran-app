@@ -1,6 +1,9 @@
 // lib/core/utils/helpers.dart
 
+import 'package:tayyran_app/data/country_data.dart';
+import 'package:tayyran_app/data/models/flight_pricing_response.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
+import 'package:tayyran_app/data/models/passenger_model.dart';
 
 /// Helper method to print nested map structure
 void printNestedMap(Map<String, dynamic> map, {String indent = ''}) {
@@ -94,4 +97,46 @@ String formatDate(DateTime date) {
 
 int getTotalPassengers(FlightOffer flightOffer) {
   return flightOffer.adults + flightOffer.children + flightOffer.infants;
+}
+
+bool validateAllPassengers(List<Passenger> passengers) {
+  for (final passenger in passengers) {
+    if (passenger.firstName.isEmpty ||
+        passenger.lastName.isEmpty ||
+        passenger.dateOfBirth.isEmpty ||
+        passenger.passportNumber.isEmpty ||
+        passenger.nationality.isEmpty) {
+      return false;
+    }
+  }
+  return true;
+}
+
+String genderFromTitle(String title) {
+  switch (title) {
+    case 'Mr':
+      return 'Male';
+    case 'Mrs':
+    case 'Ms':
+    case 'Miss':
+      return 'Female';
+    default:
+      return 'Male';
+  }
+}
+
+double calculateTotalTax(List<Tax> taxes) {
+  double total = 0.0;
+  for (final tax in taxes) {
+    total += double.tryParse(tax.amount) ?? 0.0;
+  }
+  return total;
+}
+
+String getCountryNameFromCode(String countryCode) {
+  final country = CountryData.countries.firstWhere(
+    (c) => c['code'] == countryCode,
+    orElse: () => {'name_en': countryCode, 'name_ar': countryCode},
+  );
+  return country['name_en']!;
 }

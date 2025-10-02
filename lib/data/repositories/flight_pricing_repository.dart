@@ -1,12 +1,13 @@
 // lib/data/repositories/flight_pricing_repository.dart
 import 'package:tayyran_app/data/api/flight_pricing_api_service.dart';
+import 'package:tayyran_app/data/models/flight_pricing_response.dart';
 
 class FlightPricingRepository {
   final FlightPricingApiService _apiService;
 
   FlightPricingRepository(this._apiService);
 
-  Future<Map<String, dynamic>> getFlightPricing(
+  Future<FlightPricingResponse> getFlightPricing(
     Map<String, dynamic> pricingData,
   ) async {
     try {

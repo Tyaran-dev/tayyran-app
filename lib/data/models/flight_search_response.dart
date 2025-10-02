@@ -132,6 +132,7 @@ class FlightOffer {
   final String id;
   final String mapping;
   final String type;
+  final String agent;
   final String source;
   final String fromLocation;
   final String toLocation;
@@ -168,11 +169,13 @@ class FlightOffer {
   final List<String> destinations;
   final Map<String, dynamic> originalResponse;
   final double presentageCommission;
+  final List<String> validatingAirlineCodes;
 
   FlightOffer({
     required this.id,
     required this.mapping,
     required this.type,
+    required this.agent,
     required this.source,
     required this.fromLocation,
     required this.toLocation,
@@ -209,13 +212,67 @@ class FlightOffer {
     required this.destinations,
     required this.originalResponse,
     required this.presentageCommission,
+    required this.validatingAirlineCodes,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "mapping": mapping,
+      "type": type,
+      "agent": agent,
+      "source": source,
+      "fromLocation": fromLocation,
+      "toLocation": toLocation,
+      "fromName": fromName,
+      "toName": toName,
+      "flightType": flightType,
+      "adults": adults,
+      "children": children,
+      "infants": infants,
+      "numberOfBookableSeats": numberOfBookableSeats,
+      "airline": airline,
+      "airlineLogo": airlineLogo,
+      "airlineName": airlineName,
+      "flightNumber": flightNumber,
+      "stops": stops,
+      "originalPrice": originalPrice,
+      "basePrice": basePrice,
+      "price": price,
+      "currency": currency,
+      "refund": refund,
+      "exchange": exchange,
+      "cabinClass": cabinClass,
+      "allowedBags": allowedBags,
+      "allowedCabinBags": allowedCabinBags,
+      "provider": provider,
+      "itineraries": itineraries
+          .map((itinerary) => itinerary.toJson())
+          .toList(),
+      "fareRules": fareRules.map((rule) => rule.toJson()).toList(),
+      "pricingOptions": pricingOptions.toJson(),
+      "travellerPricing": travellerPricing
+          .map((pricing) => pricing.toJson())
+          .toList(),
+      "baggageDetails": baggageDetails
+          .map((detail) => detail.toJson())
+          .toList(),
+      "totalPricingByTravellerType": totalPricingByTravellerType,
+      "charges": charges.toJson(),
+      "origins": origins,
+      "destinations": destinations,
+      "originalResponse": originalResponse,
+      "presentageCommission": presentageCommission,
+      "validatingAirlineCodes": validatingAirlineCodes,
+    };
+  }
 
   FlightOffer copyWith({
     double? presentageCommission,
     String? id,
     String? mapping,
     String? type,
+    String? agent,
     String? source,
     String? fromLocation,
     String? toLocation,
@@ -251,12 +308,14 @@ class FlightOffer {
     List<String>? origins,
     List<String>? destinations,
     Map<String, dynamic>? originalResponse,
+    List<String>? validatingAirlineCodes,
   }) {
     return FlightOffer(
       presentageCommission: presentageCommission ?? this.presentageCommission,
       id: id ?? this.id,
       mapping: mapping ?? this.mapping,
       type: type ?? this.type,
+      agent: agent ?? this.agent,
       source: source ?? this.source,
       fromLocation: fromLocation ?? this.fromLocation,
       toLocation: toLocation ?? this.toLocation,
@@ -294,6 +353,8 @@ class FlightOffer {
       origins: origins ?? this.origins,
       destinations: destinations ?? this.destinations,
       originalResponse: originalResponse ?? this.originalResponse,
+      validatingAirlineCodes:
+          validatingAirlineCodes ?? this.validatingAirlineCodes,
     );
   }
 
@@ -330,6 +391,7 @@ class FlightOffer {
       id: json['id']?.toString() ?? '',
       mapping: json['mapping'] ?? '',
       type: json['type'] ?? '',
+      agent: json['agent'] ?? '',
       source: json['source'] ?? '',
       fromLocation: firstItinerary.fromAirport.code,
       toLocation: firstItinerary.toAirport.code,
@@ -390,6 +452,9 @@ class FlightOffer {
       presentageCommission:
           (json['presentageCommission'] as num?)?.toDouble() ??
           presentageCommission,
+      validatingAirlineCodes: List<String>.from(
+        json['validatingAirlineCodes'] ?? [],
+      ),
     );
   }
 
@@ -418,6 +483,8 @@ class FlightOffer {
     }
     return '${minutes}m';
   }
+
+  Null get passengers => null;
 }
 
 class Itinerary {
@@ -444,6 +511,21 @@ class Itinerary {
     required this.segments,
     required this.stops,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "duration": duration,
+      "fromLocation": fromLocation,
+      "toLocation": toLocation,
+      "fromName": fromName,
+      "toName": toName,
+      "fromAirport": fromAirport.toJson(),
+      "toAirport": toAirport.toJson(),
+      "departure": departure?.toJson(),
+      "segments": segments.map((segment) => segment.toJson()).toList(),
+      "stops": stops,
+    };
+  }
 
   factory Itinerary.fromJson(Map<String, dynamic> json) => Itinerary(
     duration: json['duration'] ?? '',
@@ -512,6 +594,25 @@ class DepartureInfo {
     required this.airlineName,
     required this.image,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "departure_date_time": departureDateTime.toIso8601String(),
+      "departure_date": departureDate,
+      "departure_time": departureTime,
+      "departure_terminal": departureTerminal,
+      "arrival_date_time": arrivalDateTime.toIso8601String(),
+      "arrival_date": arrivalDate,
+      "arrival_time": arrivalTime,
+      "arrival_terminal": arrivalTerminal,
+      "stops": stops,
+      "duration": duration,
+      "flightNumber": flightNumber,
+      "airlineCode": airlineCode,
+      "airlineName": airlineName,
+      "image": image,
+    };
+  }
 
   factory DepartureInfo.fromJson(Map<String, dynamic> json) => DepartureInfo(
     departureDateTime: DateTime.parse(
@@ -584,6 +685,33 @@ class Segment {
     this.image,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      "departure": departure.toJson(),
+      "arrival": arrival.toJson(),
+      "carrierCode": carrierCode,
+      "number": number,
+      "aircraft": aircraft?.toJson(),
+      "operating": operating?.toJson(),
+      "duration": duration,
+      "id": id,
+      "numberOfStops": numberOfStops,
+      "blacklistedInEU": blacklistedInEU,
+      "departure_date": departureDate,
+      "departure_time": departureTime,
+      "arrival_date": arrivalDate,
+      "arrival_time": arrivalTime,
+      "stopDuration": stopDuration,
+      "stopLocation": stopLocation,
+      "fromName": fromName,
+      "toName": toName,
+      "fromAirport": fromAirport.toJson(),
+      "toAirport": toAirport.toJson(),
+      "class": segmentClass,
+      "image": image,
+    };
+  }
+
   factory Segment.fromJson(Map<String, dynamic> json) => Segment(
     departure: SegmentEndpoint.fromJson(json['departure'] ?? {}),
     arrival: SegmentEndpoint.fromJson(json['arrival'] ?? {}),
@@ -627,6 +755,13 @@ class SegmentEndpoint {
         at: DateTime.parse(json['at'] ?? '2025-01-01T00:00:00'),
         terminal: json['terminal'],
       );
+  Map<String, dynamic> toJson() {
+    return {
+      "iataCode": iataCode,
+      "at": at.toIso8601String(),
+      "terminal": terminal,
+    };
+  }
 }
 
 class Aircraft {
@@ -636,12 +771,18 @@ class Aircraft {
 
   factory Aircraft.fromJson(Map<String, dynamic> json) =>
       Aircraft(code: json['code'] ?? '');
+  Map<String, dynamic> toJson() {
+    return {"code": code};
+  }
 }
 
 class OperatingCarrier {
   final String carrierCode;
 
   OperatingCarrier({required this.carrierCode});
+  Map<String, dynamic> toJson() {
+    return {"carrierCode": carrierCode};
+  }
 
   factory OperatingCarrier.fromJson(Map<String, dynamic> json) =>
       OperatingCarrier(carrierCode: json['carrierCode'] ?? '');
@@ -659,6 +800,9 @@ class Airport {
     required this.code,
     required this.city,
   });
+  Map<String, dynamic> toJson() {
+    return {"id": id, "name": name, "code": code, "city": city};
+  }
 
   factory Airport.fromJson(Map<String, dynamic> json) => Airport(
     id: json['id'] ?? '',
@@ -688,6 +832,13 @@ class FareRule {
   final String category;
   final String? maxPenaltyAmount;
   final bool? notApplicable;
+  Map<String, dynamic> toJson() {
+    return {
+      "category": category,
+      "maxPenaltyAmount": maxPenaltyAmount,
+      "notApplicable": notApplicable,
+    };
+  }
 
   FareRule({required this.category, this.maxPenaltyAmount, this.notApplicable});
 
@@ -706,6 +857,12 @@ class PricingOptions {
     required this.fareType,
     required this.includedCheckedBagsOnly,
   });
+  Map<String, dynamic> toJson() {
+    return {
+      "fareType": fareType,
+      "includedCheckedBagsOnly": includedCheckedBagsOnly,
+    };
+  }
 
   factory PricingOptions.fromJson(Map<String, dynamic> json) => PricingOptions(
     fareType: List<String>.from(json['fareType'] ?? []),
@@ -733,6 +890,18 @@ class TravellerPricing {
     required this.cabinBagsAllowed,
     required this.fareDetails,
   });
+  Map<String, dynamic> toJson() {
+    return {
+      "travelerType": travelerType,
+      "total": total,
+      "base": base,
+      "tax": tax,
+      "class": travelClass,
+      "allowedBags": allowedBags.toJson(),
+      "cabinBagsAllowed": cabinBagsAllowed,
+      "fareDetails": fareDetails.map((detail) => detail.toJson()).toList(),
+    };
+  }
 
   factory TravellerPricing.fromJson(Map<String, dynamic> json) =>
       TravellerPricing(
@@ -756,6 +925,9 @@ class BaggageAllowance {
   final String weight;
 
   BaggageAllowance({required this.quantity, required this.weight});
+  Map<String, dynamic> toJson() {
+    return {"quantity": quantity, "weight": weight};
+  }
 
   factory BaggageAllowance.fromJson(Map<String, dynamic> json) =>
       BaggageAllowance(
@@ -780,6 +952,16 @@ class FareDetail {
     required this.bagsAllowed,
     required this.cabinBagsAllowed,
   });
+  Map<String, dynamic> toJson() {
+    return {
+      "segmentId": segmentId,
+      "cabin": cabin,
+      "fareBasis": fareBasis,
+      "class": fareClass,
+      "bagsAllowed": bagsAllowed,
+      "cabinBagsAllowed": cabinBagsAllowed,
+    };
+  }
 
   factory FareDetail.fromJson(Map<String, dynamic> json) => FareDetail(
     segmentId: json['segmentId'] ?? '',
@@ -807,6 +989,16 @@ class BaggageDetail {
     required this.checkedBagsAllowed,
     required this.cabinBagsAllowed,
   });
+  Map<String, dynamic> toJson() {
+    return {
+      "Flight Number": flightNumber,
+      "From": from,
+      "To": to,
+      "Airline": airline,
+      "Checked Bags Allowed": checkedBagsAllowed,
+      "Cabin Bags Allowed": cabinBagsAllowed,
+    };
+  }
 
   factory BaggageDetail.fromJson(Map<String, dynamic> json) => BaggageDetail(
     flightNumber: json['Flight Number'] ?? '',
@@ -828,6 +1020,13 @@ class Charges {
     required this.refund,
     required this.revalidation,
   });
+  Map<String, dynamic> toJson() {
+    return {
+      "exchange": exchange,
+      "refund": refund,
+      "revalidation": revalidation,
+    };
+  }
 
   factory Charges.fromJson(Map<String, dynamic> json) => Charges(
     exchange: json['exchange'] ?? '',

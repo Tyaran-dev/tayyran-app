@@ -1,6 +1,6 @@
-// lib/presentation/passenger_info/cubit/passenger_info_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/utils/helpers/helpers.dart';
+import 'package:tayyran_app/data/models/flight_pricing_response.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/data/models/passenger_model.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
@@ -10,6 +10,7 @@ part 'passenger_info_state.dart';
 class PassengerInfoCubit extends Cubit<PassengerInfoState> {
   final FlightPricingRepository _pricingRepository;
   bool _hasPricingUpdated = false;
+  bool _hasSubmitted = false;
 
   PassengerInfoCubit({
     required FlightOffer flightOffer,
@@ -35,38 +36,47 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
       );
 
       print('✅ Received pricing response');
-      print('📋 Response success: ${pricingResponse['success']}');
+      print('📋 Response success: ${pricingResponse.success}');
 
-      if (pricingResponse['success'] == true) {
+      if (pricingResponse.success) {
         final updatedFlightOffer = _mergeFlightOfferWithPricing(
           state.currentFlightOffer,
           pricingResponse,
         );
 
+        final pricingOffer = pricingResponse.data.flightOffers.first;
+        final presentageCommission = pricingResponse.presentageCommission;
+        final updatedPrice = pricingOffer.price.grandTotalAsDouble;
+        final administrationFee = updatedPrice * (presentageCommission / 100);
+        final grandTotal = updatedPrice + administrationFee;
+
         _hasPricingUpdated = true;
 
         print('🎉 Pricing update completed:');
-        print('   - New price: ${updatedFlightOffer.price}');
-        print(
-          '   - New commission: ${updatedFlightOffer.presentageCommission}%',
-        );
+        print('   - Updated Price: $updatedPrice');
+        print('   - Commission: $presentageCommission%');
+        print('   - Administration Fee: $administrationFee');
+        print('   - Grand Total: $grandTotal');
 
         emit(
           state.copyWith(
             isLoading: false,
             currentFlightOffer: updatedFlightOffer,
+            pricingResponse: pricingResponse,
             errorMessage: null,
+            updatedPrice: updatedPrice,
+            administrationFee: administrationFee,
+            grandTotal: grandTotal,
           ),
         );
       } else {
         print('❌ Pricing API returned success: false');
         final errorMessage =
-            pricingResponse['message'] ?? 'Failed to update pricing';
+            pricingResponse.message ?? 'Failed to update pricing';
         emit(state.copyWith(isLoading: false, errorMessage: errorMessage));
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       print('🔥 Error in updateFlightPricing: $e');
-      print('📋 Stack trace: $stackTrace');
       emit(
         state.copyWith(
           isLoading: false,
@@ -77,13 +87,11 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
   }
 
   Map<String, dynamic> _preparePricingRequestData(FlightOffer flightOffer) {
-    // Convert the entire flight offer to JSON and then back to Map
-    // This ensures we send the exact same structure as the original response
     final Map<String, dynamic> requestData = {
       "mapping": flightOffer.mapping,
       "type": flightOffer.type,
       "id": flightOffer.id,
-      "agent": "GDS", // Hardcoded as per your example
+      "agent": flightOffer.agent,
       "source": flightOffer.source,
       "fromLocation": flightOffer.fromLocation,
       "toLocation": flightOffer.toLocation,
@@ -256,7 +264,6 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
       "originalResponse": flightOffer.originalResponse,
     };
 
-    // Add debug print to see what's being sent
     print('📤 Sending complete flight offer to pricing API');
     print('📋 Request contains ${requestData.length} keys');
     print('💰 Mapping: ${requestData['mapping']}');
@@ -272,122 +279,33 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
 
   FlightOffer _mergeFlightOfferWithPricing(
     FlightOffer original,
-    Map<String, dynamic> pricingResponse,
+    FlightPricingResponse pricingResponse,
   ) {
     print('🔍 Starting _mergeFlightOfferWithPricing');
 
-    final data = pricingResponse['data'];
-    if (data == null) {
-      print('❌ No data in pricing response');
+    if (pricingResponse.data.flightOffers.isEmpty) {
+      print('❌ No flight offers in response');
       return original;
     }
 
-    if (data['flightOffers'] == null) {
-      print('❌ No flightOffers in data');
-      return original;
-    }
+    final pricingOffer = pricingResponse.data.flightOffers.first;
+    final presentageCommission = pricingResponse.presentageCommission;
 
-    final flightOffers = data['flightOffers'] as List;
-    if (flightOffers.isEmpty) {
-      print('❌ flightOffers list is empty');
-      return original;
-    }
+    print('💰 Commission from response: $presentageCommission');
+    print('💰 Grand Total: ${pricingOffer.price.grandTotal}');
 
-    final pricingData = flightOffers.first;
-    print('📦 First flight offer keys: ${pricingData.keys.toList()}');
+    final updatedPrice = pricingOffer.price.grandTotalAsDouble;
+    final administrationFee = updatedPrice * (presentageCommission / 100);
+    final grandTotal = updatedPrice + administrationFee;
 
-    // Debug: Print the entire pricingData to see the structure
-    print('🔍 Full pricing data structure:');
-    printNestedMap(pricingData as Map<String, dynamic>);
+    print('🎯 Calculated prices:');
+    print('   - Updated Price: $updatedPrice');
+    print('   - Commission %: $presentageCommission%');
+    print('   - Administration Fee: $administrationFee');
+    print('   - Grand Total: $grandTotal');
 
-    final priceData = pricingData['price'];
-    if (priceData == null) {
-      print('❌ No price data in flight offer');
-      return original;
-    }
-
-    // SAFELY extract grandTotal
-    final grandTotal =
-        safeParseDouble(priceData['grandTotal']) ?? original.price;
-    print('💰 grandTotal: $grandTotal');
-
-    // SAFELY extract presentageCommission - check multiple possible locations
-    double presentageCommission = original.presentageCommission;
-
-    // Check multiple possible locations for the commission
-    if (pricingData.containsKey('presentageCommission')) {
-      presentageCommission =
-          safeParseDouble(pricingData['presentageCommission']) ??
-          original.presentageCommission;
-      print(
-        '✅ Found presentageCommission in flight offer: $presentageCommission',
-      );
-    } else if (data.containsKey('presentageCommission')) {
-      presentageCommission =
-          safeParseDouble(data['presentageCommission']) ??
-          original.presentageCommission;
-
-      print('✅ Found presentageCommission in data: $presentageCommission');
-    } else if (pricingResponse.containsKey('presentageCommission')) {
-      presentageCommission =
-          safeParseDouble(pricingResponse['presentageCommission']) ??
-          original.presentageCommission;
-      print('✅ Found presentageCommission in root: $presentageCommission');
-    } else {
-      print('❌ presentageCommission not found in any location');
-    }
-
-    // SAFELY extract traveler pricing
-    final travelerPricings =
-        pricingData['travelerPricings'] as List<dynamic>? ?? [];
-    final updatedTravelerPricing = _extractUpdatedTravelerPricing(
-      travelerPricings,
-    );
-
-    final updatedOffer = original.copyWith(
-      price: grandTotal,
-      presentageCommission: presentageCommission,
-      travellerPricing: updatedTravelerPricing.isNotEmpty
-          ? updatedTravelerPricing
-          : original.travellerPricing,
-    );
-
-    print('🎯 Final updated offer:');
-    print('   - Price: ${updatedOffer.price}');
-    print('   - Commission: ${updatedOffer.presentageCommission}%');
-
-    return updatedOffer;
-  }
-
-  List<TravellerPricing> _extractUpdatedTravelerPricing(
-    List<dynamic> travelerPricings,
-  ) {
-    return travelerPricings.map((pricing) {
-      final priceData = pricing['price'];
-
-      // SAFELY extract values - handle both string and numeric values
-      final total =
-          safeParseDouble(priceData?['total'])?.toString() ??
-          (priceData?['total']?.toString() ?? '0');
-      final base =
-          safeParseDouble(priceData?['base'])?.toString() ??
-          (priceData?['base']?.toString() ?? '0');
-      final tax = safeParseDouble(priceData?['tax']) ?? 0.0;
-
-      return TravellerPricing(
-        travelerType: pricing['travelerType']?.toString() ?? '',
-        total: total,
-        base: base,
-        tax: tax,
-        travelClass:
-            pricing['fareDetailsBySegment']?[0]?['cabin']?.toString() ??
-            pricing['class']?.toString() ??
-            '',
-        allowedBags: BaggageAllowance(quantity: '', weight: ''),
-        cabinBagsAllowed: 0,
-        fareDetails: [],
-      );
-    }).toList();
+    // Return the original flight offer unchanged
+    return original;
   }
 
   void updatePassengerFirstName(int index, String firstName) {
@@ -418,6 +336,14 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
     final updatedPassengers = List<Passenger>.from(state.passengers);
     updatedPassengers[index] = updatedPassengers[index].copyWith(
       passportNumber: passportNumber,
+    );
+    emit(state.copyWith(passengers: updatedPassengers));
+  }
+
+  void updatePassengerGender(int index, String gender) {
+    final updatedPassengers = List<Passenger>.from(state.passengers);
+    updatedPassengers[index] = updatedPassengers[index].copyWith(
+      gender: gender,
     );
     emit(state.copyWith(passengers: updatedPassengers));
   }
@@ -478,20 +404,25 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
   }
 
   void submitPassengerInfo() {
-    if (!state.isFormValid || state.isLoading) return;
+    if (_hasSubmitted || state.isLoading) return;
+    if (!state.isFormValid) return;
 
+    _hasSubmitted = true;
     emit(state.copyWith(isLoading: true));
 
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(Duration(milliseconds: 300), () {
       emit(state.copyWith(isLoading: false, isSubmitted: true));
-      // Navigate to payment screen
     });
+  }
+
+  void resetSubmission() {
+    _hasSubmitted = false;
+    emit(state.copyWith(isSubmitted: false));
   }
 
   @override
   Future<void> close() {
-    // Clean up any resources if needed
+    _hasSubmitted = false;
     return super.close();
   }
 }

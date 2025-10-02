@@ -17,8 +17,8 @@ class PassengerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = passenger.firstName.isNotEmpty &&
-        passenger.lastName.isNotEmpty;
+    final isCompleted =
+        passenger.firstName.isNotEmpty && passenger.lastName.isNotEmpty;
 
     IconData getIconForPassengerType() {
       switch (passenger.type) {
@@ -71,9 +71,7 @@ class PassengerCard extends StatelessWidget {
           ),
           child: Icon(
             isCompleted ? getIconForPassengerType() : Icons.person_add,
-            color: isCompleted
-                ? getColorForPassengerType()
-                : Colors.grey[600],
+            color: isCompleted ? getColorForPassengerType() : Colors.grey[600],
           ),
         ),
         title: Text(
@@ -94,10 +92,7 @@ class PassengerCard extends StatelessWidget {
               )
             : Text(
                 'Tap to add details',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
         trailing: IconButton(
           icon: Icon(

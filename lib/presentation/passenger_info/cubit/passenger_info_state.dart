@@ -1,16 +1,19 @@
-// lib/presentation/passenger_info/cubit/passenger_info_state.dart
 part of 'passenger_info_cubit.dart';
 
 class PassengerInfoState {
   final List<Passenger> passengers;
   final String contactEmail;
   final String contactPhone;
-  final String countryCode; // Add this field
+  final String countryCode;
   final bool isLoading;
   final bool isSubmitted;
   final FlightOffer originalFlightOffer;
   final FlightOffer currentFlightOffer;
   final String? errorMessage;
+  final FlightPricingResponse? pricingResponse;
+  final double? updatedPrice;
+  final double? administrationFee;
+  final double? grandTotal;
 
   const PassengerInfoState({
     required this.passengers,
@@ -22,6 +25,10 @@ class PassengerInfoState {
     this.isLoading = false,
     this.isSubmitted = false,
     this.errorMessage,
+    this.pricingResponse,
+    this.updatedPrice,
+    this.administrationFee,
+    this.grandTotal,
   });
 
   factory PassengerInfoState.initial(FlightOffer flightOffer) {
@@ -32,7 +39,7 @@ class PassengerInfoState {
       passengers.add(
         Passenger(
           type: TravelerType.ADULT,
-          title: 'Mr',
+          title: '',
           firstName: '',
           lastName: '',
           dateOfBirth: '',
@@ -49,7 +56,7 @@ class PassengerInfoState {
       passengers.add(
         Passenger(
           type: TravelerType.CHILD,
-          title: 'Miss',
+          title: '',
           firstName: '',
           lastName: '',
           dateOfBirth: '',
@@ -66,7 +73,7 @@ class PassengerInfoState {
       passengers.add(
         Passenger(
           type: TravelerType.INFANT,
-          title: 'Miss',
+          title: '',
           firstName: '',
           lastName: '',
           dateOfBirth: '',
@@ -85,11 +92,14 @@ class PassengerInfoState {
       countryCode: '+966',
       originalFlightOffer: flightOffer,
       currentFlightOffer: flightOffer,
+      pricingResponse: null,
+      updatedPrice: flightOffer.price,
+      administrationFee: 0.0,
+      grandTotal: flightOffer.price,
     );
   }
 
   bool get isFormValid {
-    // Check if all passenger fields are filled with valid data
     final allPassengersValid = passengers.every(
       (passenger) =>
           passenger.title.isNotEmpty &&
@@ -103,8 +113,6 @@ class PassengerInfoState {
           passenger.passportExpiry.isNotEmpty &&
           isValidDate(passenger.passportExpiry),
     );
-
-    // Check if contact information is filled
     final contactValid =
         contactEmail.isNotEmpty &&
         contactPhone.isNotEmpty &&
@@ -122,6 +130,10 @@ class PassengerInfoState {
     bool? isSubmitted,
     FlightOffer? currentFlightOffer,
     String? errorMessage,
+    FlightPricingResponse? pricingResponse,
+    double? updatedPrice,
+    double? administrationFee,
+    double? grandTotal,
   }) {
     return PassengerInfoState(
       passengers: passengers ?? this.passengers,
@@ -133,6 +145,10 @@ class PassengerInfoState {
       originalFlightOffer: originalFlightOffer,
       currentFlightOffer: currentFlightOffer ?? this.currentFlightOffer,
       errorMessage: errorMessage ?? this.errorMessage,
+      pricingResponse: pricingResponse ?? this.pricingResponse,
+      updatedPrice: updatedPrice ?? this.updatedPrice,
+      administrationFee: administrationFee ?? this.administrationFee,
+      grandTotal: grandTotal ?? this.grandTotal,
     );
   }
 
@@ -142,6 +158,7 @@ class PassengerInfoState {
         'passengers: ${passengers.length}, '
         'isLoading: $isLoading, '
         'countryCode: $countryCode, '
+        'pricingResponse: ${pricingResponse != null}, '
         'errorMessage: $errorMessage'
         '}';
   }

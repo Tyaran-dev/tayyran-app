@@ -5,6 +5,7 @@ import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
+import 'package:tayyran_app/data/repositories/payment_repository.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
@@ -19,6 +20,11 @@ import 'package:tayyran_app/presentation/onboarding/cubit/onboarding_cubit.dart'
 import 'package:tayyran_app/presentation/onboarding/onboarding_screen.dart';
 import 'package:tayyran_app/presentation/passenger_info/cubit/passenger_info_cubit.dart';
 import 'package:tayyran_app/presentation/passenger_info/passenger_info_screen.dart';
+import 'package:tayyran_app/presentation/payment/cubit/payment_cubit.dart';
+import 'package:tayyran_app/presentation/payment/model/payment_arguments.dart';
+import 'package:tayyran_app/presentation/payment/payment_screen.dart';
+import 'package:tayyran_app/presentation/payment_status/cubit/payment_status_cubit.dart';
+import 'package:tayyran_app/presentation/payment_status/payment_status_screen.dart';
 import 'package:tayyran_app/presentation/profile/profile_screen.dart';
 import 'package:tayyran_app/presentation/splash/splash_screen.dart';
 import 'package:tayyran_app/presentation/stay/stay_screen.dart';
@@ -130,7 +136,35 @@ class AppRoutes {
           ),
           settings: const RouteSettings(name: RouteNames.passengerInfo),
         );
+      case RouteNames.payment:
+        final args = settings.arguments as PaymentArguments;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => PaymentCubit(
+              getIt<PaymentRepository>(), // Inject repository here
+              args,
+            ),
+            child: PaymentScreen(args: args),
+          ),
+          settings: const RouteSettings(name: RouteNames.payment),
+        );
 
+      case RouteNames.paymentStatus:
+        final arguments = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (context) => PaymentStatusCubit(
+              getIt<PaymentRepository>(), // Inject PaymentRepository here
+              arguments['invoiceId'],
+              arguments['args'],
+            ),
+            child: PaymentStatusScreen(
+              invoiceId: arguments['invoiceId'],
+              args: arguments['args'],
+            ),
+          ),
+          settings: const RouteSettings(name: RouteNames.paymentStatus),
+        );
       default:
         return MaterialPageRoute(
           builder: (_) => PopScope(

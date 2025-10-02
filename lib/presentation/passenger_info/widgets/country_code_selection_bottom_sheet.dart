@@ -36,7 +36,8 @@ class _CountryCodeSelectionBottomSheetState
             (country) =>
                 country['name_en']!.toLowerCase().contains(query) ||
                 country['dial_code']!.contains(query) ||
-                country['name_ar']!.toLowerCase().contains(query),
+                country['name_ar']!.toLowerCase().contains(query) ||
+                country['code']!.toLowerCase().contains(query),
           )
           .toList();
     });
@@ -81,6 +82,7 @@ class _CountryCodeSelectionBottomSheetState
                 title: Text(_filteredCountries[index]['name_en']!),
                 subtitle: Text(_filteredCountries[index]['name_ar']!),
                 trailing: Text(_filteredCountries[index]['dial_code']!),
+
                 onTap: () => Navigator.pop(context, _filteredCountries[index]),
               ),
             ),

@@ -1,6 +1,7 @@
 // lib/presentation/passenger_info/widgets/passenger_form_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
 import 'package:tayyran_app/data/models/passenger_model.dart';
 import 'package:tayyran_app/presentation/passenger_info/cubit/passenger_info_cubit.dart';
@@ -49,13 +50,13 @@ class _PassengerFormBottomSheetState extends State<PassengerFormBottomSheet> {
         text: passenger.passportNumber,
       );
       _issuingCountryController = TextEditingController(
-        text: passenger.issuingCountry,
+        text: getCountryNameFromCode(passenger.issuingCountry),
       );
       _passportExpiryController = TextEditingController(
         text: passenger.passportExpiry,
       );
       _nationalityController = TextEditingController(
-        text: passenger.nationality,
+        text: getCountryNameFromCode(passenger.nationality),
       );
     } else {
       _selectedTitle = 'Mr';
@@ -341,9 +342,9 @@ class _PassengerFormBottomSheetState extends State<PassengerFormBottomSheet> {
     if (selectedCountry != null && mounted) {
       setState(() {
         if (isNationality) {
-          _nationalityController.text = selectedCountry['nationality_en']!;
+          _nationalityController.text = selectedCountry['code']!;
         } else {
-          _issuingCountryController.text = selectedCountry['name_en']!;
+          _issuingCountryController.text = selectedCountry['code']!;
         }
       });
     }
