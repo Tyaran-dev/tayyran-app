@@ -111,10 +111,6 @@ class PassengerInfoScreen extends StatelessWidget {
     cubit.resetSubmission();
 
     final flightOffer = state.currentFlightOffer;
-    double presentageCommission = flightOffer.presentageCommission;
-    double administrationFee = flightOffer.price * (presentageCommission / 100);
-    double totalWithCommission = flightOffer.price + administrationFee;
-
     // Debug: Print what we're passing to payment
     debugPrint("🚀 Navigating to payment with:");
     debugPrint("  - Passengers count: ${state.passengers.length}");
@@ -131,9 +127,9 @@ class PassengerInfoScreen extends StatelessWidget {
         "  Passenger ${i + 1}: ${passenger.firstName} ${passenger.lastName}",
       );
     }
-
+    final grandTotal = state.grandTotal ?? state.currentFlightOffer.price;
     final paymentArgs = PaymentArguments(
-      amount: totalWithCommission,
+      amount: grandTotal,
       email: state.contactEmail,
       phoneNumber: state.contactPhone,
       countryCode: state.countryCode,

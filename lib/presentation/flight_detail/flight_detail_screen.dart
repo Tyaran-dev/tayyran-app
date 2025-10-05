@@ -727,17 +727,28 @@ class FlightDetailScreen extends StatelessWidget {
         final flight = state.flightOffer;
 
         double presentageCommission = 0.0;
+        double presentageVat = 0.0;
         double administrationFee = 0.0;
-        double totalWithCommission = flight.price;
+        double vatAmount = 0.0;
+        double totalWithFees = flight.price;
 
         try {
           presentageCommission = flight.presentageCommission;
+          presentageVat = flight.presentageVat;
+
+          // ✅ CORRECT: Calculate administration fee on base price
           administrationFee = flight.price * (presentageCommission / 100);
-          totalWithCommission = flight.price + administrationFee;
+
+          // ✅ CORRECT: Calculate VAT on administration fee only
+          vatAmount = administrationFee * (presentageVat / 100);
+
+          totalWithFees = flight.price + administrationFee + vatAmount;
         } catch (e) {
           presentageCommission = 0.0;
+          presentageVat = 0.0;
           administrationFee = 0.0;
-          totalWithCommission = flight.price;
+          vatAmount = 0.0;
+          totalWithFees = flight.price;
         }
 
         return Container(
@@ -746,7 +757,7 @@ class FlightDetailScreen extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -775,7 +786,7 @@ class FlightDetailScreen extends StatelessWidget {
                           )
                         else
                           Text(
-                            totalWithCommission.toStringAsFixed(2),
+                            totalWithFees.toStringAsFixed(2),
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -823,9 +834,7 @@ class FlightDetailScreen extends StatelessWidget {
                           Navigator.pushNamed(
                             context,
                             RouteNames.passengerInfo,
-                            arguments: flight.copyWith(
-                              price: totalWithCommission,
-                            ),
+                            arguments: flight.copyWith(price: totalWithFees),
                           );
                         },
                   text: state.isLoading ? 'Updating...' : 'Book',
@@ -848,19 +857,30 @@ class FlightDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        // Calculate commission values
+        // Calculate commission and VAT values
         double presentageCommission = 0.0;
+        double presentageVat = 0.0;
         double administrationFee = 0.0;
-        double totalWithCommission = flight.price;
+        double vatAmount = 0.0;
+        double totalWithFees = flight.price;
 
         try {
           presentageCommission = flight.presentageCommission;
+          presentageVat = flight.presentageVat;
+
+          // ✅ CORRECT: Administration fee on base price
           administrationFee = flight.price * (presentageCommission / 100);
-          totalWithCommission = flight.price + administrationFee;
+
+          // ✅ CORRECT: VAT on administration fee only
+          vatAmount = administrationFee * (presentageVat / 100);
+
+          totalWithFees = flight.price + administrationFee + vatAmount;
         } catch (e) {
           presentageCommission = 0.0;
+          presentageVat = 0.0;
           administrationFee = 0.0;
-          totalWithCommission = flight.price;
+          vatAmount = 0.0;
+          totalWithFees = flight.price;
         }
 
         final travelerNumbers = <String, int>{};
@@ -868,7 +888,7 @@ class FlightDetailScreen extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             final maxHeight = MediaQuery.of(context).size.height * 0.8;
-            final baseContentHeight = 315.0; // Increased for commission section
+            final baseContentHeight = 350.0; // Increased for VAT section
             final passengerContentHeight =
                 flight.travellerPricing.length * 120.0;
             final contentHeight = baseContentHeight + passengerContentHeight;
@@ -969,7 +989,7 @@ class FlightDetailScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Administration Fee ($presentageCommission%)',
+                                'Administration Fee ',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[700],
@@ -977,6 +997,30 @@ class FlightDetailScreen extends StatelessWidget {
                               ),
                               Text(
                                 '${administrationFee.toStringAsFixed(2)} ${flight.currency}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+
+                        // VAT breakdown
+                        if (presentageVat > 0) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'VAT ($presentageVat%)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Text(
+                                '${vatAmount.toStringAsFixed(2)} ${flight.currency}',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[700],
@@ -1002,7 +1046,7 @@ class FlightDetailScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '${totalWithCommission.toStringAsFixed(2)} ${flight.currency}',
+                              '${totalWithFees.toStringAsFixed(2)} ${flight.currency}',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,

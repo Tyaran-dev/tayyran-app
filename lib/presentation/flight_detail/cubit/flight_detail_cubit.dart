@@ -22,84 +22,10 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     print('🚀 FlightDetailCubit created');
     print('📊 Initial price: ${flightOffer.price}');
     print("presentage Commission price: ${flightOffer.presentageCommission}");
+    print("presentageVat price: ${flightOffer.presentageVat}");
     // Auto-update pricing when cubit is created
     // _autoUpdatePricing();
   }
-
-  // void _autoUpdatePricing() {
-  //   if (!_hasAutoUpdated) {
-  //     print('⚡ Auto-updating pricing...');
-  //     _hasAutoUpdated = true;
-  //     updateFlightPricing();
-  //   } else {
-  //     print('⏩ Pricing already auto-updated, skipping');
-  //   }
-  // }
-
-  // Future<void> updateFlightPricing() async {
-  //   if (state.isLoading) return;
-
-  //   print('🔄 updateFlightPricing() called');
-  //   print('📊 Original price: ${_originalFlightOffer.price}');
-  //   print(
-  //     '📊 Original commission: ${_originalFlightOffer.presentageCommission}%',
-  //   );
-
-  //   emit(state.copyWith(isLoading: true, errorMessage: null));
-
-  //   try {
-  //     final pricingData = _preparePricingRequestData(_originalFlightOffer);
-  //     print('📤 Sending pricing request...');
-
-  //     final pricingResponse = await _pricingRepository.getFlightPricing(
-  //       pricingData,
-  //     );
-
-  //     print('✅ Received pricing response');
-  //     print('📋 Response success: ${pricingResponse['success']}');
-  //     print('📋 Response message: ${pricingResponse['message']}');
-
-  //     if (pricingResponse['success'] == true) {
-  //       // Debug the full response structure
-  //       _debugResponseStructure;
-  //       print('🔍 Full response structure:');
-  //       printNestedMap(pricingResponse);
-
-  //       final updatedFlightOffer = _mergeFlightOfferWithPricing(
-  //         _originalFlightOffer,
-  //         pricingResponse,
-  //       );
-
-  //       print('🎉 Update completed:');
-  //       print('   - New price: ${updatedFlightOffer.price}');
-  //       print(
-  //         '   - New commission: ${updatedFlightOffer.presentageCommission}%',
-  //       );
-
-  //       emit(
-  //         state.copyWith(
-  //           flightOffer: updatedFlightOffer,
-  //           isLoading: false,
-  //           errorMessage: null,
-  //         ),
-  //       );
-  //     } else {
-  //       print('❌ Pricing API returned success: false');
-  //       final errorMessage =
-  //           pricingResponse['message'] ?? 'Failed to update pricing';
-  //       emit(state.copyWith(isLoading: false, errorMessage: errorMessage));
-  //     }
-  //   } catch (e, stackTrace) {
-  //     print('🔥 Error in updateFlightPricing: $e');
-  //     print('📋 Stack trace: $stackTrace');
-  //     emit(
-  //       state.copyWith(
-  //         isLoading: false,
-  //         errorMessage: 'Failed to update flight pricing: $e',
-  //       ),
-  //     );
-  //   }
-  // }
 
   Future<void> updateFlightPricing() async {
     if (state.isLoading) return;
@@ -395,9 +321,11 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
 
     final pricingOffer = pricingResponse.data.flightOffers.first;
     final presentageCommission = pricingResponse.presentageCommission;
+    final presentageVat = pricingResponse.presentageVat; // Add this
 
     print('💰 Commission from response: $presentageCommission');
     print('💰 Grand Total: ${pricingOffer.price.grandTotal}');
+    print('💰 VAT from response: $presentageVat'); // Add this
 
     // Extract updated traveler pricing if available
     final updatedTravelerPricing = _extractUpdatedTravelerPricing(
@@ -407,6 +335,7 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     final updatedOffer = original.copyWith(
       price: pricingOffer.price.grandTotalAsDouble,
       presentageCommission: presentageCommission,
+      presentageVat: presentageVat, // Add this
       travellerPricing: updatedTravelerPricing.isNotEmpty
           ? updatedTravelerPricing
           : original.travellerPricing,
@@ -418,6 +347,7 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     print(
       '   - Traveler Pricing Count: ${updatedOffer.travellerPricing.length}',
     );
+    print('   - VAT: ${updatedOffer.presentageVat}%'); // Add this
 
     return updatedOffer;
   }

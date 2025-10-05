@@ -154,14 +154,10 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
             create: (context) => PaymentStatusCubit(
-              getIt<PaymentRepository>(), // Inject PaymentRepository here
+              getIt<PaymentRepository>(),
               arguments['invoiceId'],
-              arguments['args'],
             ),
-            child: PaymentStatusScreen(
-              invoiceId: arguments['invoiceId'],
-              args: arguments['args'],
-            ),
+            child: PaymentStatusScreen(invoiceId: arguments['invoiceId']),
           ),
           settings: const RouteSettings(name: RouteNames.paymentStatus),
         );

@@ -5,6 +5,7 @@ class FlightPricingResponse {
   final FlightPricingData data;
   final Map<String, dynamic>? dictionaries;
   final double presentageCommission;
+  final double presentageVat;
   final String? message;
 
   FlightPricingResponse({
@@ -12,6 +13,7 @@ class FlightPricingResponse {
     required this.data,
     this.dictionaries,
     required this.presentageCommission,
+    required this.presentageVat,
     this.message,
   });
 
@@ -24,6 +26,8 @@ class FlightPricingResponse {
           : null,
       presentageCommission:
           (json['presentageCommission'] as num?)?.toDouble() ?? 0.0,
+      presentageVat: (json['presentageVat'] as num?)?.toDouble() ?? 0.0,
+
       message: json['message'],
     );
   }
@@ -34,6 +38,7 @@ class FlightPricingResponse {
       'data': data.toJson(),
       'dictionaries': dictionaries,
       'presentageCommission': presentageCommission,
+      'presentageVat': presentageVat,
       'message': message,
     };
   }

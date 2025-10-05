@@ -5,11 +5,15 @@ class FlightSearchResponse {
   final Filters filters;
   final String? message;
   final double presentageCommission;
+  final double presentageVat;
+
   FlightSearchResponse({
     required this.success,
     required this.data,
     required this.filters,
     required this.presentageCommission,
+    required this.presentageVat,
+
     this.message,
   });
 
@@ -24,6 +28,7 @@ class FlightSearchResponse {
               filters: filters,
               presentageCommission:
                   (json['presentageCommission'] as num?)?.toDouble() ?? 0.0,
+              presentageVat: (json['presentageVat'] as num?)?.toDouble() ?? 0.0,
             ),
           ) // Pass filters here
           .toList(),
@@ -31,6 +36,7 @@ class FlightSearchResponse {
       message: json['message'],
       presentageCommission:
           (json['presentageCommission'] as num?)?.toDouble() ?? 0.0,
+      presentageVat: (json['presentageVat'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -169,6 +175,7 @@ class FlightOffer {
   final List<String> destinations;
   final Map<String, dynamic> originalResponse;
   final double presentageCommission;
+  final double presentageVat;
   final List<String> validatingAirlineCodes;
 
   FlightOffer({
@@ -212,6 +219,7 @@ class FlightOffer {
     required this.destinations,
     required this.originalResponse,
     required this.presentageCommission,
+    required this.presentageVat,
     required this.validatingAirlineCodes,
   });
 
@@ -263,12 +271,15 @@ class FlightOffer {
       "destinations": destinations,
       "originalResponse": originalResponse,
       "presentageCommission": presentageCommission,
+      "presentageVat": presentageVat,
+
       "validatingAirlineCodes": validatingAirlineCodes,
     };
   }
 
   FlightOffer copyWith({
     double? presentageCommission,
+    double? presentageVat,
     String? id,
     String? mapping,
     String? type,
@@ -312,6 +323,7 @@ class FlightOffer {
   }) {
     return FlightOffer(
       presentageCommission: presentageCommission ?? this.presentageCommission,
+      presentageVat: presentageVat ?? this.presentageVat,
       id: id ?? this.id,
       mapping: mapping ?? this.mapping,
       type: type ?? this.type,
@@ -362,6 +374,7 @@ class FlightOffer {
     Map<String, dynamic> json, {
     Filters? filters,
     double presentageCommission = 0.0,
+    double presentageVat = 0.0,
   }) {
     final firstItinerary =
         (json["itineraries_formated"] as List<dynamic>? ?? []).isNotEmpty
@@ -452,6 +465,8 @@ class FlightOffer {
       presentageCommission:
           (json['presentageCommission'] as num?)?.toDouble() ??
           presentageCommission,
+      presentageVat:
+          (json['presentageVat'] as num?)?.toDouble() ?? presentageVat,
       validatingAirlineCodes: List<String>.from(
         json['validatingAirlineCodes'] ?? [],
       ),

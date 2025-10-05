@@ -140,3 +140,13 @@ String getCountryNameFromCode(String countryCode) {
   );
   return country['name_en']!;
 }
+
+String formatTime(String dateTimeString) {
+  final dateTime = DateTime.parse(dateTimeString);
+  return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+}
+
+String formatDateString(String dateString) {
+  final date = DateTime.parse(dateString);
+  return '${date.day}/${date.month}/${date.year}';
+}

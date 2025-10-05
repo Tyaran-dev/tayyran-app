@@ -13,6 +13,7 @@ class PassengerInfoState {
   final FlightPricingResponse? pricingResponse;
   final double? updatedPrice;
   final double? administrationFee;
+  final double? presentageVat;
   final double? grandTotal;
 
   const PassengerInfoState({
@@ -27,6 +28,7 @@ class PassengerInfoState {
     this.errorMessage,
     this.pricingResponse,
     this.updatedPrice,
+    this.presentageVat,
     this.administrationFee,
     this.grandTotal,
   });
@@ -133,6 +135,7 @@ class PassengerInfoState {
     FlightPricingResponse? pricingResponse,
     double? updatedPrice,
     double? administrationFee,
+    double? presentageVat,
     double? grandTotal,
   }) {
     return PassengerInfoState(
@@ -148,6 +151,7 @@ class PassengerInfoState {
       pricingResponse: pricingResponse ?? this.pricingResponse,
       updatedPrice: updatedPrice ?? this.updatedPrice,
       administrationFee: administrationFee ?? this.administrationFee,
+      presentageVat: presentageVat ?? this.presentageVat,
       grandTotal: grandTotal ?? this.grandTotal,
     );
   }

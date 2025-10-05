@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
         },
         onGenerateRoute: AppRoutes.generateRoute,
         initialRoute: RouteNames.splash,
-        // home: PaymentScreen(),
+        // home: PaymentStatusScreen(),
       ),
     );
   }
