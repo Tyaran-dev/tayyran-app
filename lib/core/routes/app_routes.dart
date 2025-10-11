@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
-import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
 import 'package:tayyran_app/data/repositories/payment_repository.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/booking/booking_screen.dart';
 import 'package:tayyran_app/presentation/discount/discount_screen.dart';
+import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
 import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
@@ -112,11 +112,14 @@ class AppRoutes {
         );
 
       case RouteNames.flightDetail:
-        final flightOffer = settings.arguments as FlightOffer;
+        final arg = settings.arguments as TicketArguments;
+        final flightOffer = arg.flightOffer;
+        final filterCarrier = arg.filters;
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
             create: (_) => FlightDetailCubit(
               flightOffer: flightOffer,
+              filterCarrier: filterCarrier,
               pricingRepository: getIt<FlightPricingRepository>(),
             ),
             child: const FlightDetailScreen(),
@@ -125,11 +128,12 @@ class AppRoutes {
         );
 
       case RouteNames.passengerInfo:
-        final flightOffer = settings.arguments as FlightOffer;
+        final args = settings.arguments as TicketArguments;
         return MaterialPageRoute(
           builder: (_) => BlocProvider(
             create: (_) => PassengerInfoCubit(
-              flightOffer: flightOffer,
+              flightOffer: args.flightOffer,
+              filters: args.filters, // Pass filters to cubit
               pricingRepository: getIt<FlightPricingRepository>(),
             ),
             child: const PassengerInfoScreen(),

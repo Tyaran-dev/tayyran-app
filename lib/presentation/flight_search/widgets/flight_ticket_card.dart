@@ -1,8 +1,8 @@
-// lib/presentation/flight_search/widgets/flight_ticket_card.dart (updated)
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
 
 class FlightTicketCard extends StatelessWidget {
@@ -19,7 +19,10 @@ class FlightTicketCard extends StatelessWidget {
         Navigator.pushNamed(
           context,
           RouteNames.flightDetail,
-          arguments: ticket.flightOffer,
+          arguments: TicketArguments(
+            flightOffer: ticket.flightOffer,
+            filters: ticket.filterCarrier,
+          ),
         );
       },
       child: Card(
@@ -31,24 +34,15 @@ class FlightTicketCard extends StatelessWidget {
           padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              // Airline Header
-              _buildAirlineHeader(),
-              SizedBox(height: 8),
+              if (ticket.flightType == "multi") _buildPriceHeader(),
+              SizedBox(height: 12),
+              if (ticket.flightType == "multi")
+                _buildMultiCitySimpleLayout(context, isArabic)
+              else
+                _buildFlightDirectionWithArrow(context, isArabic),
 
-              // NEW LAYOUT: Direction centered with arrow image
-              _buildFlightDirectionWithArrow(context, isArabic),
               SizedBox(height: 16),
-
-              // Flight Times and Dates
-              _buildFlightTimesAndDates(isArabic),
-              SizedBox(height: 16),
-
-              // Seats Remaining and Tax Disclaimer
               _buildSeatsAndTaxInfo(),
-              SizedBox(height: 16),
-
-              // Book Now Button
-              // _buildBookButton(),
             ],
           ),
         ),
@@ -56,21 +50,31 @@ class FlightTicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAirlineHeader() {
+  Widget _buildPriceHeader() {
     return Row(
       children: [
-        CircleAvatar(
-          backgroundColor: Colors.transparent,
-          backgroundImage: NetworkImage(ticket.airlineLogo),
-          radius: 16,
-        ),
-        SizedBox(width: 8),
-        // Airline Name
-        Text(
-          ticket.airline,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
         Spacer(),
+        SizedBox(width: 50),
+        // Multi-city badge
+        if (ticket.flightType == "multi")
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.splashBackgroundColorEnd.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              'Multi-City Journey',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.splashBackgroundColorEnd,
+              ),
+            ),
+          ),
+
+        Spacer(),
+
         // Price with Currency Icon
         Row(
           children: [
@@ -90,8 +94,200 @@ class FlightTicketCard extends StatelessWidget {
     );
   }
 
+  // Simple Multi-City Layout
+  Widget _buildMultiCitySimpleLayout(BuildContext context, bool isArabic) {
+    final flightOffer = ticket.flightOffer;
+    final itineraries = flightOffer.itineraries;
+
+    if (itineraries.isEmpty) return SizedBox();
+
+    return Column(
+      children: [
+        // All flight segments
+        Column(
+          children: List.generate(itineraries.length, (index) {
+            final itinerary = itineraries[index];
+            final departure = itinerary.departure;
+            final isLast = index == itineraries.length - 1;
+            final firstSegment = itinerary.segments.isNotEmpty
+                ? itinerary.segments[0]
+                : null;
+            final airlineLogo = firstSegment?.image ?? '';
+            return Column(
+              children: [
+                // Flight segment
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Column(
+                    children: [
+                      // Airline and route
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Airline logo
+                          if (airlineLogo.isNotEmpty)
+                            CircleAvatar(
+                              backgroundColor: Colors.transparent,
+                              backgroundImage: NetworkImage(airlineLogo),
+                              radius: 16,
+                            ),
+                          SizedBox(width: 8),
+
+                          // Route and times
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // From airport and time
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        itinerary.fromName,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    if (departure != null)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            departure.departureTime,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            departure.departureDate,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 8),
+
+                                // Duration and stops
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.flight_takeoff,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      itinerary.duration,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: departure?.stops == 0
+                                            ? Colors.green[50]
+                                            : Colors.orange[50],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        _getStopText(
+                                          departure?.stops ?? 0,
+                                          isArabic,
+                                        ),
+                                        style: TextStyle(
+                                          color: departure?.stops == 0
+                                              ? Colors.green
+                                              : Colors.orange,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 8),
+
+                                // To airport and time
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        itinerary.toName,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    if (departure != null)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            departure.arrivalTime,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            departure.arrivalDate,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isLast) ...[SizedBox(height: 16)],
+              ],
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  // Original one-way and round trip layout (unchanged)
   Widget _buildFlightDirectionWithArrow(BuildContext context, bool isArabic) {
-    // Extract airport codes for the main direction
     final fromParts = ticket.from.split(' - ');
     final toParts = ticket.to.split(' - ');
     final fromCode = fromParts.isNotEmpty ? fromParts[0] : '';
@@ -101,7 +297,40 @@ class FlightTicketCard extends StatelessWidget {
 
     return Column(
       children: [
-        // Main Direction (Centered)
+        // Airline info for one-way/round trips
+        Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.transparent,
+              backgroundImage: NetworkImage(ticket.airlineLogo),
+              radius: 16,
+            ),
+            SizedBox(width: 8),
+            Text(
+              ticket.airline,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Spacer(),
+            // Price with Currency Icon
+            Row(
+              children: [
+                Image.asset(AppAssets.currencyIcon, height: 25, width: 25),
+                SizedBox(width: 4),
+                Text(
+                  ticket.basePrice.toStringAsFixed(0),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: AppColors.splashBackgroundColorEnd,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+
+        // Route
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -120,14 +349,17 @@ class FlightTicketCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 5.0),
-              child: Text(
-                "→",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.splashBackgroundColorEnd,
-                ),
-              ),
+              child: ticket.flightType == "round"
+                  ? Icon(
+                      Icons.sync,
+                      size: 16,
+                      color: AppColors.splashBackgroundColorEnd,
+                    )
+                  : Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: AppColors.splashBackgroundColorEnd,
+                    ),
             ),
             Flexible(
               child: Text(
@@ -146,11 +378,10 @@ class FlightTicketCard extends StatelessWidget {
         ),
         SizedBox(height: 8),
 
-        // Arrow image between departure and arrival
+        // Airport codes with airplane
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Departure Airport Code
             Expanded(
               child: Text(
                 fromCode,
@@ -160,12 +391,8 @@ class FlightTicketCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-
-            // Arrow icon
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 8),
               child: Image.asset(
@@ -174,8 +401,6 @@ class FlightTicketCard extends StatelessWidget {
                 width: 165,
               ),
             ),
-
-            // Arrival Airport Code
             Expanded(
               child: Text(
                 toCode,
@@ -185,12 +410,12 @@ class FlightTicketCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
+        SizedBox(height: 16),
+        _buildFlightTimesAndDates(isArabic),
       ],
     );
   }
@@ -199,7 +424,6 @@ class FlightTicketCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        // Departure Time and Date
         Column(
           children: [
             Text(
@@ -213,8 +437,6 @@ class FlightTicketCard extends StatelessWidget {
             ),
           ],
         ),
-
-        // Flight Duration
         Column(
           children: [
             Text(
@@ -239,30 +461,11 @@ class FlightTicketCard extends StatelessWidget {
             ),
           ],
         ),
-
-        // Arrival Time and Date
         Column(
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  ticket.arrivalTime,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                // if (ticket.arrivesNextDay)
-                //   Padding(
-                //     padding: EdgeInsets.only(left: 4),
-                //     child: Text(
-                //       isArabic ? '+١' : '+1',
-                //       style: TextStyle(
-                //         fontSize: 10,
-                //         color: Colors.red,
-                //         fontWeight: FontWeight.bold,
-                //       ),
-                //     ),
-                //   ),
-              ],
+            Text(
+              ticket.arrivalTime,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 4),
             Text(
@@ -288,7 +491,6 @@ class FlightTicketCard extends StatelessWidget {
   Widget _buildSeatsAndTaxInfo() {
     return Column(
       children: [
-        // Seats Remaining
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -303,7 +505,6 @@ class FlightTicketCard extends StatelessWidget {
               ),
             ),
             Spacer(),
-            // Tax Disclaimer
             Text(
               '* The price excludes tax',
               style: TextStyle(

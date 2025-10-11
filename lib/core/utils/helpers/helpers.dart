@@ -1,5 +1,7 @@
 // lib/core/utils/helpers.dart
 
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:tayyran_app/data/country_data.dart';
 import 'package:tayyran_app/data/models/flight_pricing_response.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
@@ -149,4 +151,56 @@ String formatTime(String dateTimeString) {
 String formatDateString(String dateString) {
   final date = DateTime.parse(dateString);
   return '${date.day}/${date.month}/${date.year}';
+}
+
+// Helper methods
+String formatTimeAmPm(DateTime dateTime) =>
+    DateFormat('h:mm a').format(dateTime);
+String formatDateFull(DateTime dateTime) =>
+    DateFormat('MMM dd, yyyy').format(dateTime);
+
+IconData getFareRuleIcon(String category) {
+  switch (category) {
+    case 'EXCHANGE':
+      return Icons.swap_horiz;
+    case 'REFUND':
+      return Icons.currency_exchange;
+    case 'REVALIDATION':
+      return Icons.autorenew;
+    default:
+      return Icons.info_outline;
+  }
+}
+
+String getFareRuleTitle(String category) {
+  switch (category) {
+    case 'EXCHANGE':
+      return 'Flight Change';
+    case 'REFUND':
+      return 'Refund Policy';
+    case 'REVALIDATION':
+      return 'Revalidation';
+    default:
+      return category;
+  }
+}
+
+String formatTravelerTypeWithNumber(String type, int number) {
+  final baseType = formatTravelerType(type);
+  return '$baseType $number';
+}
+
+String formatTravelerType(String type) {
+  switch (type.toUpperCase()) {
+    case 'ADULT':
+      return 'Adult';
+    case 'CHILD':
+      return 'Child';
+    case 'INFANT':
+      return 'Infant';
+    case 'HELD_INFANT':
+      return 'Infant';
+    default:
+      return type;
+  }
 }

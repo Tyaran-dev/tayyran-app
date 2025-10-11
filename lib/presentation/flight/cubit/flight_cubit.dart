@@ -447,138 +447,134 @@ class FlightCubit extends Cubit<FlightState> {
     emit(state.copyWith(cabinClass: cabinClass));
   }
 
+  // MAIN SEARCH METHOD - CLEAR SEPARATION BETWEEN MULTI-CITY AND REGULAR SEARCHES
   Future<void> search(BuildContext context) async {
     if (state.tripType == "multi") {
-      // Validate all segments have required data
-      for (final segment in state.flightSegments) {
-        if (segment.from.isEmpty ||
-            segment.to.isEmpty ||
-            segment.date.isEmpty) {
-          return;
-        }
-      }
-
-      // Validate date sequence
-      if (!validateMultiCityDates()) {
-        return;
-      }
-
-      try {
-        final newSearch = RecentSearchModel(
-          from: state.flightSegments.first.from,
-          to: state.flightSegments.last.to,
-          date: state.flightSegments.first.date,
-          returnDate: "",
-          passengers: state.totalPassengers,
-          adults: state.adults,
-          children: state.children,
-          infants: state.infants,
-          flightClass: state.cabinClass,
-          timestamp: DateTime.now(),
-          type: 'flight',
-          tripType: state.tripType,
-        );
-
-        // Only save to recent searches if it's not a duplicate
-        if (!_isDuplicateSearch(newSearch)) {
-          final allSearches =
-              await SharedPreferencesService.loadRecentSearches();
-          final flightSearches = allSearches
-              .where((search) => search['type'] == 'flight')
-              .map((json) => RecentSearchModel.fromJson(json))
-              .toList();
-
-          final updatedFlightSearches = List<RecentSearchModel>.from(
-            flightSearches,
-          )..insert(0, newSearch);
-
-          if (updatedFlightSearches.length > 5) {
-            updatedFlightSearches.removeLast();
-          }
-
-          final nonFlightSearches = allSearches
-              .where((search) => search['type'] != 'flight')
-              .toList();
-
-          final allUpdatedSearches = [
-            ...updatedFlightSearches.map((search) => search.toJson()),
-            ...nonFlightSearches,
-          ];
-
-          await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
-          emit(state.copyWith(recentSearches: updatedFlightSearches));
-        }
-
-        navigateToSearchResults(context);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error in multi-city search: $e');
-        }
-      }
+      await _handleMultiCitySearch(context);
     } else {
-      if (state.from.isEmpty ||
-          state.to.isEmpty ||
-          state.departureDate.isEmpty) {
-        return;
-      }
+      await _handleRegularSearch(context);
+    }
+  }
 
-      if (state.tripType == "round" && state.returnDate.isEmpty) {
-        return;
-      }
-
-      try {
-        final newSearch = RecentSearchModel(
-          from: state.from,
-          to: state.to,
-          date: state.departureDate,
-          returnDate: state.tripType == "round" ? state.returnDate : "",
-          passengers: state.totalPassengers,
-          adults: state.adults,
-          children: state.children,
-          infants: state.infants,
-          flightClass: state.cabinClass,
-          timestamp: DateTime.now(),
-          type: 'flight',
-          tripType: state.tripType,
+  Future<void> _handleMultiCitySearch(BuildContext context) async {
+    // Validate all segments have required data
+    for (final segment in state.flightSegments) {
+      if (segment.from.isEmpty || segment.to.isEmpty || segment.date.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please fill all flight segments")),
         );
-
-        // Only save to recent searches if it's not a duplicate
-        if (!_isDuplicateSearch(newSearch)) {
-          final allSearches =
-              await SharedPreferencesService.loadRecentSearches();
-          final flightSearches = allSearches
-              .where((search) => search['type'] == 'flight')
-              .map((json) => RecentSearchModel.fromJson(json))
-              .toList();
-
-          final updatedFlightSearches = List<RecentSearchModel>.from(
-            flightSearches,
-          )..insert(0, newSearch);
-
-          if (updatedFlightSearches.length > 5) {
-            updatedFlightSearches.removeLast();
-          }
-
-          final nonFlightSearches = allSearches
-              .where((search) => search['type'] != 'flight')
-              .toList();
-
-          final allUpdatedSearches = [
-            ...updatedFlightSearches.map((search) => search.toJson()),
-            ...nonFlightSearches,
-          ];
-
-          await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
-          emit(state.copyWith(recentSearches: updatedFlightSearches));
-        }
-
-        // ALWAYS navigate to search results, even for duplicates
-        navigateToSearchResults(context);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error in regular search: $e');
-        }
+        return;
       }
+    }
+
+    // Validate date sequence
+    if (!validateMultiCityDates()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Flight dates must be in chronological order"),
+        ),
+      );
+      return;
+    }
+
+    // SKIP RECENT SEARCHES FOR MULTI-CITY - JUST NAVIGATE TO RESULTS
+    print('🔍 Multi-city search - skipping recent searches');
+    navigateToSearchResults(context);
+  }
+
+  Future<void> _handleRegularSearch(BuildContext context) async {
+    // Validate required fields
+    if (state.from.isEmpty || state.to.isEmpty || state.departureDate.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all required fields")),
+      );
+      return;
+    }
+
+    // Validate return date for round trips
+    if (state.tripType == "round" && state.returnDate.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select return date")),
+      );
+      return;
+    }
+
+    // Validate date logic for round trips
+    if (state.tripType == "round" &&
+        state.departureDate.isNotEmpty &&
+        state.returnDate.isNotEmpty) {
+      final departure = _parseDate(state.departureDate);
+      final returnDate = _parseDate(state.returnDate);
+
+      if (returnDate.isBefore(departure.add(const Duration(days: 1)))) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Return date must be after departure date"),
+          ),
+        );
+        return;
+      }
+    }
+
+    try {
+      final newSearch = RecentSearchModel(
+        from: state.from,
+        to: state.to,
+        date: state.departureDate,
+        returnDate: state.tripType == "round" ? state.returnDate : "",
+        passengers: state.totalPassengers,
+        adults: state.adults,
+        children: state.children,
+        infants: state.infants,
+        flightClass: state.cabinClass,
+        timestamp: DateTime.now(),
+        type: 'flight',
+        tripType: state.tripType,
+      );
+
+      // Only save to recent searches if it's not a duplicate
+      if (!_isDuplicateSearch(newSearch)) {
+        final allSearches = await SharedPreferencesService.loadRecentSearches();
+        final flightSearches = allSearches
+            .where((search) => search['type'] == 'flight')
+            .map((json) => RecentSearchModel.fromJson(json))
+            .toList();
+
+        final updatedFlightSearches = List<RecentSearchModel>.from(
+          flightSearches,
+        )..insert(0, newSearch);
+
+        // Keep only the 5 most recent searches
+        if (updatedFlightSearches.length > 5) {
+          updatedFlightSearches.removeLast();
+        }
+
+        final nonFlightSearches = allSearches
+            .where((search) => search['type'] != 'flight')
+            .toList();
+
+        final allUpdatedSearches = [
+          ...updatedFlightSearches.map((search) => search.toJson()),
+          ...nonFlightSearches,
+        ];
+
+        await SharedPreferencesService.saveRecentSearches(allUpdatedSearches);
+        emit(state.copyWith(recentSearches: updatedFlightSearches));
+
+        print('💾 Saved regular search to recent searches');
+      } else {
+        print('🔍 Duplicate search - not saving to recent searches');
+      }
+
+      // Navigate to search results
+      navigateToSearchResults(context);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in regular search: $e');
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Search error: $e')));
     }
   }
 
@@ -659,7 +655,7 @@ class FlightCubit extends Cubit<FlightState> {
 
     if (state.tripType == "multi") {
       searchData = {
-        "type": "multi",
+        "flightType": "multi",
         "segments": state.flightSegments.map((segment) {
           return {
             "id": segment.id,
@@ -675,7 +671,7 @@ class FlightCubit extends Cubit<FlightState> {
       };
     } else {
       searchData = {
-        "type": state.tripType,
+        "flightType": state.tripType,
         "from": state.from,
         "to": state.to,
         "departureDate": state.departureDate,
@@ -691,7 +687,7 @@ class FlightCubit extends Cubit<FlightState> {
       context,
       MaterialPageRoute(
         builder: (_) => BlocProvider(
-          create: (_) => getIt<FlightSearchCubit>(), // FIXED: Use getIt
+          create: (_) => getIt<FlightSearchCubit>(),
           child: FlightSearchScreen(searchData: searchData),
         ),
       ),

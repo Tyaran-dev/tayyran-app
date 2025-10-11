@@ -1,3 +1,4 @@
+// lib/presentation/passenger_info/passenger_info_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -9,6 +10,7 @@ import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_app_bar.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
+import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
 import 'package:tayyran_app/presentation/passenger_info/cubit/passenger_info_cubit.dart';
 import 'package:tayyran_app/presentation/passenger_info/widgets/country_code_selection_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/passenger_info/widgets/passenger_card.dart';
@@ -43,7 +45,6 @@ class PassengerInfoScreen extends StatelessWidget {
           _navigateToPaymentScreen(context);
         }
       },
-
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: GradientAppBar(
@@ -75,10 +76,14 @@ class PassengerInfoScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Error banner if there's an error
-          if (state.errorMessage != null) buildErrorBanner(context),
+          if (state.errorMessage != null) _buildErrorBanner(context),
+
+          // Trip type indicator
+          Center(child: _buildTripTypeHeader(state)),
+          const SizedBox(height: 16),
 
           // Flight summary
-          buildFlightSummary(context, state.currentFlightOffer),
+          buildFlightSummary(context, state),
           const SizedBox(height: 24),
 
           // Passenger list title
@@ -104,48 +109,7 @@ class PassengerInfoScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToPaymentScreen(BuildContext context) {
-    final cubit = context.read<PassengerInfoCubit>();
-    final state = cubit.state;
-
-    cubit.resetSubmission();
-
-    final flightOffer = state.currentFlightOffer;
-    // Debug: Print what we're passing to payment
-    debugPrint("🚀 Navigating to payment with:");
-    debugPrint("  - Passengers count: ${state.passengers.length}");
-    debugPrint("  - Email: ${state.contactEmail}");
-    debugPrint("  - Phone: ${state.contactPhone}");
-    debugPrint("  - Country Code: ${state.countryCode}");
-    debugPrint(
-      "  - Pricing Response Available: ${state.pricingResponse != null}",
-    );
-
-    for (int i = 0; i < state.passengers.length; i++) {
-      final passenger = state.passengers[i];
-      debugPrint(
-        "  Passenger ${i + 1}: ${passenger.firstName} ${passenger.lastName}",
-      );
-    }
-    final grandTotal = state.grandTotal ?? state.currentFlightOffer.price;
-    final paymentArgs = PaymentArguments(
-      amount: grandTotal,
-      email: state.contactEmail,
-      phoneNumber: state.contactPhone,
-      countryCode: state.countryCode,
-      flightOffer: flightOffer,
-      passengers: state.passengers,
-      pricingResponse: state.pricingResponse!,
-    );
-
-    Navigator.pushReplacementNamed(
-      context,
-      RouteNames.payment,
-      arguments: paymentArgs,
-    );
-  }
-
-  Widget buildErrorBanner(BuildContext context) {
+  Widget _buildErrorBanner(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -170,13 +134,522 @@ class PassengerInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget buildFlightSummary(BuildContext context, FlightOffer flightOffer) {
+  Widget _buildTripTypeHeader(PassengerInfoState state) {
+    final tripType = _determineTripType(state.currentFlightOffer);
+
+    Color getColor() {
+      switch (tripType) {
+        case FlightTripType.roundTrip:
+          return Colors.blue;
+        case FlightTripType.multiCity:
+          return Colors.purple;
+        case FlightTripType.oneWay:
+          return Colors.green;
+      }
+    }
+
+    String getText() {
+      switch (tripType) {
+        case FlightTripType.roundTrip:
+          return 'Round Trip';
+        case FlightTripType.multiCity:
+          return 'Multi-City (${state.currentFlightOffer.itineraries.length} flights)';
+        case FlightTripType.oneWay:
+          return 'One Way';
+      }
+    }
+
+    IconData getIcon() {
+      switch (tripType) {
+        case FlightTripType.roundTrip:
+          return Icons.swap_horiz;
+        case FlightTripType.multiCity:
+          return Icons.account_tree;
+        case FlightTripType.oneWay:
+          return Icons.arrow_forward;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: getColor().withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: getColor().withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(getIcon(), color: getColor(), size: 16),
+          const SizedBox(width: 8),
+          Text(
+            getText(),
+            style: TextStyle(
+              color: getColor(),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  FlightTripType _determineTripType(FlightOffer flightOffer) {
+    // Method 1: Check mapping for multi-city pattern
+    final mapping = flightOffer.mapping;
+    final hasMultipleCities = mapping.split('||').length > 2;
+
+    // Method 2: Check if it's truly multi-city by analyzing the itineraries
+    final isTrueMultiCity = _isTrueMultiCity(flightOffer);
+
+    // Method 3: Check if we have multiple unique origins/destinations
+    final hasMultipleOriginsDestinations = _hasMultipleOriginsDestinations(
+      flightOffer,
+    );
+
+    // Method 4: Check if this is a complex route (not simple round trip)
+    final isComplexRoute = _isComplexRoute(flightOffer);
+
+    print('🔍 PassengerInfo - Trip Type Detection:');
+    print('   - Mapping: $mapping');
+    print('   - Has multiple cities in mapping: $hasMultipleCities');
+    print('   - Is true multi-city: $isTrueMultiCity');
+    print(
+      '   - Has multiple origins/destinations: $hasMultipleOriginsDestinations',
+    );
+    print('   - Is complex route: $isComplexRoute');
+    print('   - Backend flightType: ${flightOffer.flightType}');
+    print('   - Number of itineraries: ${flightOffer.itineraries.length}');
+
+    if (hasMultipleCities ||
+        isTrueMultiCity ||
+        hasMultipleOriginsDestinations ||
+        isComplexRoute) {
+      print('🎯 Detected as: Multi-City');
+      return FlightTripType.multiCity;
+    } else if (flightOffer.itineraries.length > 1) {
+      print('🎯 Detected as: Round Trip');
+      return FlightTripType.roundTrip;
+    } else {
+      print('🎯 Detected as: One Way');
+      return FlightTripType.oneWay;
+    }
+  }
+
+  bool _isTrueMultiCity(FlightOffer flightOffer) {
+    if (flightOffer.itineraries.length <= 2) return false;
+    return flightOffer.itineraries.length > 2;
+  }
+
+  bool _hasMultipleOriginsDestinations(FlightOffer flightOffer) {
+    final Set<String> origins = {};
+    final Set<String> destinations = {};
+
+    for (final itinerary in flightOffer.itineraries) {
+      origins.add(itinerary.fromLocation);
+      destinations.add(itinerary.toLocation);
+    }
+
+    print('   - Unique origins: $origins');
+    print('   - Unique destinations: $destinations');
+
+    return origins.length > 2 || destinations.length > 2;
+  }
+
+  bool _isComplexRoute(FlightOffer flightOffer) {
+    if (flightOffer.itineraries.length < 2) return false;
+
+    final firstItinerary = flightOffer.itineraries.first;
+    final lastItinerary = flightOffer.itineraries.last;
+
+    final isSimpleRoundTrip =
+        firstItinerary.fromLocation == lastItinerary.toLocation &&
+        firstItinerary.toLocation == lastItinerary.fromLocation;
+
+    print('   - Is simple round trip: $isSimpleRoundTrip');
+
+    return !isSimpleRoundTrip;
+  }
+
+  String _getRouteSummary(FlightOffer flightOffer) {
+    final tripType = _determineTripType(flightOffer);
+
+    switch (tripType) {
+      case FlightTripType.oneWay:
+        return '${flightOffer.fromLocation} → ${flightOffer.toLocation}';
+      case FlightTripType.roundTrip:
+        return '${flightOffer.fromLocation} → ${flightOffer.toLocation} → ${flightOffer.fromLocation}';
+      case FlightTripType.multiCity:
+        final cities = <String>[];
+        for (final itinerary in flightOffer.itineraries) {
+          if (cities.isEmpty || cities.last != itinerary.fromLocation) {
+            cities.add(itinerary.fromLocation);
+          }
+          cities.add(itinerary.toLocation);
+        }
+        return cities.join(' → ');
+    }
+  }
+
+  Widget buildFlightSummary(BuildContext context, PassengerInfoState state) {
+    final flightOffer = state.currentFlightOffer;
+    final tripType = _determineTripType(flightOffer);
+
+    if (tripType == FlightTripType.multiCity) {
+      return _buildMultiCityFlightSummary(context, state);
+    } else if (tripType == FlightTripType.roundTrip) {
+      return _buildRoundTripFlightSummary(context, state);
+    } else {
+      return _buildOneWayFlightSummary(context, state);
+    }
+  }
+
+  Widget _buildRoundTripFlightSummary(
+    BuildContext context,
+    PassengerInfoState state,
+  ) {
+    final flightOffer = state.currentFlightOffer;
+    final cubit = context.read<PassengerInfoCubit>();
+
+    final outboundItinerary = flightOffer.itineraries[0];
+    final returnItinerary = flightOffer.itineraries[1];
+
+    final outboundSegment = outboundItinerary.segments.isNotEmpty
+        ? outboundItinerary.segments.first
+        : null;
+    final returnSegment = returnItinerary.segments.isNotEmpty
+        ? returnItinerary.segments.first
+        : null;
+
+    // Get airline info for each segment
+    final outboundAirlineName = outboundSegment != null
+        ? cubit.getAirlineNameForSegment(outboundSegment)
+        : flightOffer.airlineName;
+    final outboundAirlineLogo = outboundSegment != null
+        ? cubit.getAirlineLogoForSegment(outboundSegment)
+        : flightOffer.airlineLogo;
+
+    final returnAirlineName = returnSegment != null
+        ? cubit.getAirlineNameForSegment(returnSegment)
+        : flightOffer.airlineName;
+    final returnAirlineLogo = returnSegment != null
+        ? cubit.getAirlineLogoForSegment(returnSegment)
+        : flightOffer.airlineLogo;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.transparent,
+                    backgroundImage: outboundAirlineLogo.isNotEmpty
+                        ? NetworkImage(outboundAirlineLogo)
+                        : null,
+                    radius: 20,
+                    child: outboundAirlineLogo.isEmpty
+                        ? Icon(
+                            Icons.airplanemode_active,
+                            color: AppColors.splashBackgroundColorEnd,
+                            size: 20,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cubit.displayAirlineName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Round Trip',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SvgPicture.asset(
+                AppAssets.ticketLogo,
+                width: 65,
+                height: 65,
+                fit: BoxFit.fill,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Outbound Flight
+          _buildFlightSegment(
+            itinerary: outboundItinerary,
+            segment: outboundSegment,
+            title: 'Outbound',
+            icon: Icons.flight_takeoff,
+            airlineName: outboundAirlineName,
+            airlineLogo: outboundAirlineLogo,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Return Flight
+          _buildFlightSegment(
+            itinerary: returnItinerary,
+            segment: returnSegment,
+            title: 'Return',
+            icon: Icons.flight_land,
+            airlineName: returnAirlineName,
+            airlineLogo: returnAirlineLogo,
+          ),
+
+          const SizedBox(height: 16),
+
+          // Flight details summary
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    'Total Duration',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    _calculateTotalDuration(flightOffer),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    'Class',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    flightOffer.cabinClass.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    'Passengers',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    '${getTotalPassengers(flightOffer)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiCityFlightSummary(
+    BuildContext context,
+    PassengerInfoState state,
+  ) {
+    final flightOffer = state.currentFlightOffer;
+    final cubit = context.read<PassengerInfoCubit>();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE3CC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Multi-City Journey',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getRouteSummary(flightOffer),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              SvgPicture.asset(
+                AppAssets.ticketLogo,
+                width: 65,
+                height: 65,
+                fit: BoxFit.fill,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Flight segments
+          ...flightOffer.itineraries.asMap().entries.map((entry) {
+            final index = entry.key;
+            final itinerary = entry.value;
+            final firstSegment = itinerary.segments.isNotEmpty
+                ? itinerary.segments.first
+                : null;
+
+            final airlineName = firstSegment != null
+                ? cubit.getAirlineNameForSegment(firstSegment)
+                : flightOffer.airlineName;
+            final airlineLogo = firstSegment != null
+                ? cubit.getAirlineLogoForSegment(firstSegment)
+                : flightOffer.airlineLogo;
+
+            return Column(
+              children: [
+                if (index > 0) const SizedBox(height: 12),
+                _buildMultiCitySegment(
+                  itinerary,
+                  firstSegment,
+                  index + 1,
+                  airlineName,
+                  airlineLogo,
+                ),
+                if (index < flightOffer.itineraries.length - 1)
+                  const Divider(height: 20),
+              ],
+            );
+          }),
+
+          const SizedBox(height: 16),
+
+          // Flight details summary
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    'Total Flights',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    '${flightOffer.itineraries.length}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    'Class',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    flightOffer.cabinClass.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    'Passengers',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    '${getTotalPassengers(flightOffer)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOneWayFlightSummary(
+    BuildContext context,
+    PassengerInfoState state,
+  ) {
+    final flightOffer = state.currentFlightOffer;
+    final cubit = context.read<PassengerInfoCubit>();
+
     final firstItinerary = flightOffer.itineraries.isNotEmpty
         ? flightOffer.itineraries.first
         : Itinerary.empty();
     final firstSegment = firstItinerary.segments.isNotEmpty
         ? firstItinerary.segments.first
         : null;
+
+    // Get airline info
+    final airlineName = firstSegment != null
+        ? cubit.getAirlineNameForSegment(firstSegment)
+        : flightOffer.airlineName;
+    final airlineLogo = firstSegment != null
+        ? cubit.getAirlineLogoForSegment(firstSegment)
+        : flightOffer.airlineLogo;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -202,15 +675,24 @@ class PassengerInfoScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     backgroundColor: Colors.transparent,
-                    backgroundImage: NetworkImage(flightOffer.airlineLogo),
+                    backgroundImage: airlineLogo.isNotEmpty
+                        ? NetworkImage(airlineLogo)
+                        : null,
                     radius: 20,
+                    child: airlineLogo.isEmpty
+                        ? Icon(
+                            Icons.airplanemode_active,
+                            color: AppColors.splashBackgroundColorEnd,
+                            size: 20,
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        flightOffer.airlineName,
+                        airlineName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -346,6 +828,301 @@ class PassengerInfoScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildFlightSegment({
+    required Itinerary itinerary,
+    required Segment? segment,
+    required String title,
+    required IconData icon,
+    required String airlineName,
+    required String airlineLogo,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFE3CC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          // Segment header
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.splashBackgroundColorEnd),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                formatDate(segment?.departure.at ?? DateTime.now()),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Airline info
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.transparent,
+                backgroundImage: airlineLogo.isNotEmpty
+                    ? NetworkImage(airlineLogo)
+                    : null,
+                radius: 12,
+                child: airlineLogo.isEmpty
+                    ? Icon(
+                        Icons.airplanemode_active,
+                        color: AppColors.splashBackgroundColorEnd,
+                        size: 16,
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                airlineName,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Flight route
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    itinerary.fromAirport.code,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  Text(
+                    _formatTime(segment?.departure.at ?? DateTime.now()),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  Icon(
+                    Icons.flight,
+                    size: 16,
+                    color: AppColors.splashBackgroundColorEnd,
+                  ),
+                  Text(
+                    itinerary.duration,
+                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    itinerary.toAirport.code,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  Text(
+                    _formatTime(segment?.arrival.at ?? DateTime.now()),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${segment?.carrierCode ?? ''}${segment?.number ?? ''} • ${itinerary.segments.length} segment${itinerary.segments.length > 1 ? 's' : ''}',
+            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiCitySegment(
+    Itinerary itinerary,
+    Segment? firstSegment,
+    int flightNumber,
+    String airlineName,
+    String airlineLogo,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Flight number
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: AppColors.splashBackgroundColorEnd,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              '$flightNumber',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Airline and flight number
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.transparent,
+                    backgroundImage: airlineLogo.isNotEmpty
+                        ? NetworkImage(airlineLogo)
+                        : firstSegment?.image != null
+                        ? NetworkImage(firstSegment!.image!)
+                        : null,
+                    radius: 12,
+                    child: airlineLogo.isEmpty && firstSegment?.image == null
+                        ? Icon(
+                            Icons.airplanemode_active,
+                            color: AppColors.splashBackgroundColorEnd,
+                            size: 16,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    airlineName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${firstSegment?.carrierCode ?? ''}${firstSegment?.number ?? ''}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Route and time
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        itinerary.fromAirport.code,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(
+                          firstSegment?.departure.at ?? DateTime.now(),
+                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      Icon(
+                        Icons.flight,
+                        size: 16,
+                        color: AppColors.splashBackgroundColorEnd,
+                      ),
+                      Text(
+                        itinerary.duration,
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        itinerary.toAirport.code,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(firstSegment?.arrival.at ?? DateTime.now()),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${formatDate(firstSegment?.departure.at ?? DateTime.now())} • ${itinerary.segments.length} segment${itinerary.segments.length > 1 ? 's' : ''}',
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ... (all other methods remain exactly the same as in your original code)
+
+  // Helper methods
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour < 12 ? 'AM' : 'PM';
+    return '${hour == 0 ? 12 : hour}:$minute $period';
+  }
+
+  String _calculateTotalDuration(FlightOffer flightOffer) {
+    Duration totalDuration = Duration.zero;
+    for (final itinerary in flightOffer.itineraries) {
+      if (itinerary.segments.isNotEmpty) {
+        final firstSegment = itinerary.segments.first;
+        final lastSegment = itinerary.segments.last;
+        totalDuration += lastSegment.arrival.at.difference(
+          firstSegment.departure.at,
+        );
+      }
+    }
+
+    final hours = totalDuration.inHours;
+    final minutes = totalDuration.inMinutes.remainder(60);
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
   }
 
   Widget buildPassengerCards(BuildContext context, PassengerInfoState state) {
@@ -503,6 +1280,31 @@ class PassengerInfoScreen extends StatelessWidget {
     });
   }
 
+  void _navigateToPaymentScreen(BuildContext context) {
+    final cubit = context.read<PassengerInfoCubit>();
+    final state = cubit.state;
+
+    cubit.resetSubmission();
+
+    final flightOffer = state.currentFlightOffer;
+    final grandTotal = state.grandTotal ?? state.currentFlightOffer.price;
+    final paymentArgs = PaymentArguments(
+      amount: grandTotal,
+      email: state.contactEmail,
+      phoneNumber: state.contactPhone,
+      countryCode: state.countryCode,
+      flightOffer: flightOffer,
+      passengers: state.passengers,
+      pricingResponse: state.pricingResponse!,
+    );
+
+    Navigator.pushReplacementNamed(
+      context,
+      RouteNames.payment,
+      arguments: paymentArgs,
+    );
+  }
+
   void _handleContinueToPayment(BuildContext context) {
     final cubit = context.read<PassengerInfoCubit>();
 
@@ -523,13 +1325,14 @@ class PassengerInfoScreen extends StatelessWidget {
     return BlocBuilder<PassengerInfoCubit, PassengerInfoState>(
       builder: (context, state) {
         final grandTotal = state.grandTotal ?? state.currentFlightOffer.price;
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, -5),
               ),
@@ -548,7 +1351,10 @@ class PassengerInfoScreen extends StatelessWidget {
                       'Total Price',
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
+                    const SizedBox(height: 4),
+
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         if (state.isLoading)
                           const SizedBox(
@@ -560,30 +1366,37 @@ class PassengerInfoScreen extends StatelessWidget {
                             ),
                           )
                         else
-                          Text(
-                            grandTotal.toStringAsFixed(2),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.splashBackgroundColorEnd,
+                          // Wrap price text in Flexible + FittedBox to prevent overflow
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                grandTotal.toStringAsFixed(2),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.splashBackgroundColorEnd,
+                                ),
+                              ),
                             ),
                           ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 6),
                         Image.asset(
                           AppAssets.currencyIcon,
-                          width: 30,
-                          height: 30,
+                          width: 24,
+                          height: 24,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
 
               // Continue button
               SizedBox(
-                width: context.widthPct(0.65),
+                width: context.widthPct(0.55),
                 child: GradientButton(
                   onPressed: state.isFormValid && !state.isLoading
                       ? () => _handleContinueToPayment(context)

@@ -11,20 +11,23 @@ part 'flight_detail_state.dart';
 class FlightDetailCubit extends Cubit<FlightDetailState> {
   final FlightPricingRepository _pricingRepository;
   final FlightOffer _originalFlightOffer;
-  // late bool _hasAutoUpdated = false;
 
   FlightDetailCubit({
     required FlightOffer flightOffer,
+    required Filters filterCarrier,
     required FlightPricingRepository pricingRepository,
   }) : _pricingRepository = pricingRepository,
        _originalFlightOffer = flightOffer,
-       super(FlightDetailState.initial(flightOffer)) {
+       super(
+         FlightDetailState.initial(
+           flightOffer: flightOffer,
+           filters: filterCarrier,
+         ),
+       ) {
     print('🚀 FlightDetailCubit created');
     print('📊 Initial price: ${flightOffer.price}');
     print("presentage Commission price: ${flightOffer.presentageCommission}");
     print("presentageVat price: ${flightOffer.presentageVat}");
-    // Auto-update pricing when cubit is created
-    // _autoUpdatePricing();
   }
 
   Future<void> updateFlightPricing() async {
@@ -42,7 +45,6 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
       final pricingData = _preparePricingRequestData(_originalFlightOffer);
       print('📤 Sending pricing request...');
 
-      // Use the typed response instead of Map
       final pricingResponse = await _pricingRepository.getFlightPricing(
         pricingData,
       );
@@ -52,7 +54,6 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
       print('📋 Response message: ${pricingResponse.message}');
 
       if (pricingResponse.success) {
-        // Debug the full response structure
         print('🔍 Full response structure:');
         _debugResponseStructure(pricingResponse);
 
@@ -383,11 +384,35 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
     }).toList();
   }
 
-  void selectItinerary(int itineraryIndex) {
+  void selectOutboundItinerary(int itineraryIndex) {
     if (itineraryIndex >= 0 &&
-        itineraryIndex < state.flightOffer.itineraries.length) {
-      emit(state.copyWith(selectedItineraryIndex: itineraryIndex));
+        itineraryIndex < state.flightOffer.itineraries.length &&
+        _isValidOutboundItinerary(itineraryIndex)) {
+      emit(state.copyWith(selectedOutboundItineraryIndex: itineraryIndex));
     }
+  }
+
+  void selectReturnItinerary(int itineraryIndex) {
+    if (state.tripType == FlightTripType.roundTrip &&
+        itineraryIndex >= 0 &&
+        itineraryIndex < state.flightOffer.itineraries.length &&
+        _isValidReturnItinerary(itineraryIndex)) {
+      emit(state.copyWith(selectedReturnItineraryIndex: itineraryIndex));
+    }
+  }
+
+  bool _isValidOutboundItinerary(int index) {
+    if (state.tripType == FlightTripType.roundTrip) {
+      return index < state.selectedReturnItineraryIndex;
+    }
+    return true;
+  }
+
+  bool _isValidReturnItinerary(int index) {
+    if (state.tripType == FlightTripType.roundTrip) {
+      return index > state.selectedOutboundItineraryIndex;
+    }
+    return false;
   }
 
   void toggleExpandedSection(SectionType section) {
@@ -421,12 +446,6 @@ class FlightDetailCubit extends Cubit<FlightDetailState> {
   void retryPricingUpdate() {
     clearError();
     updateFlightPricing();
-  }
-
-  @override
-  Future<void> close() {
-    // Clean up any resources if needed
-    return super.close();
   }
 }
 

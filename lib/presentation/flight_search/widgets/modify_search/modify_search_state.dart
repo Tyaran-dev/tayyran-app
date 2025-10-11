@@ -78,7 +78,7 @@ class ModifySearchState {
       'children': children,
       'infants': infants,
       'cabinClass': cabinClass,
-      'type': hasReturnDate ? 'round' : 'oneway',
+      'flightType': hasReturnDate ? 'round' : 'oneway',
     };
   }
 }

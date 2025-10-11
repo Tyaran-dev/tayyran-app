@@ -1,5 +1,6 @@
 // flight_segment.dart
 import 'package:flutter/foundation.dart';
+import 'package:tayyran_app/data/models/flight_search_response.dart';
 
 @immutable
 class FlightSegment {
@@ -48,4 +49,11 @@ class FlightSegment {
   String toString() {
     return 'FlightSegment{id: $id, from: $from, to: $to, date: $date}';
   }
+}
+
+class TicketArguments {
+  final FlightOffer flightOffer;
+  final Filters filters;
+
+  TicketArguments({required this.flightOffer, required this.filters});
 }

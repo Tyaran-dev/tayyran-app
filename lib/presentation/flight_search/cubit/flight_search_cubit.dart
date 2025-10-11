@@ -1,8 +1,8 @@
-// lib/presentation/flight_search/cubit/flight_search_cubit.dart
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/data/repositories/flight_search_repository.dart';
+import 'package:tayyran_app/presentation/flight/models/multi_flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
 import 'package:tayyran_app/presentation/flight_search/models/filter_options.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
@@ -45,15 +45,24 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     if (_isLoading || isClosed || _isDisposed) return;
     _isLoading = true;
 
+    print('🔍 [CUBIT] Original searchData received: $searchData');
+
+    // Format for UI display
+    final formattedSearchData = formatSearchDataForAppBar(searchData);
+
+    print('🔍 [CUBIT] Formatted searchData: $formattedSearchData');
+
     _safeEmit(
       state.copyWith(
         isLoading: true,
-        searchData: searchData,
+        searchData: formattedSearchData, // For UI
+        originalSearchData: searchData, // For API calls and retry
         errorMessage: null,
       ),
     );
 
     try {
+      // Use original searchData for API call
       final apiRequestData = _prepareApiRequestData(searchData);
       final response = await _repository.searchFlights(apiRequestData);
 
@@ -70,15 +79,10 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
             isLoading: false,
             tickets: tickets,
             filteredTickets: tickets,
-            searchData: searchData,
             availableCarriers: availableCarriers,
-            minTicketPrice: priceRange['min'] ?? 0, // Store for reference
-            maxTicketPrice: priceRange['max'] ?? 10000, // Store for reference
-            filters: FilterOptions(
-              // RESET FILTERS TO DEFAULT
-              minPrice: 0, // DEFAULT MIN
-              maxPrice: 10000, // DEFAULT MAX
-            ),
+            minTicketPrice: priceRange['min'] ?? 0,
+            maxTicketPrice: priceRange['max'] ?? 10000,
+            filters: FilterOptions(minPrice: 0, maxPrice: 10000),
           ),
         );
       } else {
@@ -86,7 +90,6 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
           state.copyWith(
             isLoading: false,
             errorMessage: response.message ?? 'Failed to load flights',
-            searchData: searchData,
           ),
         );
       }
@@ -95,11 +98,111 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
         state.copyWith(
           isLoading: false,
           errorMessage: 'Failed to load flights: $e',
-          searchData: searchData,
         ),
       );
     } finally {
       _isLoading = false;
+    }
+  }
+
+  // Future<void> loadFlights(Map<String, dynamic> searchData) async {
+  //   if (_isLoading || isClosed || _isDisposed) return;
+  //   _isLoading = true;
+
+  //   // FIX: Use the original searchData for API call, not formatted data
+  //   final formattedSearchData = formatSearchDataForAppBar(searchData);
+
+  //   _safeEmit(
+  //     state.copyWith(
+  //       isLoading: true,
+  //       searchData: formattedSearchData,
+  //       errorMessage: null,
+  //     ),
+  //   );
+
+  //   try {
+  //     // FIX: Use the original searchData for API call
+  //     final apiRequestData = _prepareApiRequestData(searchData);
+  //     final response = await _repository.searchFlights(apiRequestData);
+
+  //     if (response.success) {
+  //       final availableCarriers = response.getAvailableCarriers();
+  //       final priceRange = response.getPriceRange();
+
+  //       final tickets = response.data.map((offer) {
+  //         return _createFlightTicket(offer, response.filters);
+  //       }).toList();
+
+  //       _safeEmit(
+  //         state.copyWith(
+  //           isLoading: false,
+  //           tickets: tickets,
+  //           filteredTickets: tickets,
+  //           searchData: formattedSearchData,
+  //           availableCarriers: availableCarriers,
+  //           minTicketPrice: priceRange['min'] ?? 0,
+  //           maxTicketPrice: priceRange['max'] ?? 10000,
+  //           filters: FilterOptions(minPrice: 0, maxPrice: 10000),
+  //         ),
+  //       );
+  //     } else {
+  //       _safeEmit(
+  //         state.copyWith(
+  //           isLoading: false,
+  //           errorMessage: response.message ?? 'Failed to load flights',
+  //           searchData: formattedSearchData,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     _safeEmit(
+  //       state.copyWith(
+  //         isLoading: false,
+  //         errorMessage: 'Failed to load flights: $e',
+  //         searchData: formattedSearchData,
+  //       ),
+  //     );
+  //   } finally {
+  //     _isLoading = false;
+  //   }
+  // }
+
+  // ADD THIS METHOD: Format search data for app bar display
+  Map<String, dynamic> formatSearchDataForAppBar(
+    Map<String, dynamic> searchData,
+  ) {
+    final tripType = searchData['flightType'] ?? 'oneway';
+    print("SEARCH DATA ON FORMAT SEARCH DATA $searchData");
+    if (tripType == 'multi') {
+      final segments = searchData['segments'] as List<dynamic>? ?? [];
+      final multiCityRoutes = segments.map((segment) {
+        return {
+          'from': segment['from']?.toString() ?? '',
+          'to': segment['to']?.toString() ?? '',
+          'date': segment['date']?.toString() ?? '',
+        };
+      }).toList();
+
+      return {
+        'flightType': 'multi',
+        'multiCityRoutes': multiCityRoutes,
+        'adults': searchData['adults'] ?? 1,
+        'children': searchData['children'] ?? 0,
+        'infants': searchData['infants'] ?? 0,
+        'cabinClass': searchData['cabinClass'] ?? 'Economy',
+      };
+    } else {
+      return {
+        'flightType': tripType,
+        'from': searchData['from']?.toString() ?? '',
+        'to': searchData['to']?.toString() ?? '',
+        'departureDate': searchData['departureDate']?.toString() ?? '',
+        'returnDate': searchData['returnDate']?.toString() ?? '',
+        'adults': searchData['adults'] ?? 1,
+        'children': searchData['children'] ?? 0,
+        'infants': searchData['infants'] ?? 0,
+        'cabinClass': searchData['cabinClass'] ?? 'Economy',
+      };
     }
   }
 
@@ -130,11 +233,14 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     );
     final arrivalDateFormatted = _formatDateEnglish(firstSegment?.arrival.at);
 
+    // CREATE FLIGHT SEGMENTS FROM ALL ITINERARIES
+    final flightSegments = _createFlightSegments(offer, filters);
+
     return FlightTicket(
       id: offer.mapping,
       airline: airlineName,
       airlineLogo: airlineLogo,
-      airlineCode: carrierCode, // ADD THIS LINE
+      airlineCode: carrierCode,
       from: '${offer.fromLocation} - ${offer.fromName}',
       to: '${offer.toLocation} - ${offer.toName}',
       departureTime: departureTime,
@@ -152,7 +258,62 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       arrivalDate: firstSegment?.arrival.at ?? DateTime.now(),
       seatsRemaining: offer.numberOfBookableSeats,
       flightOffer: offer,
+      filterCarrier: filters,
+      flightType: offer.flightType,
+      flightSegments: flightSegments, // Add this line
     );
+  }
+
+  // ADD THIS METHOD to create flight segments from all itineraries
+  List<MultiFlightSegment> _createFlightSegments(
+    FlightOffer offer,
+    Filters filters,
+  ) {
+    final segments = <MultiFlightSegment>[];
+
+    for (final itinerary in offer.itineraries) {
+      for (final segment in itinerary.segments) {
+        final carrier = filters.findCarrierByCode(segment.carrierCode);
+
+        // Extract airport codes and cities
+        final fromParts = segment.fromName.split(' - ');
+        final toParts = segment.toName.split(' - ');
+        final fromCode = fromParts.isNotEmpty
+            ? fromParts[0]
+            : segment.fromAirport.code;
+        final toCode = toParts.isNotEmpty ? toParts[0] : segment.toAirport.code;
+        final fromCity = fromParts.length > 1
+            ? fromParts[1]
+            : segment.fromAirport.city;
+        final toCity = toParts.length > 1 ? toParts[1] : segment.toAirport.city;
+
+        final flightSegment = MultiFlightSegment(
+          from: segment.fromName,
+          to: segment.toName,
+          fromCode: fromCode,
+          toCode: toCode,
+          fromCity: fromCity,
+          toCity: toCity,
+          airline: carrier?.airLineName ?? segment.carrierCode,
+          airlineLogo: carrier?.image ?? '',
+          airlineCode: segment.carrierCode,
+          departureTime: _formatTimeEnglish(segment.departure.at),
+          arrivalTime: _formatTimeEnglish(segment.arrival.at),
+          departureDateFormatted: _formatDateEnglish(segment.departure.at),
+          arrivalDateFormatted: _formatDateEnglish(segment.arrival.at),
+          duration: segment.duration,
+          stops: segment.numberOfStops,
+          isDirect: segment.numberOfStops == 0,
+          arrivesNextDay: segment.arrival.at.day != segment.departure.at.day,
+          departureDate: segment.departure.at,
+          arrivalDate: segment.arrival.at,
+        );
+
+        segments.add(flightSegment);
+      }
+    }
+
+    return segments;
   }
 
   String _formatTimeEnglish(DateTime? dateTime) {
@@ -180,7 +341,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
   }
 
   Map<String, dynamic> _prepareApiRequestData(Map<String, dynamic> searchData) {
-    final tripType = searchData['type'] ?? 'oneway';
+    final tripType = searchData['flightType'] ?? 'oneway';
 
     if (tripType == 'multi') {
       // Multi-city request
@@ -199,6 +360,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
         'children': searchData['children'] ?? 0,
         'infants': searchData['infants'] ?? 0,
         'cabinClass': searchData['cabinClass'] ?? 'Economy',
+        'flightType': "multi",
       };
     } else if (tripType == 'round') {
       // Round-trip request
@@ -221,6 +383,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
         'children': searchData['children'] ?? 0,
         'infants': searchData['infants'] ?? 0,
         'cabinClass': searchData['cabinClass'] ?? 'Economy',
+        'flightType': "round",
       };
     } else {
       // One-way request
@@ -237,6 +400,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
         'children': searchData['children'] ?? 0,
         'infants': searchData['infants'] ?? 0,
         'cabinClass': searchData['cabinClass'] ?? 'Economy',
+        'flightType': 'oneway',
       };
     }
   }

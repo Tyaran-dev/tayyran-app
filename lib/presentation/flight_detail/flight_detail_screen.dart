@@ -1,14 +1,16 @@
+// lib/presentation/flight_detail/flight_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_app_bar.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
+import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit.dart';
-import 'package:intl/intl.dart';
 
 class FlightDetailScreen extends StatelessWidget {
   const FlightDetailScreen({super.key});
@@ -17,7 +19,6 @@ class FlightDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<FlightDetailCubit, FlightDetailState>(
       listener: (context, state) {
-        // Handle error states
         if (state.errorMessage != null && !state.isLoading) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -38,45 +39,20 @@ class FlightDetailScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: GradientAppBar(
-          title: 'Flight Details',
+          title: _getAppBarTitle(context),
           height: 120,
           showBackButton: true,
         ),
         body: BlocBuilder<FlightDetailCubit, FlightDetailState>(
           builder: (context, state) {
-            // Show loading overlay when updating pricing
             if (state.isLoading) {
               return Stack(
                 children: [
                   _buildContent(context, state),
-                  Container(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              AppColors.splashBackgroundColorEnd,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Updating prices...',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildLoadingOverlay(),
                 ],
               );
             }
-
             return _buildContent(context, state);
           },
         ),
@@ -85,41 +61,74 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, FlightDetailState state) {
-    final flight = state.flightOffer;
-    final itinerary = state.selectedItinerary;
+  String _getAppBarTitle(BuildContext context) {
+    final state = context.read<FlightDetailCubit>().state;
+    switch (state.tripType) {
+      case FlightTripType.roundTrip:
+        return 'Round Trip Details';
+      case FlightTripType.multiCity:
+        return 'Multi-City Journey';
+      case FlightTripType.oneWay:
+        return 'Flight Details';
+    }
+  }
 
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.3),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(
+                AppColors.splashBackgroundColorEnd,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Updating prices...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, FlightDetailState state) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Error banner if there's an error
           if (state.errorMessage != null) _buildErrorBanner(context),
 
-          // Virtual flight path
-          _buildFlightCard(itinerary, flight),
+          // Trip type indicator with route summary
+          _buildTripTypeHeader(state),
           const SizedBox(height: 16),
 
-          // Departure and arrival details
-          _buildAirportDetails(itinerary, context),
+          // Multi-city specific header
+          if (state.tripType == FlightTripType.multiCity)
+            _buildMultiCityRouteOverview(state),
           const SizedBox(height: 16),
 
-          // Flight duration and stops
-          _buildFlightSummary(itinerary, flight),
-          const SizedBox(height: 16),
+          // Flight sections
+          ..._buildFlightSections(state),
 
-          // Baggage information
-          _buildBaggageInformation(flight),
           const SizedBox(height: 16),
-
-          // Fare rules
-          _buildFareRulesCard(flight, context),
+          _buildAirportDetails(state),
           const SizedBox(height: 16),
+          _buildFlightSummary(state),
+          const SizedBox(height: 16),
+          _buildBaggageInformation(state.flightOffer),
+          const SizedBox(height: 16),
+          _buildFareRulesCard(state.flightOffer, context),
 
-          // Retry button if there was an error
           if (state.errorMessage != null) _buildRetryButton(context),
-
-          // Spacer for bottom button
           const SizedBox(height: 20),
         ],
       ),
@@ -151,27 +160,198 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRetryButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: ElevatedButton.icon(
-        onPressed: () => context.read<FlightDetailCubit>().retryPricingUpdate(),
-        icon: const Icon(Icons.refresh),
-        label: const Text('Retry Price Update'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.splashBackgroundColorEnd,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        ),
+  List<Widget> _buildFlightSections(FlightDetailState state) {
+    switch (state.tripType) {
+      case FlightTripType.oneWay:
+        return [
+          _buildFlightSection(
+            state.selectedOutboundItinerary,
+            state,
+            'Flight',
+            Icons.flight_takeoff,
+          ),
+        ];
+      case FlightTripType.roundTrip:
+        return [
+          _buildFlightSection(
+            state.selectedOutboundItinerary,
+            state,
+            'Outbound Flight',
+            Icons.flight_takeoff,
+          ),
+          const SizedBox(height: 24),
+          _buildFlightSection(
+            state.selectedReturnItinerary!,
+            state,
+            'Return Flight',
+            Icons.flight_land,
+          ),
+        ];
+      case FlightTripType.multiCity:
+        return state.allItineraries.asMap().entries.map((entry) {
+          final index = entry.key;
+          final itinerary = entry.value;
+          return Column(
+            children: [
+              if (index > 0) const SizedBox(height: 24),
+              _buildFlightSection(
+                itinerary,
+                state,
+                'Flight ${index + 1}: ${itinerary.fromLocation} → ${itinerary.toLocation}',
+                _getMultiCityIcon(index, state.allItineraries.length),
+              ),
+            ],
+          );
+        }).toList();
+    }
+  }
+
+  IconData _getMultiCityIcon(int index, int total) {
+    if (index == 0) return Icons.flight_takeoff;
+    if (index == total - 1) return Icons.flight_land;
+    return Icons.flight;
+  }
+
+  Widget _buildMultiCityRouteOverview(FlightDetailState state) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.purple[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.purple[100]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.route, color: Colors.purple[700], size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Journey Route',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.routeSummary,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${state.allItineraries.length} flights • ${_calculateTotalDuration(state)} total duration',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFlightCard(Itinerary itinerary, FlightOffer flight) {
+  Widget _buildTripTypeHeader(FlightDetailState state) {
+    Color getColor() {
+      switch (state.tripType) {
+        case FlightTripType.roundTrip:
+          return Colors.blue;
+        case FlightTripType.multiCity:
+          return Colors.purple;
+        case FlightTripType.oneWay:
+          return Colors.green;
+      }
+    }
+
+    String getText() {
+      switch (state.tripType) {
+        case FlightTripType.roundTrip:
+          return 'Round Trip';
+        case FlightTripType.multiCity:
+          return 'Multi-City (${state.allItineraries.length} flights)';
+        case FlightTripType.oneWay:
+          return 'One Way';
+      }
+    }
+
+    IconData getIcon() {
+      switch (state.tripType) {
+        case FlightTripType.roundTrip:
+          return Icons.swap_horiz;
+        case FlightTripType.multiCity:
+          return Icons.account_tree;
+        case FlightTripType.oneWay:
+          return Icons.arrow_forward;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: getColor().withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: getColor().withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(getIcon(), color: getColor(), size: 16),
+          const SizedBox(width: 8),
+          Text(
+            getText(),
+            style: TextStyle(
+              color: getColor(),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFlightSection(
+    Itinerary itinerary,
+    FlightDetailState state,
+    String title,
+    IconData icon,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.splashBackgroundColorEnd),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        _buildFlightCard(itinerary, state),
+      ],
+    );
+  }
+
+  Widget _buildFlightCard(Itinerary itinerary, FlightDetailState state) {
     if (itinerary.segments.isEmpty) return const SizedBox();
 
     final firstSegment = itinerary.segments.first;
     final lastSegment = itinerary.segments.last;
+
+    // Get the correct airline name and logo for this itinerary
+    final airlineName = state.getAirlineNameForSegment(firstSegment);
+    final airlineLogo = state.getAirlineLogoForSegment(firstSegment);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -179,7 +359,7 @@ class FlightDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // --- Airline logo + details (centered) ---
+          // Airline logo + details
           Column(
             children: [
               Container(
@@ -188,14 +368,19 @@ class FlightDetailScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: Colors.transparent,
-                  image: firstSegment.image != null
+                  image: airlineLogo.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(airlineLogo),
+                          fit: BoxFit.contain,
+                        )
+                      : firstSegment.image != null
                       ? DecorationImage(
                           image: NetworkImage(firstSegment.image!),
                           fit: BoxFit.contain,
                         )
                       : null,
                 ),
-                child: firstSegment.image == null
+                child: airlineLogo.isEmpty && firstSegment.image == null
                     ? Icon(
                         Icons.airplanemode_active,
                         color: AppColors.splashBackgroundColorEnd,
@@ -205,7 +390,7 @@ class FlightDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                flight.airlineName,
+                airlineName,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -221,7 +406,7 @@ class FlightDetailScreen extends StatelessWidget {
 
           const SizedBox(height: 5),
 
-          // --- Flight path row ---
+          // Flight path row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -304,134 +489,208 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAirportDetails(Itinerary itinerary, BuildContext context) {
-    if (itinerary.segments.isEmpty) return const SizedBox();
+  Widget _buildAirportDetails(FlightDetailState state) {
+    return Column(
+      children: [
+        if (state.tripType == FlightTripType.multiCity) ...[
+          ...state.allItineraries.asMap().entries.map((entry) {
+            final index = entry.key;
+            final itinerary = entry.value;
+            return Column(
+              children: [
+                if (index > 0) const SizedBox(height: 24),
+                _buildSingleItineraryDetails(
+                  itinerary,
+                  state,
+                  'Flight ${index + 1} Details: ${itinerary.fromLocation} → ${itinerary.toLocation}',
+                ),
+              ],
+            );
+          }),
+        ] else if (state.tripType == FlightTripType.roundTrip) ...[
+          _buildSingleItineraryDetails(
+            state.selectedOutboundItinerary,
+            state,
+            'Outbound Journey Details',
+          ),
+          const SizedBox(height: 24),
+          _buildSingleItineraryDetails(
+            state.selectedReturnItinerary!,
+            state,
+            'Return Journey Details',
+          ),
+        ] else ...[
+          _buildSingleItineraryDetails(
+            state.selectedOutboundItinerary,
+            state,
+            'Flight Details',
+          ),
+        ],
+      ],
+    );
+  }
 
+  Widget _buildSingleItineraryDetails(
+    Itinerary itinerary,
+    FlightDetailState state,
+    String title,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: 3.0.toBoxDecoration(color: const Color(0xFFF9fafb)),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (int i = 0; i < itinerary.segments.length; i++)
-            Column(
-              children: [
-                if (i > 0)
-                  _buildLayoverSection(
-                    itinerary.segments[i - 1],
-                    itinerary.segments[i],
-                  ),
-
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Left side: icons + vertical line
-                    Column(
-                      children: [
-                        Icon(
-                          Icons.flight_takeoff,
-                          color: AppColors.splashBackgroundColorEnd,
-                        ),
-                        Container(
-                          width: 2,
-                          height: context.heightPct(0.11),
-                          color: Colors.grey[300],
-                        ),
-                        Icon(
-                          Icons.flight,
-                          color: AppColors.splashBackgroundColorEnd,
-                        ),
-                        Container(
-                          width: 2,
-                          height: context.heightPct(0.1),
-                          color: Colors.grey[300],
-                        ),
-                        Icon(
-                          Icons.flight_land,
-                          color: AppColors.splashBackgroundColorEnd,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 12),
-
-                    // Right side: details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildTimeDetail(
-                            time: _formatTimeAmPm(
-                              itinerary.segments[i].departure.at,
-                            ),
-                            date: _formatDate(
-                              itinerary.segments[i].departure.at,
-                            ),
-                            airport: itinerary.segments[i].fromAirport,
-                            terminal: itinerary.segments[i].departure.terminal,
-                            isDeparture: true,
-                            flightNumber:
-                                '${itinerary.segments[i].carrierCode} ${itinerary.segments[i].number}',
-                            duration: itinerary.segments[i].duration,
-                          ),
-                          const SizedBox(height: 12),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Divider(color: Colors.grey[300]),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: Icon(
-                                    Icons.flight,
-                                    size: 16,
-                                    color: AppColors.splashBackgroundColorEnd,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Divider(color: Colors.grey[300]),
-                                ),
-                              ],
-                            ),
-                          ),
-                          _buildTimeDetail(
-                            time: _formatTimeAmPm(
-                              itinerary.segments[i].arrival.at,
-                            ),
-                            date: _formatDate(itinerary.segments[i].arrival.at),
-                            airport: itinerary.segments[i].toAirport,
-                            terminal: itinerary.segments[i].arrival.terminal,
-                            isDeparture: false,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                if (i < itinerary.segments.length - 1)
-                  const SizedBox(height: 20),
-              ],
-            ),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          _buildItineraryDetails(itinerary, state),
         ],
       ),
     );
   }
 
-  Widget _buildLayoverSection(Segment previousSegment, Segment nextSegment) {
+  Widget _buildItineraryDetails(Itinerary itinerary, FlightDetailState state) {
+    if (itinerary.segments.isEmpty) return const SizedBox();
+
+    return Column(
+      children: [
+        for (int i = 0; i < itinerary.segments.length; i++)
+          Column(
+            children: [
+              if (i > 0)
+                _buildLayoverSection(
+                  itinerary.segments[i - 1],
+                  itinerary.segments[i],
+                  state,
+                ),
+
+              _buildSegmentDetails(itinerary.segments[i], state),
+              if (i < itinerary.segments.length - 1) const SizedBox(height: 20),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSegmentDetails(Segment segment, FlightDetailState state) {
+    // Get airline info for this segment
+    final airlineName = state.getAirlineNameForSegment(segment);
+    final airlineLogo = state.getAirlineLogoForSegment(segment);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                image: airlineLogo.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(airlineLogo),
+                        fit: BoxFit.contain,
+                      )
+                    : segment.image != null
+                    ? DecorationImage(
+                        image: NetworkImage(segment.image!),
+                        fit: BoxFit.contain,
+                      )
+                    : null,
+              ),
+              child: airlineLogo.isEmpty && segment.image == null
+                  ? Icon(
+                      Icons.airplanemode_active,
+                      color: AppColors.splashBackgroundColorEnd,
+                      size: 20,
+                    )
+                  : null,
+            ),
+            Container(width: 2, height: 90, color: Colors.grey[300]),
+            Icon(
+              Icons.flight,
+              color: AppColors.splashBackgroundColorEnd,
+              size: 20,
+            ),
+            Container(width: 2, height: 90, color: Colors.grey[300]),
+            Icon(
+              Icons.flight_land,
+              color: AppColors.splashBackgroundColorEnd,
+              size: 20,
+            ),
+          ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTimeDetail(
+                time: formatTimeAmPm(segment.departure.at),
+                date: formatDateFull(segment.departure.at),
+                airport: segment.fromAirport,
+                terminal: segment.departure.terminal,
+                isDeparture: true,
+                flightNumber: '${segment.carrierCode} ${segment.number}',
+                duration: segment.duration,
+                airlineName: airlineName,
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Icon(
+                        Icons.flight,
+                        size: 16,
+                        color: AppColors.splashBackgroundColorEnd,
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                  ],
+                ),
+              ),
+              _buildTimeDetail(
+                time: formatTimeAmPm(segment.arrival.at),
+                date: formatDateFull(segment.arrival.at),
+                airport: segment.toAirport,
+                terminal: segment.arrival.terminal,
+                isDeparture: false,
+                airlineName: airlineName,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLayoverSection(
+    Segment previousSegment,
+    Segment nextSegment,
+    FlightDetailState state,
+  ) {
     final layoverDuration = nextSegment.departure.at.difference(
       previousSegment.arrival.at,
     );
     final hours = layoverDuration.inHours;
     final minutes = layoverDuration.inMinutes.remainder(60);
 
+    // Get airline info for the next segment
+    final nextAirlineName = state.getAirlineNameForSegment(nextSegment);
+
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.splashBackgroundColorEnd.withOpacity(0.2),
+        color: AppColors.splashBackgroundColorEnd.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),
@@ -457,7 +716,7 @@ class FlightDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${hours}h ${minutes}m layover • Change of aircraft',
+                  '${hours}h ${minutes}m layover • Change to $nextAirlineName',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.splashBackgroundColorEnd,
@@ -479,6 +738,7 @@ class FlightDetailScreen extends StatelessWidget {
     required bool isDeparture,
     String? flightNumber,
     String? duration,
+    String? airlineName,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,16 +776,25 @@ class FlightDetailScreen extends StatelessWidget {
                   'Terminal $terminal',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-              if (flightNumber != null && isDeparture)
+              if (flightNumber != null && isDeparture && airlineName != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Flight: $flightNumber • $duration',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.splashBackgroundColorEnd,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$airlineName • $flightNumber',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.splashBackgroundColorEnd,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        'Duration: $duration',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -535,7 +804,11 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFlightSummary(Itinerary itinerary, FlightOffer flight) {
+  Widget _buildFlightSummary(FlightDetailState state) {
+    final totalDuration = _calculateTotalDuration(state);
+    final totalStops = _calculateTotalStops(state);
+    final totalFlights = _calculateTotalFlights(state);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: 3.0.toBoxDecoration(color: const Color(0xFFF9fafb)),
@@ -544,22 +817,61 @@ class FlightDetailScreen extends StatelessWidget {
         children: [
           _buildSummaryItem(
             icon: Icons.schedule,
-            title: 'Duration',
-            value: itinerary.duration,
+            title: 'Total Duration',
+            value: totalDuration,
           ),
           _buildSummaryItem(
             icon: Icons.airplanemode_active,
-            title: 'Stops',
-            value: _getStopText(flight.stops),
+            title: state.tripType == FlightTripType.multiCity
+                ? 'Total Flights'
+                : 'Total Stops',
+            value: state.tripType == FlightTripType.multiCity
+                ? '$totalFlights flights'
+                : totalStops == 0
+                ? 'Direct'
+                : '$totalStops stops',
           ),
           _buildSummaryItem(
             icon: Icons.airline_seat_recline_normal,
             title: 'Class',
-            value: flight.cabinClass,
+            value: state.flightOffer.cabinClass,
           ),
         ],
       ),
     );
+  }
+
+  String _calculateTotalDuration(FlightDetailState state) {
+    Duration totalDuration = Duration.zero;
+    for (final itinerary in state.allItineraries) {
+      if (itinerary.segments.isNotEmpty) {
+        final firstSegment = itinerary.segments.first;
+        final lastSegment = itinerary.segments.last;
+        totalDuration += lastSegment.arrival.at.difference(
+          firstSegment.departure.at,
+        );
+      }
+    }
+
+    final hours = totalDuration.inHours;
+    final minutes = totalDuration.inMinutes.remainder(60);
+
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
+  }
+
+  int _calculateTotalStops(FlightDetailState state) {
+    int totalStops = 0;
+    for (final itinerary in state.allItineraries) {
+      totalStops += itinerary.segments.length - 1;
+    }
+    return totalStops;
+  }
+
+  int _calculateTotalFlights(FlightDetailState state) {
+    return state.allItineraries.length;
   }
 
   Widget _buildSummaryItem({
@@ -673,7 +985,7 @@ class FlightDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
-          _getFareRuleIcon(rule.category),
+          getFareRuleIcon(rule.category),
           size: 20,
           color: AppColors.splashBackgroundColorEnd,
         ),
@@ -683,7 +995,7 @@ class FlightDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _getFareRuleTitle(rule.category),
+                getFareRuleTitle(rule.category),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -721,6 +1033,22 @@ class FlightDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRetryButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: ElevatedButton.icon(
+        onPressed: () => context.read<FlightDetailCubit>().retryPricingUpdate(),
+        icon: const Icon(Icons.refresh),
+        label: const Text('Retry Price Update'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.splashBackgroundColorEnd,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomBookingBar(BuildContext context) {
     return BlocBuilder<FlightDetailCubit, FlightDetailState>(
       builder: (context, state) {
@@ -735,13 +1063,8 @@ class FlightDetailScreen extends StatelessWidget {
         try {
           presentageCommission = flight.presentageCommission;
           presentageVat = flight.presentageVat;
-
-          // ✅ CORRECT: Calculate administration fee on base price
           administrationFee = flight.price * (presentageCommission / 100);
-
-          // ✅ CORRECT: Calculate VAT on administration fee only
           vatAmount = administrationFee * (presentageVat / 100);
-
           totalWithFees = flight.price + administrationFee + vatAmount;
         } catch (e) {
           presentageCommission = 0.0;
@@ -834,7 +1157,12 @@ class FlightDetailScreen extends StatelessWidget {
                           Navigator.pushNamed(
                             context,
                             RouteNames.passengerInfo,
-                            arguments: flight.copyWith(price: totalWithFees),
+                            arguments: TicketArguments(
+                              flightOffer: flight.copyWith(
+                                price: totalWithFees,
+                              ),
+                              filters: state.filters,
+                            ),
                           );
                         },
                   text: state.isLoading ? 'Updating...' : 'Book',
@@ -857,7 +1185,6 @@ class FlightDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        // Calculate commission and VAT values
         double presentageCommission = 0.0;
         double presentageVat = 0.0;
         double administrationFee = 0.0;
@@ -867,13 +1194,8 @@ class FlightDetailScreen extends StatelessWidget {
         try {
           presentageCommission = flight.presentageCommission;
           presentageVat = flight.presentageVat;
-
-          // ✅ CORRECT: Administration fee on base price
           administrationFee = flight.price * (presentageCommission / 100);
-
-          // ✅ CORRECT: VAT on administration fee only
           vatAmount = administrationFee * (presentageVat / 100);
-
           totalWithFees = flight.price + administrationFee + vatAmount;
         } catch (e) {
           presentageCommission = 0.0;
@@ -888,7 +1210,7 @@ class FlightDetailScreen extends StatelessWidget {
         return LayoutBuilder(
           builder: (context, constraints) {
             final maxHeight = MediaQuery.of(context).size.height * 0.8;
-            final baseContentHeight = 350.0; // Increased for VAT section
+            final baseContentHeight = 350.0;
             final passengerContentHeight =
                 flight.travellerPricing.length * 120.0;
             final contentHeight = baseContentHeight + passengerContentHeight;
@@ -924,7 +1246,6 @@ class FlightDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Passenger fare details
                   flight.travellerPricing.length > 2
                       ? Expanded(
                           child: SingleChildScrollView(
@@ -947,7 +1268,6 @@ class FlightDetailScreen extends StatelessWidget {
 
                   const SizedBox(height: 16),
 
-                  // Total section with breakdown
                   Container(
                     padding: const EdgeInsets.symmetric(
                       vertical: 16,
@@ -961,7 +1281,6 @@ class FlightDetailScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Subtotal (sum of all passenger fares)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -982,7 +1301,6 @@ class FlightDetailScreen extends StatelessWidget {
                           ],
                         ),
 
-                        // Administration fee breakdown
                         if (presentageCommission > 0) ...[
                           const SizedBox(height: 8),
                           Row(
@@ -1006,7 +1324,6 @@ class FlightDetailScreen extends StatelessWidget {
                           ),
                         ],
 
-                        // VAT breakdown
                         if (presentageVat > 0) ...[
                           const SizedBox(height: 8),
                           Row(
@@ -1034,7 +1351,6 @@ class FlightDetailScreen extends StatelessWidget {
                         const Divider(),
                         const SizedBox(height: 8),
 
-                        // Grand Total
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -1073,6 +1389,7 @@ class FlightDetailScreen extends StatelessWidget {
     FlightOffer flight,
     Map<String, int> travelerNumbers,
   ) {
+    // ignore: unused_local_variable
     double subtotal = 0.0;
 
     final passengerWidgets = flight.travellerPricing.map((pricing) {
@@ -1080,7 +1397,6 @@ class FlightDetailScreen extends StatelessWidget {
       travelerNumbers[travelerType] = (travelerNumbers[travelerType] ?? 0) + 1;
       final travelerNumber = travelerNumbers[travelerType]!;
 
-      // Calculate passenger total (convert string to double)
       final passengerTotal = double.tryParse(pricing.total) ?? 0.0;
       subtotal += passengerTotal;
 
@@ -1097,7 +1413,7 @@ class FlightDetailScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _formatTravelerTypeWithNumber(
+                  formatTravelerTypeWithNumber(
                     pricing.travelerType,
                     travelerNumber,
                   ),
@@ -1129,19 +1445,7 @@ class FlightDetailScreen extends StatelessWidget {
       );
     }).toList();
 
-    // Update the flight price to match the calculated subtotal
-    // This ensures consistency between passenger totals and the displayed price
-    if (flight.price != subtotal) {
-      // If there's a discrepancy, we might want to use the calculated subtotal
-      // But for now, we'll just use the flight.price from the API
-    }
-
     return passengerWidgets;
-  }
-
-  String _formatTravelerTypeWithNumber(String type, int number) {
-    final baseType = _formatTravelerType(type);
-    return '$baseType $number';
   }
 
   Widget _buildDetailRow({
@@ -1206,56 +1510,5 @@ class FlightDetailScreen extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _formatTimeAmPm(DateTime dateTime) =>
-      DateFormat('h:mm a').format(dateTime);
-  String _formatDate(DateTime dateTime) =>
-      DateFormat('MMM dd, yyyy').format(dateTime);
-  String _getStopText(int stops) => stops == 0
-      ? 'Direct'
-      : stops == 1
-      ? '1 stop'
-      : '$stops stops';
-
-  IconData _getFareRuleIcon(String category) {
-    switch (category) {
-      case 'EXCHANGE':
-        return Icons.swap_horiz;
-      case 'REFUND':
-        return Icons.currency_exchange;
-      case 'REVALIDATION':
-        return Icons.autorenew;
-      default:
-        return Icons.info_outline;
-    }
-  }
-
-  String _getFareRuleTitle(String category) {
-    switch (category) {
-      case 'EXCHANGE':
-        return 'Flight Change';
-      case 'REFUND':
-        return 'Refund Policy';
-      case 'REVALIDATION':
-        return 'Revalidation';
-      default:
-        return category;
-    }
-  }
-
-  String _formatTravelerType(String type) {
-    switch (type.toUpperCase()) {
-      case 'ADULT':
-        return 'Adult';
-      case 'CHILD':
-        return 'Child';
-      case 'INFANT':
-        return 'Infant';
-      case 'HELD_INFANT':
-        return 'Infant';
-      default:
-        return type;
-    }
   }
 }

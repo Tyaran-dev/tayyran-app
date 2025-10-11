@@ -11,14 +11,54 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
   final FlightPricingRepository _pricingRepository;
   bool _hasPricingUpdated = false;
   bool _hasSubmitted = false;
-
   PassengerInfoCubit({
     required FlightOffer flightOffer,
+    required Filters filters,
     required FlightPricingRepository pricingRepository,
+    Map<String, dynamic>? initialPassengerData,
   }) : _pricingRepository = pricingRepository,
-       super(PassengerInfoState.initial(flightOffer)) {
+       super(
+         PassengerInfoState.initial(flightOffer: flightOffer, filters: filters),
+       ) {
     print('🚀 PassengerInfoCubit created');
     print('📊 Initial price: ${flightOffer.price}');
+  }
+
+  // Add helper method to get airline name for segment
+  String getAirlineNameForSegment(Segment segment) {
+    final carrier = state.filters.findCarrierByCode(segment.carrierCode);
+    return carrier?.airLineName ?? segment.carrierCode;
+  }
+
+  // Add helper method to get airline logo for segment
+  String getAirlineLogoForSegment(Segment segment) {
+    final carrier = state.filters.findCarrierByCode(segment.carrierCode);
+    return carrier?.image ?? '';
+  }
+
+  // Get display airline name for multi-airline flights
+  String get displayAirlineName {
+    final Set<String> airlineCodes = {};
+    for (final itinerary in state.currentFlightOffer.itineraries) {
+      for (final segment in itinerary.segments) {
+        if (segment.carrierCode.isNotEmpty) {
+          airlineCodes.add(segment.carrierCode);
+        }
+      }
+    }
+
+    final airlines = airlineCodes
+        .map((code) => state.filters.findCarrierByCode(code))
+        .where((carrier) => carrier != null)
+        .cast<Carrier>()
+        .toList();
+
+    if (airlines.length == 1) {
+      return airlines.first.airLineName;
+    } else if (airlines.length > 1) {
+      return 'Multiple Airlines';
+    }
+    return state.currentFlightOffer.airlineName;
   }
 
   Future<void> updateFlightPricing() async {
@@ -226,8 +266,8 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
           "tax": pricing.tax,
           "class": pricing.travelClass,
           "allowedBags": {
-            "quantity": pricing.allowedBags.quantity,
-            "weight": pricing.allowedBags.weight,
+            // "quantity": pricing.allowedBags.quantity,
+            // "weight": pricing.allowedBags.weight,
           },
           "cabinBagsAllowed": pricing.cabinBagsAllowed,
           "fareDetails": pricing.fareDetails.map((detail) {

@@ -12,7 +12,8 @@ class FlightSearchState {
   final String? errorMessage;
   final Set<SortOption> selectedSorts;
   final FilterOptions filters;
-  final Map<String, dynamic> searchData;
+  final Map<String, dynamic> searchData; // Formatted for UI
+  final Map<String, dynamic> originalSearchData; // Original for API calls
   final FlightOffer? selectedFlightOffer;
   final List<FlightOffer> flightOffers;
   final List<Carrier> availableCarriers;
@@ -28,6 +29,7 @@ class FlightSearchState {
     this.selectedSorts = const {},
     required this.filters,
     this.searchData = const {},
+    this.originalSearchData = const {}, // Add this
     this.selectedFlightOffer,
     this.availableCarriers = const [],
     this.minTicketPrice = 0,
@@ -43,40 +45,12 @@ class FlightSearchState {
       selectedSorts: const {},
       filters: FilterOptions(),
       searchData: const {},
+      originalSearchData: const {}, // Initialize
       selectedFlightOffer: null,
       availableCarriers: const [],
       minTicketPrice: 0,
       maxTicketPrice: 10000,
     );
-  }
-
-  Map<String, dynamic> get safeSearchData {
-    return {
-      'from': searchData['from'] ?? '',
-      'to': searchData['to'] ?? '',
-      'departureDate': searchData['departureDate'] ?? '',
-      'returnDate': searchData['returnDate'] ?? '',
-      'adults': searchData['adults'] is int ? searchData['adults'] : 1,
-      'children': searchData['children'] is int ? searchData['children'] : 0,
-      'infants': searchData['infants'] is int ? searchData['infants'] : 0,
-      'cabinClass': searchData['cabinClass'] is String
-          ? searchData['cabinClass']
-          : 'Economy',
-      'tripType': searchData['tripType'] is String
-          ? searchData['tripType']
-          : 'oneway',
-    };
-  }
-
-  @override
-  String toString() {
-    return 'FlightSearchState{'
-        'isLoading: $isLoading, '
-        'tickets: ${tickets.length}, '
-        'filteredTickets: ${filteredTickets.length}, '
-        'searchData: $searchData, '
-        'errorMessage: $errorMessage'
-        '}';
   }
 
   FlightSearchState copyWith({
@@ -88,6 +62,7 @@ class FlightSearchState {
     Set<SortOption>? selectedSorts,
     FilterOptions? filters,
     Map<String, dynamic>? searchData,
+    Map<String, dynamic>? originalSearchData, // Add this
     FlightOffer? selectedFlightOffer,
     List<Carrier>? availableCarriers,
     double? minTicketPrice,
@@ -102,6 +77,8 @@ class FlightSearchState {
       selectedSorts: selectedSorts ?? this.selectedSorts,
       filters: filters ?? this.filters,
       searchData: searchData ?? this.searchData,
+      originalSearchData:
+          originalSearchData ?? this.originalSearchData, // Add this
       selectedFlightOffer: selectedFlightOffer ?? this.selectedFlightOffer,
       availableCarriers: availableCarriers ?? this.availableCarriers,
       minTicketPrice: minTicketPrice ?? this.minTicketPrice,

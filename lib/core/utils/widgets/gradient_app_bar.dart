@@ -136,7 +136,6 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildFlightSearchDetails(Map<String, dynamic> searchData) {
-    // Use the safeSearchData method from your state to ensure all keys exist
     final safeData = {
       'from': searchData['from'] ?? '',
       'to': searchData['to'] ?? '',
@@ -148,7 +147,12 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
       'cabinClass': searchData['cabinClass'] is String
           ? searchData['cabinClass']
           : 'Economy',
-      'type': searchData['type'] is String ? searchData['type'] : 'oneway',
+      'flightType': searchData['flightType'] is String
+          ? searchData['flightType']
+          : 'oneway',
+      'multiCityRoutes': searchData['multiCityRoutes'] is List
+          ? searchData['multiCityRoutes']
+          : [],
     };
 
     final from = safeData['from']?.toString() ?? '';
@@ -159,8 +163,19 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     final totalPassengers = adults + children + infants;
     final cabinClass = safeData['cabinClass']?.toString() ?? 'Economy';
     final departureDate = safeData['departureDate']?.toString() ?? '';
-    final isRoundTrip = safeData['type'] == 'round';
+    final isRoundTrip = safeData['flightType'] == 'round';
+    final isMultiCity = safeData['flightType'] == 'multi';
     final returnDate = safeData['returnDate']?.toString() ?? '';
+    final multiCityRoutes = safeData['multiCityRoutes'] as List;
+
+    // For multi-city, show simplified route
+    if (isMultiCity && multiCityRoutes.isNotEmpty) {
+      return _buildMultiCityAppBar(
+        multiCityRoutes,
+        totalPassengers,
+        cabinClass,
+      );
+    }
 
     // Extract airport codes if available (format: "DXB - Dubai")
     final fromCode = from.contains(' - ') ? from.split(' - ').first : from;
@@ -189,6 +204,137 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
         ? formatDate(returnDate)
         : '';
 
+    return _buildStandardFlightAppBar(
+      fromCode: fromCode,
+      toCode: toCode,
+      isRoundTrip: isRoundTrip,
+      totalPassengers: totalPassengers,
+      cabinClass: cabinClass,
+      formattedDepartureDate: formattedDepartureDate,
+      formattedReturnDate: formattedReturnDate,
+    );
+  }
+
+  Widget _buildMultiCityAppBar(
+    List<dynamic> routes,
+    int totalPassengers,
+    String cabinClass,
+  ) {
+    // Get first and last destinations for simplified display
+    String firstFrom = '';
+    String lastTo = '';
+
+    if (routes.isNotEmpty) {
+      final firstRoute = routes.first;
+      final lastRoute = routes.last;
+
+      if (firstRoute is Map) {
+        firstFrom = _extractAirportCode(firstRoute['from']?.toString() ?? '');
+      }
+      if (lastRoute is Map) {
+        lastTo = _extractAirportCode(lastRoute['to']?.toString() ?? '');
+      }
+    }
+
+    final routeCount = routes.length;
+
+    return GestureDetector(
+      onTap: null, // Disable tap for multi-city
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Main multi-city route
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.flight_takeoff, size: 16, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                firstFrom.isNotEmpty ? firstFrom : '...',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Multi-city indicator
+              Row(
+                children: [
+                  Icon(Icons.more_horiz, size: 16, color: Colors.white),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$routeCount ${routeCount > 1 ? 'flights' : 'flight'}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.more_horiz, size: 16, color: Colors.white),
+                ],
+              ),
+
+              const SizedBox(width: 8),
+              Icon(Icons.flight_land, size: 16, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                lastTo.isNotEmpty ? lastTo : '...',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+
+          // Details row - simplified for multi-city
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Passenger icon
+              Icon(Icons.people, size: 12, color: Colors.white),
+              const SizedBox(width: 2),
+              Text(
+                '$totalPassengers',
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              const CircleAvatar(radius: 2, backgroundColor: Colors.white),
+              const SizedBox(width: 8),
+
+              // Class
+              Text(
+                cabinClass.toCabinClassDisplayName,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+              const SizedBox(width: 8),
+              const CircleAvatar(radius: 2, backgroundColor: Colors.white),
+              const SizedBox(width: 8),
+
+              // Multi-city indicator
+              Icon(Icons.account_tree, size: 12, color: Colors.white),
+              const SizedBox(width: 2),
+              Text(
+                'Multi-City',
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStandardFlightAppBar({
+    required String fromCode,
+    required String toCode,
+    required bool isRoundTrip,
+    required int totalPassengers,
+    required String cabinClass,
+    required String formattedDepartureDate,
+    required String formattedReturnDate,
+  }) {
     return GestureDetector(
       onTap: onDestinationTap,
       child: Column(
@@ -258,22 +404,42 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
               Icon(Icons.calendar_today, size: 12, color: Colors.white),
               const SizedBox(width: 2),
 
-              // Dates
+              // Dates - responsive text
               if (isRoundTrip && formattedReturnDate.isNotEmpty)
-                Text(
+                _buildResponsiveText(
                   '$formattedDepartureDate → $formattedReturnDate',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  maxChars: 25,
                 )
               else
-                Text(
-                  formattedDepartureDate,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
+                _buildResponsiveText(formattedDepartureDate, maxChars: 15),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildResponsiveText(String text, {int maxChars = 20}) {
+    // For very small screens, truncate long text
+    if (text.length > maxChars) {
+      return Flexible(
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      );
+    } else {
+      return Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+      );
+    }
+  }
+
+  String _extractAirportCode(String location) {
+    return location.contains(' - ') ? location.split(' - ').first : location;
   }
 
   Widget _buildHomeAppBarContent() {
@@ -289,22 +455,6 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
             fontFamily: 'Almarai',
           ),
         ),
-        // Row(
-        //   mainAxisSize: MainAxisSize.min,
-        //   children: const [
-        //     Icon(Icons.location_on, color: Colors.white, size: 20),
-        //     SizedBox(width: 4),
-        //     Text(
-        //       "Dubai, UAE",
-        //       style: TextStyle(
-        //         color: Colors.white,
-        //         fontSize: 19,
-        //         fontWeight: FontWeight.w700,
-        //         fontFamily: 'Almarai',
-        //       ),
-        //     ),
-        //   ],
-        // ),
       ],
     );
   }

@@ -1,14 +1,14 @@
-// lib/presentation/flight_search/models/flight_ticket_model.dart (updated)
 import 'package:tayyran_app/data/models/flight_search_response.dart';
+import 'package:tayyran_app/presentation/flight/models/multi_flight_segment.dart';
 
-// lib/presentation/flight_search/models/flight_ticket_model.dart
 class FlightTicket {
   final String id;
   final String airline;
   final String airlineLogo;
-  final String airlineCode; // ADD THIS FIELD
+  final String airlineCode;
   final String from;
   final String to;
+  final String flightType;
   final String departureTime;
   final String arrivalTime;
   final String departureDateFormatted;
@@ -24,12 +24,14 @@ class FlightTicket {
   final DateTime arrivalDate;
   final int seatsRemaining;
   final FlightOffer flightOffer;
+  final Filters filterCarrier;
+  final List<MultiFlightSegment> flightSegments;
 
   FlightTicket({
     required this.id,
     required this.airline,
     required this.airlineLogo,
-    required this.airlineCode, // ADD THIS
+    required this.airlineCode,
     required this.from,
     required this.to,
     required this.departureTime,
@@ -47,14 +49,17 @@ class FlightTicket {
     required this.arrivalDate,
     required this.seatsRemaining,
     required this.flightOffer,
+    required this.filterCarrier,
+    required this.flightType,
+    required this.flightSegments, // This was missing in the constructor call
   });
 
-  // Add copyWith method if you don't have it
+  // Update copyWith method to include flightSegments
   FlightTicket copyWith({
     String? id,
     String? airline,
     String? airlineLogo,
-    String? airlineCode, // ADD THIS
+    String? airlineCode,
     String? from,
     String? to,
     String? departureTime,
@@ -72,12 +77,15 @@ class FlightTicket {
     DateTime? arrivalDate,
     int? seatsRemaining,
     FlightOffer? flightOffer,
+    Filters? filterCarrier,
+    String? flightType,
+    List<MultiFlightSegment>? flightSegments, // Add this
   }) {
     return FlightTicket(
       id: id ?? this.id,
       airline: airline ?? this.airline,
       airlineLogo: airlineLogo ?? this.airlineLogo,
-      airlineCode: airlineCode ?? this.airlineCode, // ADD THIS
+      airlineCode: airlineCode ?? this.airlineCode,
       from: from ?? this.from,
       to: to ?? this.to,
       departureTime: departureTime ?? this.departureTime,
@@ -95,11 +103,13 @@ class FlightTicket {
       departureDate: departureDate ?? this.departureDate,
       arrivalDate: arrivalDate ?? this.arrivalDate,
       seatsRemaining: seatsRemaining ?? this.seatsRemaining,
+      flightType: flightType ?? this.flightType,
       flightOffer: flightOffer ?? this.flightOffer,
+      filterCarrier: filterCarrier ?? this.filterCarrier,
+      flightSegments: flightSegments ?? this.flightSegments, // Add this
     );
   }
 
-  // Helper method to check if arrival is on a different day
   bool get arrivesNextDay => arrivalDate.day != departureDate.day;
 
   Map<String, dynamic> toJson() {
@@ -107,6 +117,7 @@ class FlightTicket {
       'id': id,
       'airline': airline,
       'airlineLogo': airlineLogo,
+      'airlineCode': airlineCode,
       'from': from,
       'to': to,
       'departureTime': departureTime,
@@ -119,10 +130,12 @@ class FlightTicket {
       'basePrice': basePrice,
       'currency': currency,
       'hasBaggage': hasBaggage,
+      'flightType': flightType,
       'isDirect': isDirect,
       'departureDate': departureDate.toIso8601String(),
       'arrivalDate': arrivalDate.toIso8601String(),
       'seatsRemaining': seatsRemaining,
+      'flightSegments': flightSegments.length, // Add segments count
     };
   }
 }
