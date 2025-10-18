@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
@@ -28,7 +29,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: GradientAppBar(
-          title: 'Payment Status',
+          title: 'paymentStatus.title'.tr(),
           height: 120,
           showBackButton: false,
         ),
@@ -45,6 +46,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   Widget _buildMainContent(BuildContext context, PaymentStatusState state) {
+    debugPrint("$state            ${state.invoiceId}");
     if (state is PaymentStatusChecking || state is PaymentStatusInitial) {
       return _buildLoadingStatus(context, state);
     } else if (state is PaymentStatusPending) {
@@ -77,7 +79,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           SizedBox(height: 24),
           Text(
-            'Processing Payment...',
+            'paymentStatus.processing'.tr(),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w600,
@@ -86,13 +88,13 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           SizedBox(height: 16),
           Text(
-            'We are confirming your payment details',
+            'paymentStatus.confirmingDetails'.tr(),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           SizedBox(height: 8),
           Text(
-            'This may take a few moments',
+            'paymentStatus.mayTakeMoment'.tr(),
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
           SizedBox(height: 20),
@@ -120,7 +122,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           SizedBox(height: 24),
           Text(
-            'Payment Pending',
+            'paymentStatus.pending'.tr(),
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -160,7 +162,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           SizedBox(height: 16),
           Text(
-            'Next check in $secondsUntilNextCheck seconds',
+            'paymentStatus.nextCheck'.tr(
+              namedArgs: {'seconds': secondsUntilNextCheck.toString()},
+            ),
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           SizedBox(height: 20),
@@ -206,8 +210,6 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           // Passenger Details
           _buildPassengerDetailsCard(orderData.travelers),
 
-          // // Contact Information
-          // _buildContactCard(orderData.contacts),
           SizedBox(height: 30),
           Row(
             children: [
@@ -220,7 +222,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                       (route) => false,
                     );
                   },
-                  text: 'Back to Home',
+                  text: 'paymentStatus.backToHome'.tr(),
                   height: 50,
                 ),
               ),
@@ -259,7 +261,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Booking Confirmed!',
+                  'paymentStatus.bookingConfirmed'.tr(),
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -268,12 +270,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Your flight has been successfully booked and tickets issued',
+                  'paymentStatus.successfullyBooked'.tr(),
                   style: TextStyle(color: Colors.green[700], fontSize: 14),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'You will receive a confirmation email shortly',
+                  'paymentStatus.confirmationEmail'.tr(),
                   style: TextStyle(color: Colors.green[600], fontSize: 12),
                 ),
               ],
@@ -299,7 +301,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 Icon(Icons.confirmation_number, color: Colors.blue, size: 24),
                 SizedBox(width: 8),
                 Text(
-                  'E-Ticket',
+                  'paymentStatus.eTicket'.tr(),
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Spacer(),
@@ -311,7 +313,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                     border: Border.all(color: Colors.green),
                   ),
                   child: Text(
-                    'ISSUED',
+                    'paymentStatus.issued'.tr(),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -329,7 +331,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ticket Number',
+                        'paymentStatus.ticketNumber'.tr(),
                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                       SizedBox(height: 4),
@@ -350,7 +352,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          'Passenger',
+                          'paymentStatus.passenger'.tr(),
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 14,
@@ -371,7 +373,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              'Please save this ticket number for your records',
+              'paymentStatus.saveTicketNumber'.tr(),
               style: TextStyle(fontSize: 12, color: Colors.grey[500]),
             ),
           ],
@@ -381,10 +383,6 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
   }
 
   Widget _buildFlightDetailsCard(Segment segment, FlightOffer flightOffer) {
-    // final airline = flightOffer.validatingAirlineCodes.isNotEmpty
-    //     ? flightOffer.validatingAirlineCodes.first
-    //     : '';
-
     return Card(
       elevation: 2,
       margin: EdgeInsets.only(bottom: 16),
@@ -395,7 +393,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Flight Details',
+              'paymentStatus.flightDetails'.tr(),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
@@ -467,11 +465,10 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildFlightDetailItem(
-                  'Flight',
+                  'paymentStatus.flight'.tr(),
                   '${segment.carrierCode} ${segment.number}',
                 ),
-                _buildFlightDetailItem('Class', 'ECONOMY'),
-                // _buildFlightDetailItem('Aircraft', segment.aircraft.code),
+                _buildFlightDetailItem('paymentStatus.class'.tr(), 'ECONOMY'),
               ],
             ),
           ],
@@ -493,14 +490,17 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Price Summary',
+              'paymentStatus.priceSummary'.tr(),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Base Fare', style: TextStyle(color: Colors.grey[600])),
+                Text(
+                  'paymentStatus.baseFare'.tr(),
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
                 Text('${price.currency} ${price.base}'),
               ],
             ),
@@ -512,7 +512,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Tax (${tax.code})',
+                      'paymentStatus.tax'.tr(namedArgs: {'code': tax.code}),
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     Text('${price.currency} ${tax.amount}'),
@@ -526,7 +526,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Total Amount',
+                  'paymentStatus.totalAmount'.tr(),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
@@ -556,7 +556,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Passenger Details',
+              'paymentStatus.passengerDetails'.tr(),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),
@@ -618,7 +618,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           SizedBox(height: 24),
           Text(
-            'Payment Failed',
+            'paymentStatus.paymentFailed'.tr(),
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 16),
@@ -636,7 +636,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                 (route) => false,
               );
             },
-            text: 'Try Again',
+            text: 'paymentStatus.tryAgain'.tr(),
             height: 50,
           ),
         ],
@@ -661,7 +661,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
           ),
           SizedBox(height: 24),
           Text(
-            'Error Occurred',
+            'paymentStatus.errorOccurred'.tr(),
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 16),
@@ -675,7 +675,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             onPressed: () {
               context.read<PaymentStatusCubit>().checkStatusManually();
             },
-            text: 'Retry',
+            text: 'paymentStatus.retry'.tr(),
             height: 50,
           ),
         ],

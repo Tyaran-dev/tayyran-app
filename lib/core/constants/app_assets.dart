@@ -13,4 +13,5 @@ class AppAssets {
   static String profileIcon = 'assets/icons/profile.png';
   static String homeIcon = 'assets/icons/homeIcon.png';
   static String bookingIcon = 'assets/icons/bookings.png';
+  static String settingsIcon = 'assets/icons/settings.png';
 }

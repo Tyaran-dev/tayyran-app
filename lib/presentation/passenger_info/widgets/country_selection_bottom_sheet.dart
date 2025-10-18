@@ -1,6 +1,7 @@
 // lib/presentation/passenger_info/widgets/country_selection_bottom_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/data/country_data.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class CountrySelectionBottomSheet extends StatefulWidget {
   final bool showNationality;
@@ -38,10 +39,30 @@ class _CountrySelectionBottomSheetState
             (country) =>
                 country['name_en']!.toLowerCase().contains(query) ||
                 country['name_ar']!.toLowerCase().contains(query) ||
-                country['nationality_en']!.toLowerCase().contains(query),
+                (widget.showNationality &&
+                    country['nationality_en']!.toLowerCase().contains(query)) ||
+                (widget.showNationality &&
+                    country['nationality_ar']!.toLowerCase().contains(query)),
           )
           .toList();
     });
+  }
+
+  String _getLocalizedCountryName(Map<String, dynamic> country) {
+    final locale = EasyLocalization.of(context)?.locale;
+    if (locale?.languageCode == 'ar') {
+      if (widget.showNationality) {
+        return country['nationality_ar'] ??
+            country['name_ar'] ??
+            country['name_en'] ??
+            '';
+      }
+      return country['name_ar'] ?? country['name_en'] ?? '';
+    }
+    if (widget.showNationality) {
+      return country['nationality_en'] ?? country['name_en'] ?? '';
+    }
+    return country['name_en'] ?? '';
   }
 
   @override
@@ -53,7 +74,9 @@ class _CountrySelectionBottomSheetState
         children: [
           // Header
           Text(
-            widget.showNationality ? 'Select Nationality' : 'Select Country',
+            widget.showNationality
+                ? 'select_nationality'.tr()
+                : 'select_country'.tr(),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -62,7 +85,7 @@ class _CountrySelectionBottomSheetState
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              labelText: 'Search',
+              labelText: 'search'.tr(),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -80,12 +103,14 @@ class _CountrySelectionBottomSheetState
                   _filteredCountries[index]['flag']!,
                   style: const TextStyle(fontSize: 24),
                 ),
-                title: Text(_filteredCountries[index]['name_en']!),
-                subtitle: Text(
-                  widget.showNationality
-                      ? _filteredCountries[index]['nationality_en']!
-                      : _filteredCountries[index]['name_ar']!,
+                title: Text(
+                  _getLocalizedCountryName(_filteredCountries[index]),
                 ),
+                subtitle: widget.showNationality
+                    ? Text(
+                        _filteredCountries[index]['name_${context.locale.languageCode}']!,
+                      )
+                    : null,
                 onTap: () => Navigator.pop(context, _filteredCountries[index]),
               ),
             ),

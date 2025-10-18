@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/presentation/onboarding/model/onboarding_model.dart';
 
@@ -54,7 +55,7 @@ class OnboardingItem extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              onboardingModel.desc,
+              onboardingModel.descKey.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 19,

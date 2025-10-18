@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
@@ -132,9 +133,9 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              "Passengers & Cabin Class",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              "passengers_cabin_class".tr(),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
 
@@ -147,7 +148,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
                 border: Border.all(color: Colors.grey[300]!),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 6,
                     offset: const Offset(0, 3),
                   ),
@@ -156,24 +157,24 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
               child: Column(
                 children: [
                   _buildPassengerType(
-                    title: "Adults",
-                    subtitle: "Age 12+",
+                    title: "adults".tr(),
+                    subtitle: "age_12_plus".tr(),
                     count: _adults,
                     onDecrement: () => _updatePassengerCount('adults', -1),
                     onIncrement: () => _updatePassengerCount('adults', 1),
                   ),
                   const Divider(height: 20),
                   _buildPassengerType(
-                    title: "Children",
-                    subtitle: "Age 2-11",
+                    title: "children".tr(),
+                    subtitle: "age_2_11".tr(),
                     count: _children,
                     onDecrement: () => _updatePassengerCount('children', -1),
                     onIncrement: () => _updatePassengerCount('children', 1),
                   ),
                   const Divider(height: 20),
                   _buildPassengerType(
-                    title: "Infants",
-                    subtitle: "Under 2 years",
+                    title: "infants".tr(),
+                    subtitle: "under_2_years".tr(),
                     count: _infants,
                     onDecrement: () => _updatePassengerCount('infants', -1),
                     onIncrement: () => _updatePassengerCount('infants', 1),
@@ -202,29 +203,48 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Cabin Class",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  Text(
+                    "cabin_class".tr(),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Column(
                     children: [
                       _buildCabinClassOption(
-                        'Economy',
-                        'The standard seating option',
+                        'ECONOMY',
+                        'the_standard_seating_option',
                       ),
                       _buildCabinClassOption(
-                        'Premium Economy',
-                        'More legroom and amenities',
+                        'PREMIUM_ECONOMY',
+                        'more_legroom_and_amenities',
                       ),
                       _buildCabinClassOption(
-                        'Business',
-                        'Premium service and comfort',
+                        'BUSINESS',
+                        'premium_service_and_comfort',
                       ),
                       _buildCabinClassOption(
-                        'First',
-                        'The most luxurious experience',
+                        'FIRST',
+                        'the_most_luxurious_experience',
                       ),
+                      // _buildCabinClassOption(
+                      //   'economy'.tr(),
+                      //   'the_standard_seating_option'.tr(),
+                      // ),
+                      // _buildCabinClassOption(
+                      //   'premium_economy'.tr(),
+                      //   'more_legroom_and_amenities'.tr(),
+                      // ),
+                      // _buildCabinClassOption(
+                      //   'business'.tr(),
+                      //   'premium_service_and_comfort'.tr(),
+                      // ),
+                      // _buildCabinClassOption(
+                      //   'first'.tr(),
+                      //   'the_most_luxurious_experience'.tr(),
+                      // ),
                     ],
                   ),
                 ],
@@ -233,7 +253,7 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
 
             const SizedBox(height: 30),
             GradientButton(
-              text: 'Confirm',
+              text: 'confirm'.tr(),
               height: 50,
               width: double.infinity,
               onPressed: () {
@@ -314,20 +334,81 @@ class _PassengerSelectionModalState extends State<PassengerSelectionModal> {
   VoidCallback get _disabledDecrement => () {};
   VoidCallback get _disabledIncrement => () {};
 
-  Widget _buildCabinClassOption(String displayValue, String description) {
-    // Convert display value to backend value for comparison
-    final String backendValue = displayValue.toCabinClassBackendValue;
+  // Widget _buildCabinClassOption(String displayValue, String description) {
+  //   // Convert display value to backend value for comparison
+  //   final String backendValue = displayValue.toCabinClassBackendValue;
+  //   final bool isSelected = _currentCabinClass == backendValue;
+
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(vertical: 4.0),
+  //     child: InkWell(
+  //       onTap: () {
+  //         // Update local state for immediate UI feedback
+  //         setState(() {
+  //           _currentCabinClass = backendValue;
+  //         });
+  //         // Notify parent about the change
+  //         widget.onCabinClassChanged(backendValue);
+  //       },
+  //       child: Row(
+  //         children: [
+  //           Container(
+  //             width: 24,
+  //             height: 24,
+  //             decoration: BoxDecoration(
+  //               shape: BoxShape.circle,
+  //               border: Border.all(
+  //                 color: isSelected
+  //                     ? AppColors.splashBackgroundColorEnd
+  //                     : Colors.grey,
+  //                 width: 2,
+  //               ),
+  //             ),
+  //             child: isSelected
+  //                 ? Center(
+  //                     child: Container(
+  //                       width: 12,
+  //                       height: 12,
+  //                       decoration: const BoxDecoration(
+  //                         shape: BoxShape.circle,
+  //                         color: AppColors.splashBackgroundColorEnd,
+  //                       ),
+  //                     ),
+  //                   )
+  //                 : null,
+  //           ),
+  //           const SizedBox(width: 12),
+  //           Expanded(
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(displayValue, style: const TextStyle(fontSize: 15)),
+  //                 const SizedBox(height: 2),
+  //                 Text(
+  //                   description,
+  //                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+  //                   maxLines: 2,
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+  Widget _buildCabinClassOption(String backendValue, String descriptionKey) {
     final bool isSelected = _currentCabinClass == backendValue;
+    final String displayValue = backendValue.toCabinClassDisplayName;
+    final String description = descriptionKey.tr();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: InkWell(
         onTap: () {
-          // Update local state for immediate UI feedback
           setState(() {
             _currentCabinClass = backendValue;
           });
-          // Notify parent about the change
           widget.onCabinClassChanged(backendValue);
         },
         child: Row(

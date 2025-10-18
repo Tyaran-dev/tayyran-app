@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
 import 'package:tayyran_app/data/repositories/flight_search_repository.dart';
@@ -6,6 +7,7 @@ import 'package:tayyran_app/presentation/flight/models/multi_flight_segment.dart
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
 import 'package:tayyran_app/presentation/flight_search/models/filter_options.dart';
 import 'package:tayyran_app/presentation/flight_search/models/flight_ticket_model.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 
 class FlightSearchCubit extends Cubit<FlightSearchState> {
   final FlightSearchRepository _repository;
@@ -41,10 +43,14 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     _safeEmit(state.copyWith(selectedFlightOffer: null));
   }
 
-  Future<void> loadFlights(Map<String, dynamic> searchData) async {
+  Future<void> loadFlights(
+    Map<String, dynamic> searchData,
+    BuildContext context,
+  ) async {
     if (_isLoading || isClosed || _isDisposed) return;
     _isLoading = true;
 
+    print('🔍 [CUBIT] ========== STARTING FLIGHT SEARCH ==========');
     print('🔍 [CUBIT] Original searchData received: $searchData');
 
     // Format for UI display
@@ -64,6 +70,9 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     try {
       // Use original searchData for API call
       final apiRequestData = _prepareApiRequestData(searchData);
+
+      print('🔍 [CUBIT] Final API request data: $apiRequestData');
+
       final response = await _repository.searchFlights(apiRequestData);
 
       if (response.success) {
@@ -71,7 +80,7 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
         final priceRange = response.getPriceRange();
 
         final tickets = response.data.map((offer) {
-          return _createFlightTicket(offer, response.filters);
+          return _createFlightTicket(offer, response.filters, context);
         }).toList();
 
         _safeEmit(
@@ -85,6 +94,8 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
             filters: FilterOptions(minPrice: 0, maxPrice: 10000),
           ),
         );
+
+        print('✅ [CUBIT] Flight search completed successfully');
       } else {
         _safeEmit(
           state.copyWith(
@@ -92,6 +103,8 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
             errorMessage: response.message ?? 'Failed to load flights',
           ),
         );
+
+        print('❌ [CUBIT] Flight search failed: ${response.message}');
       }
     } catch (e) {
       _safeEmit(
@@ -100,79 +113,21 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
           errorMessage: 'Failed to load flights: $e',
         ),
       );
+
+      print('❌ [CUBIT] Flight search error: $e');
     } finally {
       _isLoading = false;
+      print('🔍 [CUBIT] ========== FLIGHT SEARCH COMPLETED ==========');
     }
   }
 
-  // Future<void> loadFlights(Map<String, dynamic> searchData) async {
-  //   if (_isLoading || isClosed || _isDisposed) return;
-  //   _isLoading = true;
-
-  //   // FIX: Use the original searchData for API call, not formatted data
-  //   final formattedSearchData = formatSearchDataForAppBar(searchData);
-
-  //   _safeEmit(
-  //     state.copyWith(
-  //       isLoading: true,
-  //       searchData: formattedSearchData,
-  //       errorMessage: null,
-  //     ),
-  //   );
-
-  //   try {
-  //     // FIX: Use the original searchData for API call
-  //     final apiRequestData = _prepareApiRequestData(searchData);
-  //     final response = await _repository.searchFlights(apiRequestData);
-
-  //     if (response.success) {
-  //       final availableCarriers = response.getAvailableCarriers();
-  //       final priceRange = response.getPriceRange();
-
-  //       final tickets = response.data.map((offer) {
-  //         return _createFlightTicket(offer, response.filters);
-  //       }).toList();
-
-  //       _safeEmit(
-  //         state.copyWith(
-  //           isLoading: false,
-  //           tickets: tickets,
-  //           filteredTickets: tickets,
-  //           searchData: formattedSearchData,
-  //           availableCarriers: availableCarriers,
-  //           minTicketPrice: priceRange['min'] ?? 0,
-  //           maxTicketPrice: priceRange['max'] ?? 10000,
-  //           filters: FilterOptions(minPrice: 0, maxPrice: 10000),
-  //         ),
-  //       );
-  //     } else {
-  //       _safeEmit(
-  //         state.copyWith(
-  //           isLoading: false,
-  //           errorMessage: response.message ?? 'Failed to load flights',
-  //           searchData: formattedSearchData,
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     _safeEmit(
-  //       state.copyWith(
-  //         isLoading: false,
-  //         errorMessage: 'Failed to load flights: $e',
-  //         searchData: formattedSearchData,
-  //       ),
-  //     );
-  //   } finally {
-  //     _isLoading = false;
-  //   }
-  // }
-
-  // ADD THIS METHOD: Format search data for app bar display
+  // Format search data for app bar display
   Map<String, dynamic> formatSearchDataForAppBar(
     Map<String, dynamic> searchData,
   ) {
     final tripType = searchData['flightType'] ?? 'oneway';
     print("SEARCH DATA ON FORMAT SEARCH DATA $searchData");
+
     if (tripType == 'multi') {
       final segments = searchData['segments'] as List<dynamic>? ?? [];
       final multiCityRoutes = segments.map((segment) {
@@ -206,7 +161,11 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     }
   }
 
-  FlightTicket _createFlightTicket(FlightOffer offer, Filters filters) {
+  FlightTicket _createFlightTicket(
+    FlightOffer offer,
+    Filters filters,
+    BuildContext context,
+  ) {
     final firstItinerary = offer.itineraries.isNotEmpty
         ? offer.itineraries.first
         : null;
@@ -222,19 +181,31 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       return (value ?? "").isNotEmpty ? value! : fallback;
     }
 
-    final airlineName = safeValue(carrier?.airLineName, carrierCode);
+    // Use Arabic name if locale is Arabic
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final airlineName = isArabic
+        ? safeValue(carrier?.airlineNameAr, carrier?.airLineName ?? carrierCode)
+        : safeValue(carrier?.airLineName, carrierCode);
+
     final airlineLogo = safeValue(carrier?.image, "");
 
-    // Use English format by default (remove context dependency)
-    final departureTime = _formatTimeEnglish(firstSegment?.departure.at);
-    final arrivalTime = _formatTimeEnglish(firstSegment?.arrival.at);
-    final departureDateFormatted = _formatDateEnglish(
+    // Use localized time formatting
+    final departureTime = _formatTimeLocalized(
       firstSegment?.departure.at,
+      context,
     );
-    final arrivalDateFormatted = _formatDateEnglish(firstSegment?.arrival.at);
+    final arrivalTime = _formatTimeLocalized(firstSegment?.arrival.at, context);
+    final departureDateFormatted = _formatDateLocalized(
+      firstSegment?.departure.at,
+      context,
+    );
+    final arrivalDateFormatted = _formatDateLocalized(
+      firstSegment?.arrival.at,
+      context,
+    );
 
     // CREATE FLIGHT SEGMENTS FROM ALL ITINERARIES
-    final flightSegments = _createFlightSegments(offer, filters);
+    final flightSegments = _createFlightSegments(offer, filters, context);
 
     return FlightTicket(
       id: offer.mapping,
@@ -260,16 +231,18 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       flightOffer: offer,
       filterCarrier: filters,
       flightType: offer.flightType,
-      flightSegments: flightSegments, // Add this line
+      flightSegments: flightSegments,
     );
   }
 
-  // ADD THIS METHOD to create flight segments from all itineraries
+  // Create flight segments from all itineraries with localization
   List<MultiFlightSegment> _createFlightSegments(
     FlightOffer offer,
     Filters filters,
+    BuildContext context,
   ) {
     final segments = <MultiFlightSegment>[];
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     for (final itinerary in offer.itineraries) {
       for (final segment in itinerary.segments) {
@@ -287,6 +260,13 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
             : segment.fromAirport.city;
         final toCity = toParts.length > 1 ? toParts[1] : segment.toAirport.city;
 
+        // Use Arabic airline name if available
+        final airlineName = isArabic
+            ? (carrier?.airlineNameAr ??
+                  carrier?.airLineName ??
+                  segment.carrierCode)
+            : (carrier?.airLineName ?? segment.carrierCode);
+
         final flightSegment = MultiFlightSegment(
           from: segment.fromName,
           to: segment.toName,
@@ -294,13 +274,19 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
           toCode: toCode,
           fromCity: fromCity,
           toCity: toCity,
-          airline: carrier?.airLineName ?? segment.carrierCode,
+          airline: airlineName,
           airlineLogo: carrier?.image ?? '',
           airlineCode: segment.carrierCode,
-          departureTime: _formatTimeEnglish(segment.departure.at),
-          arrivalTime: _formatTimeEnglish(segment.arrival.at),
-          departureDateFormatted: _formatDateEnglish(segment.departure.at),
-          arrivalDateFormatted: _formatDateEnglish(segment.arrival.at),
+          departureTime: _formatTimeLocalized(segment.departure.at, context),
+          arrivalTime: _formatTimeLocalized(segment.arrival.at, context),
+          departureDateFormatted: _formatDateLocalized(
+            segment.departure.at,
+            context,
+          ),
+          arrivalDateFormatted: _formatDateLocalized(
+            segment.arrival.at,
+            context,
+          ),
           duration: segment.duration,
           stops: segment.numberOfStops,
           isDirect: segment.numberOfStops == 0,
@@ -316,13 +302,37 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     return segments;
   }
 
-  String _formatTimeEnglish(DateTime? dateTime) {
+  // Localized time formatting
+  String _formatTimeLocalized(DateTime? dateTime, BuildContext context) {
     if (dateTime == null) return "";
 
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    if (isArabic) {
+      return _formatTimeArabic(dateTime);
+    } else {
+      return _formatTimeEnglish(dateTime);
+    }
+  }
+
+  // Arabic time format
+  String _formatTimeArabic(DateTime dateTime) {
     final hour = dateTime.hour;
     final minute = dateTime.minute;
 
-    // English time format (12-hour with AM/PM)
+    // Arabic time format (12-hour with ص/م)
+    final period = hour >= 12 ? 'م' : 'ص';
+    final hour12 = hour % 12;
+    final hourDisplay = hour12 == 0 ? 12 : hour12;
+
+    return '$hourDisplay:${minute.toString().padLeft(2, '0')} $period';
+  }
+
+  // English time format
+  String _formatTimeEnglish(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute;
+
     final period = hour >= 12 ? 'PM' : 'AM';
     final hour12 = hour % 12;
     final hourDisplay = hour12 == 0 ? 12 : hour12;
@@ -330,30 +340,85 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
     return '$hourDisplay:${minute.toString().padLeft(2, '0')} $period';
   }
 
-  String _formatDateEnglish(DateTime? dateTime) {
+  // Localized date formatting
+  String _formatDateLocalized(DateTime? dateTime, BuildContext context) {
     if (dateTime == null) return "";
 
-    final year = dateTime.year;
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final day = dateTime.day.toString().padLeft(2, '0');
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return '$year-$month-$day';
+    if (isArabic) {
+      return _formatDateArabic(dateTime);
+    } else {
+      return _formatDateEnglish(dateTime);
+    }
+  }
+
+  // Arabic date format
+  String _formatDateArabic(DateTime dateTime) {
+    final day = dateTime.day;
+    final month = _getArabicMonth(dateTime.month);
+    final year = dateTime.year;
+
+    return '$day $month $year';
+  }
+
+  String _getArabicMonth(int month) {
+    final months = {
+      1: 'يناير',
+      2: 'فبراير',
+      3: 'مارس',
+      4: 'أبريل',
+      5: 'مايو',
+      6: 'يونيو',
+      7: 'يوليو',
+      8: 'أغسطس',
+      9: 'سبتمبر',
+      10: 'أكتوبر',
+      11: 'نوفمبر',
+      12: 'ديسمبر',
+    };
+    return months[month] ?? '';
+  }
+
+  // English date format
+  String _formatDateEnglish(DateTime dateTime) {
+    return formatDateForBackend(dateTime);
   }
 
   Map<String, dynamic> _prepareApiRequestData(Map<String, dynamic> searchData) {
     final tripType = searchData['flightType'] ?? 'oneway';
 
+    print('🔍 [CUBIT] Preparing API request data:');
+    print('   Trip Type: $tripType');
+    print('   Original Search Data: $searchData');
+
     if (tripType == 'multi') {
       // Multi-city request
       final segments = searchData['segments'] as List<dynamic>? ?? [];
 
+      print('   Multi-city segments:');
+      for (final segment in segments) {
+        print(
+          '     Segment: ${segment['from']} -> ${segment['to']} on ${segment['date']}',
+        );
+      }
+
       return {
         'destinations': segments.map((segment) {
+          final fromCode = _extractAirportCode(segment['from'] ?? '');
+          final toCode = _extractAirportCode(segment['to'] ?? '');
+          final date = _formatDateForApi(segment['date'] ?? '');
+
+          print('   🚀 Sending segment to API:');
+          print('     From: ${segment['from']} -> $fromCode');
+          print('     To: ${segment['to']} -> $toCode');
+          print('     Date: ${segment['date']} -> $date');
+
           return {
             'id': segment['id'] ?? '',
-            'from': _extractAirportCode(segment['from'] ?? ''),
-            'to': _extractAirportCode(segment['to'] ?? ''),
-            'date': _formatDateForApi(segment['date'] ?? ''),
+            'from': fromCode,
+            'to': toCode,
+            'date': date,
           };
         }).toList(),
         'adults': searchData['adults'] ?? 1,
@@ -364,20 +429,23 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       };
     } else if (tripType == 'round') {
       // Round-trip request
+      final fromCode = _extractAirportCode(searchData['from'] ?? '');
+      final toCode = _extractAirportCode(searchData['to'] ?? '');
+      final departureDate = _formatDateForApi(
+        searchData['departureDate'] ?? '',
+      );
+      final returnDate = _formatDateForApi(searchData['returnDate'] ?? '');
+
+      print('   🚀 Sending round-trip to API:');
+      print('     From: ${searchData['from']} -> $fromCode');
+      print('     To: ${searchData['to']} -> $toCode');
+      print('     Departure: ${searchData['departureDate']} -> $departureDate');
+      print('     Return: ${searchData['returnDate']} -> $returnDate');
+
       return {
         'destinations': [
-          {
-            'id': '1',
-            'from': _extractAirportCode(searchData['from'] ?? ''),
-            'to': _extractAirportCode(searchData['to'] ?? ''),
-            'date': _formatDateForApi(searchData['departureDate'] ?? ''),
-          },
-          {
-            'id': '2',
-            'from': _extractAirportCode(searchData['to'] ?? ''),
-            'to': _extractAirportCode(searchData['from'] ?? ''),
-            'date': _formatDateForApi(searchData['returnDate'] ?? ''),
-          },
+          {'id': '1', 'from': fromCode, 'to': toCode, 'date': departureDate},
+          {'id': '2', 'from': toCode, 'to': fromCode, 'date': returnDate},
         ],
         'adults': searchData['adults'] ?? 1,
         'children': searchData['children'] ?? 0,
@@ -387,14 +455,20 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       };
     } else {
       // One-way request
+      final fromCode = _extractAirportCode(searchData['from'] ?? '');
+      final toCode = _extractAirportCode(searchData['to'] ?? '');
+      final departureDate = _formatDateForApi(
+        searchData['departureDate'] ?? '',
+      );
+
+      print('   🚀 Sending one-way to API:');
+      print('     From: ${searchData['from']} -> $fromCode');
+      print('     To: ${searchData['to']} -> $toCode');
+      print('     Date: ${searchData['departureDate']} -> $departureDate');
+
       return {
         'destinations': [
-          {
-            'id': '1',
-            'from': _extractAirportCode(searchData['from'] ?? ''),
-            'to': _extractAirportCode(searchData['to'] ?? ''),
-            'date': _formatDateForApi(searchData['departureDate'] ?? ''),
-          },
+          {'id': '1', 'from': fromCode, 'to': toCode, 'date': departureDate},
         ],
         'adults': searchData['adults'] ?? 1,
         'children': searchData['children'] ?? 0,
@@ -412,37 +486,48 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
   }
 
   String _formatDateForApi(String displayDate) {
-    // Convert "28-Sep-2025" to "2025-09-28"
+    print('🔧 [CUBIT] Formatting date for API: "$displayDate"');
+
     try {
-      final parts = displayDate.split('-');
-      if (parts.length == 3) {
-        final monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
+      // Use the helper function to parse the date
+      final dateTime = parseDate(displayDate);
 
-        final day = parts[0].padLeft(2, '0');
-        final month = (monthNames.indexOf(parts[1]) + 1).toString().padLeft(
-          2,
-          '0',
-        );
-        final year = parts[2];
+      // Use the helper function to format for backend
+      final result = formatDateForBackend(dateTime);
 
-        return '$year-$month-$day';
-      }
+      print(
+        '✅ [CUBIT] Date converted using helpers: "$displayDate" -> "$result"',
+      );
+      return result;
     } catch (e) {
-      print('Error formatting date: $e');
+      print('❌ [CUBIT] Error formatting date "$displayDate" using helpers: $e');
+
+      // Fallback: try manual parsing if helper fails
+      try {
+        final parts = displayDate.split('-');
+        if (parts.length == 3) {
+          // Handle both Arabic and English month names using helper
+          final monthNumber = getMonthNumberFromLocalizedName(parts[1]);
+
+          // ignore: unnecessary_null_comparison
+          if (monthNumber != null) {
+            final day = parts[0].padLeft(2, '0');
+            final month = monthNumber.toString().padLeft(2, '0');
+            final year = parts[2];
+
+            final result = '$year-$month-$day';
+            print(
+              '✅ [CUBIT] Date converted manually: "$displayDate" -> "$result"',
+            );
+            return result;
+          }
+        }
+      } catch (e2) {
+        print('❌ [CUBIT] Manual conversion also failed: $e2');
+      }
     }
+
+    print('⚠️ [CUBIT] Returning original date: "$displayDate"');
     return displayDate;
   }
 
@@ -659,4 +744,51 @@ class FlightSearchCubit extends Cubit<FlightSearchState> {
       state.copyWith(selectedSorts: {}, filteredTickets: state.tickets),
     );
   }
+
+  // Helper method to convert numbers to Arabic numerals
+  String _convertToArabicNumerals(String input) {
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+
+    String result = input;
+    for (int i = 0; i < english.length; i++) {
+      result = result.replaceAll(english[i], arabic[i]);
+    }
+    return result;
+  }
+
+  // Method to format price based on locale
+  String formatPriceForLocale(double price, BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    if (isArabic) {
+      return _convertToArabicNumerals(price.toStringAsFixed(0));
+    } else {
+      return price.toStringAsFixed(0);
+    }
+  }
+
+  // Method to format any number based on locale
+  String formatNumberForLocale(int number, BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    return isArabic
+        ? _convertToArabicNumerals(number.toString())
+        : number.toString();
+  }
+
+  // Retry flight search with current search data
+  Future<void> retrySearch(BuildContext context) async {
+    await loadFlights(state.originalSearchData, context);
+  }
+
+  // Refresh flights with current search data
+  Future<void> refreshFlights(BuildContext context) async {
+    await loadFlights(state.originalSearchData, context);
+  }
+
+  // Check if search is in progress
+  bool get isLoading => _isLoading;
+
+  // Get current search state
+  FlightSearchState get currentState => state;
 }

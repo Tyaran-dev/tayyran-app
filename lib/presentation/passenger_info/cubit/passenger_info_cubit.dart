@@ -25,9 +25,14 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
   }
 
   // Add helper method to get airline name for segment
-  String getAirlineNameForSegment(Segment segment) {
+  String getAirlineNameForSegment(Segment segment, String currentLang) {
     final carrier = state.filters.findCarrierByCode(segment.carrierCode);
-    return carrier?.airLineName ?? segment.carrierCode;
+    if (carrier == null) {
+      return segment.carrierCode;
+    }
+    return currentLang == 'ar'
+        ? (carrier.airlineNameAr)
+        : (carrier.airLineName);
   }
 
   // Add helper method to get airline logo for segment
@@ -85,10 +90,12 @@ class PassengerInfoCubit extends Cubit<PassengerInfoState> {
         );
 
         final pricingOffer = pricingResponse.data.flightOffers.first;
+        final presentageVat = pricingResponse.presentageVat;
         final presentageCommission = pricingResponse.presentageCommission;
         final updatedPrice = pricingOffer.price.grandTotalAsDouble;
         final administrationFee = updatedPrice * (presentageCommission / 100);
-        final grandTotal = updatedPrice + administrationFee;
+        final vatAmount = administrationFee * (presentageVat / 100);
+        final grandTotal = updatedPrice + administrationFee + vatAmount;
 
         _hasPricingUpdated = true;
 

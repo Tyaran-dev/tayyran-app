@@ -56,6 +56,7 @@ class PaymentStatusCubit extends Cubit<PaymentStatusState> {
 
       final paymentStatusResponse = PaymentStatusResponse.fromJson(response);
       final status = paymentStatusResponse.status;
+      // final status = "PENDING";
 
       debugPrint("✅ Payment status parsed: $status");
 
@@ -107,14 +108,23 @@ class PaymentStatusCubit extends Cubit<PaymentStatusState> {
         default:
           debugPrint("🟧 Unknown status: $status");
           emit(
-            PaymentStatusError(
+            PaymentStatusPending(
               invoiceId: invoiceId,
-              errorMessage: "Unknown status: $status",
+              message: "Payment is being processed",
               timerCount: _timerCount,
               checkAttempts: _checkAttempts,
               startTime: _startTime,
             ),
           );
+        // emit(
+        //   PaymentStatusError(
+        //     invoiceId: invoiceId,
+        //     errorMessage: "Unknown status: $status",
+        //     timerCount: _timerCount,
+        //     checkAttempts: _checkAttempts,
+        //     startTime: _startTime,
+        //   ),
+        // );
       }
     } catch (error, stackTrace) {
       debugPrint("❌ Status check error: $error");

@@ -7,7 +7,7 @@ import 'api_exceptions.dart';
 
 class DioClient {
   final Dio _dio;
-  String _currentLanguage = 'en'; // Default language
+  String _currentLanguage = 'ar';
 
   DioClient({String? baseUrl})
     : _dio = Dio(
@@ -15,25 +15,46 @@ class DioClient {
           baseUrl: baseUrl ?? ApiEndpoints.baseUrl,
           connectTimeout: const Duration(seconds: 60),
           receiveTimeout: const Duration(seconds: 60),
-          headers: {
-            'Content-Type': 'application/json',
-            'lng': 'en', // Default language
-          },
+          headers: {'Content-Type': 'application/json', 'lng': 'ar'},
         ),
       ) {
-    // Add interceptors
     _setupInterceptors();
   }
 
-  // Method to update language
   void setLanguage(String languageCode) {
     _currentLanguage = languageCode;
     _dio.options.headers['lng'] = languageCode;
+
+    // Update all requests interceptors
+    _setupInterceptors();
   }
 
   String get currentLanguage => _currentLanguage;
 
   void _setupInterceptors() {
+    _dio.interceptors.clear();
+
+    // Language interceptor - ADD DEBUG HERE
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          // Always set the current language
+          options.headers['lng'] = _currentLanguage;
+
+          // 🎯 DEBUG POINT - Check language before each request
+          print('🌐 [DEBUG] Dio Request Language: $_currentLanguage');
+          print('🌐 [DEBUG] Request Headers: ${options.headers}');
+          print('🌐 [DEBUG] Request URL: ${options.path}');
+
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print('🌐 [DEBUG] Dio Error with language: $_currentLanguage');
+          return handler.next(error);
+        },
+      ),
+    );
+
     // Logging interceptor
     _dio.interceptors.add(
       LogInterceptor(
@@ -41,23 +62,7 @@ class DioClient {
         requestBody: true,
         responseBody: true,
         error: true,
-      ),
-    );
-
-    // Auth interceptor
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          // Add auth token logic here
-          // options.headers['Authorization'] = 'Bearer $token';
-
-          // Ensure language header is always set
-          options.headers['lng'] = _currentLanguage;
-          return handler.next(options);
-        },
-        onError: (error, handler) {
-          return handler.next(error);
-        },
+        requestHeader: true, // This will show headers in Dio logs
       ),
     );
   }

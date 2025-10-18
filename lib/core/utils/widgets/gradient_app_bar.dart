@@ -1,11 +1,14 @@
 // gradient_app_bar.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state.dart';
+import 'package:tayyran_app/presentation/settings/cubit/language_cubit.dart';
 
 class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -48,49 +51,42 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Container(
       height: height ?? kToolbarHeight,
       decoration: const BoxDecoration(gradient: gradient),
-      child: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: showBackButton,
-        leading: showBackButton
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: onBackPressed ?? () => Navigator.pop(context),
-              )
-            : null,
-        title: isFlightResults
-            ? _buildFlightSearchTitleWithCubit(context)
-            : customTitle ??
-                  (isHomePage
-                      ? _buildHomeAppBarContent()
-                      : Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )),
-        centerTitle: true,
-        actions: isFlightResults
-            ? [
-                // Empty actions for flight results
-                const SizedBox(width: 16),
-              ]
-            : actions ??
-                  (isHomePage
-                      ? const [
-                          Padding(
-                            padding: EdgeInsets.only(right: 16),
-                            child: Icon(
-                              Icons.notifications,
-                              color: Colors.white,
-                              size: 26,
-                            ),
-                          ),
-                        ]
-                      : null),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+      child: BlocBuilder<LanguageCubit, LanguageState>(
+        builder: (context, state) {
+          return AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            automaticallyImplyLeading: showBackButton,
+            leading: showBackButton
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: onBackPressed ?? () => Navigator.pop(context),
+                  )
+                : null,
+            title: isFlightResults
+                ? _buildFlightSearchTitleWithCubit(context)
+                : customTitle ??
+                      (isHomePage
+                          ? _buildHomeAppBarContent()
+                          : Text(
+                              title.tr(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Almarai',
+                              ),
+                            )),
+            centerTitle: true,
+            actions: isFlightResults
+                ? [
+                    // Empty actions for flight results
+                    const SizedBox(width: 16),
+                  ]
+                : [const SizedBox(width: 16)],
+            systemOverlayStyle: SystemUiOverlayStyle.light,
+          );
+        },
       ),
     );
   }
@@ -108,14 +104,14 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (state.isLoading) {
           return _buildLoadingState();
         } else {
-          return _buildFlightSearchDetails(state.searchData);
+          return _buildFlightSearchDetails(context, state.searchData);
         }
       },
     );
   }
 
   Widget _buildLoadingState() {
-    return const Row(
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
@@ -128,14 +124,17 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         SizedBox(width: 12),
         Text(
-          'Searching flights...',
+          'search_flights_loading'.tr(),
           style: TextStyle(color: Colors.white, fontSize: 16),
         ),
       ],
     );
   }
 
-  Widget _buildFlightSearchDetails(Map<String, dynamic> searchData) {
+  Widget _buildFlightSearchDetails(
+    BuildContext context,
+    Map<String, dynamic> searchData,
+  ) {
     final safeData = {
       'from': searchData['from'] ?? '',
       'to': searchData['to'] ?? '',
@@ -181,27 +180,53 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     final fromCode = from.contains(' - ') ? from.split(' - ').first : from;
     final toCode = to.contains(' - ') ? to.split(' - ').first : to;
 
-    // Format date from "31-Aug-2025" to "31 Aug"
-    String formatDate(String dateString) {
-      if (dateString.contains('-')) {
-        try {
-          final parts = dateString.split('-');
-          if (parts.length == 3) {
-            final day = parts[0];
-            final monthAbbr = parts[1];
-            return '$day $monthAbbr';
-          }
-          return dateString;
-        } catch (e) {
-          return dateString;
+    // Format date for display in app bar (day and month only)
+    String formatDateForAppBar(String dateString, BuildContext context) {
+      if (dateString.isEmpty) return "";
+
+      print('🔧 formatDateForAppBar input: "$dateString"');
+
+      try {
+        // Parse the date using helper function
+        final dateTime = parseDate(dateString);
+        print('🔧 Parsed dateTime: $dateTime');
+
+        // Use helper function to format the date according to locale
+        final fullFormattedDate = formatDateForDisplay(dateTime, context);
+        print('🔧 Full formatted date: "$fullFormattedDate"');
+
+        // Extract just the day and month part for display (remove year)
+        final parts = fullFormattedDate.split('-');
+        if (parts.length == 3) {
+          final day = parts[0];
+          final month = parts[1];
+          final result = '$day $month';
+          print('✅ App bar date result: "$result"');
+          return result;
         }
+        return fullFormattedDate;
+      } catch (e) {
+        print('❌ Error formatting date for app bar: $e');
+        // Fallback: try to extract day and month directly
+        if (dateString.contains('-')) {
+          try {
+            final parts = dateString.split('-');
+            if (parts.length == 3) {
+              final day = parts[0];
+              final month = parts[1];
+              return '$day $month';
+            }
+          } catch (e2) {
+            print('❌ Manual date formatting also failed: $e2');
+          }
+        }
+        return dateString;
       }
-      return dateString;
     }
 
-    final formattedDepartureDate = formatDate(departureDate);
+    final formattedDepartureDate = formatDateForAppBar(departureDate, context);
     final formattedReturnDate = isRoundTrip && returnDate.isNotEmpty
-        ? formatDate(returnDate)
+        ? formatDateForAppBar(returnDate, context)
         : '';
 
     return _buildStandardFlightAppBar(
@@ -384,7 +409,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
               Icon(Icons.person, size: 12, color: Colors.white),
               const SizedBox(width: 2),
               Text(
-                '$totalPassengers ${totalPassengers > 1 ? 'Passengers' : 'Passenger'}',
+                '$totalPassengers ${totalPassengers > 1 ? 'Passengers'.tr() : 'Passenger'.tr()}',
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               const SizedBox(width: 8),
@@ -393,7 +418,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
 
               // Class
               Text(
-                cabinClass.toCabinClassDisplayName,
+                cabinClass.toCabinClassDisplayName.tr(),
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               const SizedBox(width: 8),
@@ -446,8 +471,8 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
-          "Home Flight",
+        Text(
+          "home".tr(),
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,

@@ -1,8 +1,10 @@
-// search_form_widget.dart - Complete version
+// lib/presentation/flight/widgets/search_form_widget.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/core/utils/widgets/airport_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/date_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
@@ -21,69 +23,26 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
   bool _showDateError = false;
   final GlobalKey _returnDateKey = GlobalKey();
 
-  DateTime _parseDate(String dateString) {
-    try {
-      final parts = dateString.split('-');
-      if (parts.length == 3) {
-        final monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        final day = int.parse(parts[0]);
-        final month = monthNames.indexOf(parts[1]) + 1;
-        final year = int.parse(parts[2]);
-        return DateTime(year, month, day);
-      }
-    } catch (e) {
-      print('Error parsing date: $e');
-    }
-    return DateTime.now();
-  }
-
-  String _formatDate(DateTime date) {
-    final monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return "${date.day}-${monthNames[date.month - 1]}-${date.year}";
-  }
-
   void _validateDates(FlightState state) {
     if (state.tripType == "round" &&
         state.departureDate.isNotEmpty &&
         state.returnDate.isNotEmpty) {
-      final departure = _parseDate(state.departureDate);
-      final returnDate = _parseDate(state.returnDate);
+      final departure = parseDate(state.departureDate);
+      final returnDate = parseDate(state.returnDate);
 
-      setState(() {
-        _showDateError = returnDate.isBefore(
-          departure.add(const Duration(days: 1)),
-        );
-      });
+      if (mounted) {
+        setState(() {
+          _showDateError = returnDate.isBefore(
+            departure.add(const Duration(days: 1)),
+          );
+        });
+      }
     } else {
-      setState(() {
-        _showDateError = false;
-      });
+      if (mounted) {
+        setState(() {
+          _showDateError = false;
+        });
+      }
     }
   }
 
@@ -111,7 +70,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                       ),
                     )
                   : GradientButton(
-                      text: 'Search Flights',
+                      text: 'search_flights'.tr(),
                       height: 45,
                       width: MediaQuery.of(context).size.width * 0.90,
                       onPressed: () {
@@ -133,9 +92,9 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
         if (segment.from.isEmpty ||
             segment.to.isEmpty ||
             segment.date.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Please fill all flight segments")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("fill_flight_segments".tr())));
           return;
         }
       }
@@ -143,31 +102,29 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
       if (state.from.isEmpty ||
           state.to.isEmpty ||
           state.departureDate.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please fill all required fields")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("fill_required_fields".tr())));
         return;
       }
 
       if (state.tripType == "round" && state.returnDate.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please select return date")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("select_return_date".tr())));
         return;
       }
 
       if (state.tripType == "round" &&
           state.departureDate.isNotEmpty &&
           state.returnDate.isNotEmpty) {
-        final departure = _parseDate(state.departureDate);
-        final returnDate = _parseDate(state.returnDate);
+        final departure = parseDate(state.departureDate);
+        final returnDate = parseDate(state.returnDate);
 
         if (returnDate.isBefore(departure.add(const Duration(days: 1)))) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Return date must be after departure date"),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("return_date_error".tr())));
           return;
         }
       }
@@ -189,19 +146,19 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildTripTypeChip(
-            label: "One-way",
+            label: "one_way".tr(),
             isSelected: state.tripType == "oneway",
             icon: Icons.flight_takeoff,
             onTap: () => cubit.changeTripType("oneway"),
           ),
           _buildTripTypeChip(
-            label: "Round-trip",
+            label: "round_trip".tr(),
             isSelected: state.tripType == "round",
             icon: Icons.flight,
             onTap: () => cubit.changeTripType("round"),
           ),
           _buildTripTypeChip(
-            label: "Multi-city",
+            label: "multi_city".tr(),
             isSelected: state.tripType == "multi",
             icon: Icons.airline_stops,
             onTap: () => cubit.changeTripType("multi"),
@@ -246,10 +203,10 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isSelected ? Colors.white : Colors.grey[700],
+                  fontFamily: "Almarai",
+                  fontSize: 14.5,
                 ),
               ),
             ],
@@ -275,7 +232,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
               children: [
                 AirportTextField(
                   isOrigin: true,
-                  label: "From",
+                  label: "from".tr(),
                   value: state.from,
                   icon: Icons.flight_takeoff,
                   onTap: () async {
@@ -284,7 +241,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                       true,
                       state.from,
                     );
-                    if (selectedAirport != null) {
+                    if (selectedAirport != null && mounted) {
                       cubit.setAirportSelection(true, selectedAirport);
                     }
                   },
@@ -292,7 +249,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 const SizedBox(height: 12),
                 AirportTextField(
                   isOrigin: false,
-                  label: "To",
+                  label: "to".tr(),
                   value: state.to,
                   icon: Icons.flight_land,
                   onTap: () async {
@@ -301,15 +258,17 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                       false,
                       state.to,
                     );
-                    if (selectedAirport != null) {
+                    if (selectedAirport != null && mounted) {
                       cubit.setAirportSelection(false, selectedAirport);
                     }
                   },
                 ),
               ],
             ),
+            // Swap button - handles RTL automatically
             Positioned(
-              right: 0,
+              right: isRTL(context) ? null : 0,
+              left: isRTL(context) ? 16 : null,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -333,11 +292,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                         color: AppColors.splashBackgroundColorEnd,
                       ),
                     ),
-                    icon: const Icon(
-                      Icons.swap_vert,
-                      size: 20,
-                      color: Colors.black,
-                    ),
+                    icon: Icon(Icons.swap_vert, size: 20, color: Colors.black),
                     onPressed: () => cubit.switchFromTo(),
                     padding: EdgeInsets.zero,
                   ),
@@ -350,7 +305,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
 
         if (state.tripType == "oneway")
           DateTextField(
-            label: "Departure",
+            label: "departure".tr(),
             value: state.departureDate,
             icon: Icons.calendar_today,
             onTap: () => _selectDate(context, isDeparture: true),
@@ -359,7 +314,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
           Column(
             children: [
               DateTextField(
-                label: "Departure",
+                label: "departure".tr(),
                 value: state.departureDate,
                 icon: Icons.calendar_today,
                 onTap: () => _selectDate(context, isDeparture: true),
@@ -369,7 +324,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 key: _returnDateKey,
                 children: [
                   DateTextField(
-                    label: "Return",
+                    label: "return".tr(),
                     value: state.returnDate,
                     icon: Icons.calendar_today,
                     onTap: () => _selectDate(context, isDeparture: false),
@@ -377,7 +332,8 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                   ),
                   if (_showDateError)
                     Positioned(
-                      right: 8,
+                      right: isRTL(context) ? null : 8,
+                      left: isRTL(context) ? 8 : null,
                       top: 8,
                       child: Icon(
                         Icons.error_outline,
@@ -391,7 +347,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
-                    "Return date must be after departure date",
+                    "return_date_error".tr(),
                     style: TextStyle(color: Colors.red[700], fontSize: 12),
                   ),
                 ),
@@ -409,16 +365,15 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     return Column(
       children: [
         ...state.flightSegments.asMap().entries.map((entry) {
-          final index =
-              entry.key; // This is the position in the list (0, 1, 2, ...)
+          final index = entry.key;
           final segment = entry.value;
-          final displayIndex = index + 1; // Convert to 1-based numbering
+          final displayIndex = index + 1;
 
           return _buildFlightSegment(
             segment,
             context,
             state.flightSegments.length > 2,
-            displayIndex, // Pass the display index
+            displayIndex,
           );
         }),
 
@@ -428,7 +383,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
             child: OutlinedButton.icon(
               onPressed: () => cubit.addFlightSegment(),
               icon: const Icon(Icons.add),
-              label: const Text("Add Another Flight"),
+              label: Text("add_another_flight".tr()),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.splashBackgroundColorEnd,
                 side: BorderSide(color: AppColors.splashBackgroundColorEnd),
@@ -447,7 +402,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     FlightSegment segment,
     BuildContext context,
     bool canDelete,
-    int displayIndex, // Add this parameter
+    int displayIndex,
   ) {
     final cubit = context.read<FlightCubit>();
 
@@ -476,7 +431,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Flight $displayIndex", // Use displayIndex instead of ID-based index
+                    "${'flight'.tr()} $displayIndex",
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -517,7 +472,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                       children: [
                         AirportTextField(
                           isOrigin: true,
-                          label: "From",
+                          label: "from".tr(),
                           value: segment.from,
                           icon: Icons.flight_takeoff,
                           onTap: () => cubit.showMultiCityAirportBottomSheet(
@@ -529,7 +484,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                         const SizedBox(height: 12),
                         AirportTextField(
                           isOrigin: false,
-                          label: "To",
+                          label: "to".tr(),
                           value: segment.to,
                           icon: Icons.flight_land,
                           onTap: () => cubit.showMultiCityAirportBottomSheet(
@@ -540,8 +495,10 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                         ),
                       ],
                     ),
+                    // Swap button for multi-city - handles RTL
                     Positioned(
-                      right: 16,
+                      right: isRTL(context) ? null : 16,
+                      left: isRTL(context) ? 16 : null,
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -573,6 +530,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                                 segment.to,
                                 segment.from,
                                 segment.date,
+                                englishDate: segment.englishDate,
                               );
                             },
                             padding: EdgeInsets.zero,
@@ -584,7 +542,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 ),
                 const SizedBox(height: 12),
                 DateTextField(
-                  label: "Departure Date",
+                  label: "departure".tr(),
                   value: segment.date,
                   icon: Icons.calendar_today,
                   onTap: () => _selectMultiCityDate(context, segment.id),
@@ -615,8 +573,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     // If the segment already has a date, use it as initial date
     if (segment.date.isNotEmpty) {
       try {
-        final currentDate = _parseDate(segment.date);
-        // Ensure initial date is not before the minimum allowed date
+        final currentDate = parseDate(segment.date);
         initialDate = currentDate.isBefore(minDate) ? minDate : currentDate;
       } catch (e) {
         print('Error parsing segment date: $e');
@@ -626,7 +583,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: minDate, // This is the key fix - use the calculated minDate
+      firstDate: minDate,
       lastDate: DateTime(DateTime.now().year + 1),
       builder: (context, child) {
         return Theme(
@@ -648,13 +605,20 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
       },
     );
 
-    if (picked != null) {
-      final formattedDate = _formatDate(picked);
+    if (picked != null && mounted) {
+      final formattedDate = formatDateForDisplay(picked, context);
+      final englishFormatDate = formatDateForBackend(picked);
+
+      print('📅 Multi-city date selected:');
+      print('   Display (Arabic): $formattedDate');
+      print('   Backend (English): $englishFormatDate');
+
       cubit.updateFlightSegment(
         segmentId,
         segment.from,
         segment.to,
         formattedDate,
+        englishDate: englishFormatDate, // Ensure English date is set
       );
     }
   }
@@ -670,11 +634,11 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
     DateTime firstDate = DateTime.now();
 
     if (isDeparture && state.departureDate.isNotEmpty) {
-      initialDate = _parseDate(state.departureDate);
+      initialDate = parseDate(state.departureDate);
     } else if (!isDeparture && state.returnDate.isNotEmpty) {
-      initialDate = _parseDate(state.returnDate);
+      initialDate = parseDate(state.returnDate);
       if (state.departureDate.isNotEmpty) {
-        final departureDate = _parseDate(state.departureDate);
+        final departureDate = parseDate(state.departureDate);
         firstDate = departureDate.add(const Duration(days: 1));
         if (initialDate.isBefore(firstDate)) {
           initialDate = firstDate;
@@ -711,17 +675,30 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
       },
     );
 
-    if (picked != null) {
-      final formattedDate = _formatDate(picked);
+    if (picked != null && mounted) {
+      final formattedDate = formatDateForDisplay(picked, context);
+      final englishFormatDate = formatDateForBackend(picked);
+
+      print('📅 Date selected:');
+      print('   Display (Arabic): $formattedDate');
+      print('   Backend (English): $englishFormatDate');
+      print('   Is Departure: $isDeparture');
 
       if (isDeparture) {
-        cubit.setDepartureDate(formattedDate);
+        cubit.setDepartureDate(formattedDate, englishDate: englishFormatDate);
         if (state.tripType == "round") {
           final nextDay = picked.add(const Duration(days: 1));
-          cubit.setReturnDate(_formatDate(nextDay));
+          final nextDayFormatted = formatDateForDisplay(nextDay, context);
+          final nextDayEnglish = formatDateForBackend(nextDay);
+
+          cubit.setReturnDate(nextDayFormatted, englishDate: nextDayEnglish);
+
+          print('🔄 Auto-set return date:');
+          print('   Display: $nextDayFormatted');
+          print('   Backend: $nextDayEnglish');
         }
       } else {
-        cubit.setReturnDate(formattedDate);
+        cubit.setReturnDate(formattedDate, englishDate: englishFormatDate);
       }
     }
   }
@@ -773,7 +750,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "${state.totalPassengers} Passenger${state.totalPassengers > 1 ? 's' : ''} • ${state.cabinClass.toCabinClassDisplayName}",
+                    "${state.totalPassengers} ${'passengers'.tr()} • ${state.cabinClass.toCabinClassDisplayName.tr()}",
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -781,9 +758,9 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "${state.adults} Adult${state.adults != 1 ? 's' : ''}, "
-                    "${state.children} Child${state.children != 1 ? 'ren' : ''}, "
-                    "${state.infants} Infant${state.infants != 1 ? 's' : ''}",
+                    "${state.adults} ${'adults'.tr()}, "
+                    "${state.children} ${'children'.tr()}, "
+                    "${state.infants} ${'infants'.tr()}",
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],

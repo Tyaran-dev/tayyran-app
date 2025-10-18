@@ -1,6 +1,7 @@
 // lib/presentation/payment/screens/payment_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
@@ -29,7 +30,7 @@ class PaymentScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: GradientAppBar(
-          title: 'Payment',
+          title: 'payment.title'.tr(),
           height: 120,
           showBackButton: true,
         ),
@@ -42,7 +43,7 @@ class PaymentScreen extends StatelessWidget {
     return BlocBuilder<PaymentCubit, PaymentState>(
       builder: (context, state) {
         if (state is PaymentLoading || state is PaymentInitial) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -50,7 +51,7 @@ class PaymentScreen extends StatelessWidget {
                   color: AppColors.splashBackgroundColorEnd,
                 ),
                 SizedBox(height: 16),
-                Text('Initializing payment...'),
+                Text('payment.initializing'.tr()),
               ],
             ),
           );
@@ -66,7 +67,7 @@ class PaymentScreen extends StatelessWidget {
                   Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Payment Error',
+                    'payment.error.title'.tr(),
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -79,7 +80,7 @@ class PaymentScreen extends StatelessWidget {
                   GradientButton(
                     onPressed: () =>
                         context.read<PaymentCubit>().retryPayment(),
-                    text: 'Retry Payment',
+                    text: 'payment.retry'.tr(),
                     height: 50,
                   ),
                 ],
@@ -93,7 +94,7 @@ class PaymentScreen extends StatelessWidget {
         }
 
         if (state is PaymentProcessing) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -101,7 +102,7 @@ class PaymentScreen extends StatelessWidget {
                   color: AppColors.splashBackgroundColorEnd,
                 ),
                 SizedBox(height: 16),
-                Text('Processing payment...'),
+                Text('payment.processing'.tr()),
               ],
             ),
           );
@@ -117,7 +118,7 @@ class PaymentScreen extends StatelessWidget {
                   Icon(Icons.cancel, size: 64, color: Colors.orange),
                   const SizedBox(height: 16),
                   Text(
-                    'Payment Failed',
+                    'payment.failed.title'.tr(),
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -130,7 +131,7 @@ class PaymentScreen extends StatelessWidget {
                   GradientButton(
                     onPressed: () =>
                         context.read<PaymentCubit>().retryPayment(),
-                    text: 'Try Again',
+                    text: 'payment.tryAgain'.tr(),
                     height: 50,
                   ),
                 ],
@@ -139,7 +140,7 @@ class PaymentScreen extends StatelessWidget {
           );
         }
 
-        return const Center(
+        return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -147,7 +148,7 @@ class PaymentScreen extends StatelessWidget {
                 color: AppColors.splashBackgroundColorEnd,
               ),
               SizedBox(height: 16),
-              Text('Loading...'),
+              Text('payment.loading'.tr()),
             ],
           ),
         );
@@ -165,15 +166,7 @@ class PaymentScreen extends StatelessWidget {
           _buildPaymentSummary(state.args),
           const SizedBox(height: 24),
 
-          // Apple Pay Button (Commented for future use)
-          // _buildApplePayButton(),
-          // const SizedBox(height: 24),
-
-          // Divider with "OR" text
-          // _buildDividerWithText(),
-          // const SizedBox(height: 24),
-
-          // Card payment section titlex`
+          // Card payment section title
           _buildCardPaymentTitle(),
           const SizedBox(height: 16),
 
@@ -195,7 +188,9 @@ class PaymentScreen extends StatelessWidget {
               width: context.widthPct(0.65),
               child: GradientButton(
                 onPressed: () => context.read<PaymentCubit>().processPayment(),
-                text: 'Pay ${state.args.amount.toStringAsFixed(2)} SAR',
+                text: 'payment.payButton'.tr(
+                  namedArgs: {'amount': state.args.amount.toStringAsFixed(2)},
+                ),
                 height: 50,
               ),
             ),
@@ -205,10 +200,16 @@ class PaymentScreen extends StatelessWidget {
           // Info text
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              'Your payment will be authorized first and then captured to confirm your booking.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            child: Center(
+              child: Text(
+                'payment.infoText'.tr(),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[700],
+                  fontFamily: "Almarai",
+                  fontSize: 14.5,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 40), // Extra padding for keyboard
@@ -217,83 +218,10 @@ class PaymentScreen extends StatelessWidget {
     );
   }
 
-  // Apple Pay Button (Commented for future implementation)
-  // ignore: unused_element
-  Widget _buildApplePayButton() {
-    return const SizedBox.shrink(); // Completely hidden for now
-
-    // Uncomment this when you want to implement Apple Pay:
-
-    // return Container(
-    //   width: double.infinity,
-    //   height: 50,
-    //   decoration: BoxDecoration(
-    //     color: Colors.black,
-    //     borderRadius: BorderRadius.circular(8),
-    //     border: Border.all(color: Colors.grey[300]!),
-    //   ),
-    //   child: Material(
-    //     color: Colors.transparent,
-    //     child: InkWell(
-    //       onTap: () {
-    //         // TODO: Implement Apple Pay functionality
-    //         debugPrint('Apple Pay tapped');
-    //       },
-    //       borderRadius: BorderRadius.circular(8),
-    //       child: Row(
-    //         mainAxisAlignment: MainAxisAlignment.center,
-    //         children: [
-    //           Icon(Icons.apple, color: Colors.white, size: 24),
-    //           const SizedBox(width: 12),
-    //           Text(
-    //             'Pay with Apple Pay',
-    //             style: TextStyle(
-    //               color: Colors.white,
-    //               fontSize: 16,
-    //               fontWeight: FontWeight.w600,
-    //             ),
-    //           ),
-    //         ],
-    //       ),
-    //     ),
-    //   ),
-    // );
-  }
-
-  // Divider with "OR" text
-  // ignore: unused_element
-  Widget _buildDividerWithText() {
-    return const SizedBox.shrink(); // Hidden when Apple Pay is hidden
-
-    // Uncomment this when you implement Apple Pay:
-
-    // return Row(
-    //   children: [
-    //     Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-    //     Padding(
-    //       padding: const EdgeInsets.symmetric(horizontal: 16),
-    //       child: Text(
-    //         'OR',
-    //         style: TextStyle(
-    //           color: Colors.grey[500],
-    //           fontSize: 14,
-    //           fontWeight: FontWeight.w500,
-    //         ),
-    //       ),
-    //     ),
-    //     Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
-    //   ],
-    // );
-  }
-
   // Card payment section title
   Widget _buildCardPaymentTitle() {
-    // return const SizedBox.shrink(); // Hidden when Apple Pay is hidden
-
-    // Uncomment this when you implement Apple Pay:
-
     return Text(
-      'Enter Card Details',
+      'payment.cardDetails'.tr(),
       style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w600,
@@ -316,7 +244,7 @@ class PaymentScreen extends StatelessWidget {
                 Icon(Icons.receipt, color: AppColors.splashBackgroundColorEnd),
                 const SizedBox(width: 8),
                 Text(
-                  'Payment Summary',
+                  'payment.summary'.tr(),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -327,24 +255,32 @@ class PaymentScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildSummaryRow(
-              'Flight',
+              'payment.flight'.tr(),
               '${args.flightOffer.airlineName} ${args.flightOffer.flightNumber}',
             ),
             _buildSummaryRow(
-              'Route',
+              'payment.route'.tr(),
               '${args.flightOffer.fromLocation} → ${args.flightOffer.toLocation}',
             ),
-            _buildSummaryRow('Passengers', '${args.passengers.length}'),
             _buildSummaryRow(
-              'Class',
-              args.flightOffer.cabinClass.toUpperCase(),
+              'payment.passengers'.tr(),
+              '${args.passengers.length}',
             ),
-            _buildSummaryRow('Email', args.email),
-            _buildSummaryRow('Phone', '${args.countryCode}${args.phoneNumber}'),
+            _buildSummaryRow(
+              'payment.class'.tr(),
+              args.flightOffer.cabinClass.toLowerCase().tr(),
+            ),
+            _buildSummaryRow('payment.email'.tr(), args.email),
+            _buildSummaryRow(
+              'payment.phone'.tr(),
+              '${args.countryCode}${args.phoneNumber}',
+            ),
             const Divider(),
             _buildSummaryRow(
-              'Total Amount',
-              '${args.amount.toStringAsFixed(2)} SAR',
+              'payment.totalAmount'.tr(),
+              'payment.totalAmountWithCurrency'.tr(
+                namedArgs: {'amount': args.amount.toStringAsFixed(2)},
+              ),
               isBold: true,
             ),
           ],
@@ -376,29 +312,21 @@ class PaymentScreen extends StatelessWidget {
   }
 
   void _navigateToPaymentStatus(BuildContext context, PaymentAuthorized state) {
-    // Navigator.pushReplacementNamed(
-    //   context,
-    //   RouteNames.paymentStatus,
-    //   arguments: {'invoiceId': state.invoiceId, 'args': state.args},
-    // );
     Navigator.pushNamed(
       context,
       RouteNames.paymentStatus,
-      arguments: {
-        'invoiceId': state.invoiceId,
-        'args': state.args, // Your PaymentArguments object
-      },
+      arguments: {'invoiceId': state.invoiceId, 'args': state.args},
     );
   }
 
   void _handlePaymentError(BuildContext context, PaymentError state) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Payment error: ${state.errorMessage}'),
+        content: Text('payment.snackbar.error'.tr(args: [state.errorMessage])),
         backgroundColor: Colors.red,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
-          label: 'Retry',
+          label: 'payment.retry'.tr(),
           onPressed: () => context.read<PaymentCubit>().retryPayment(),
         ),
       ),
@@ -408,11 +336,11 @@ class PaymentScreen extends StatelessWidget {
   void _handlePaymentFailed(BuildContext context, PaymentFailed state) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Payment failed: ${state.reason}'),
+        content: Text('payment.snackbar.failed'.tr(args: [state.reason])),
         backgroundColor: Colors.orange,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
-          label: 'Retry',
+          label: 'payment.retry'.tr(),
           onPressed: () => context.read<PaymentCubit>().retryPayment(),
         ),
       ),

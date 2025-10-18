@@ -1,4 +1,5 @@
 // filter_sort_chip_bar.dart - UPDATED with airline logos in chips
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/data/models/flight_search_response.dart';
@@ -13,7 +14,7 @@ class FilterSortChipBar extends StatelessWidget {
   final Function() onFilterPressed;
   final Function(SortOption) onSortRemoved;
   final Function(String, dynamic) onFilterRemoved;
-  final List<Carrier> availableCarriers; // ADD THIS
+  final List<Carrier> availableCarriers;
 
   const FilterSortChipBar({
     super.key,
@@ -23,7 +24,7 @@ class FilterSortChipBar extends StatelessWidget {
     required this.onFilterPressed,
     required this.onSortRemoved,
     required this.onFilterRemoved,
-    required this.availableCarriers, // ADD THIS
+    required this.availableCarriers,
   });
 
   @override
@@ -48,7 +49,9 @@ class FilterSortChipBar extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: hasActiveFilters
-                      ? AppColors.splashBackgroundColorEnd.withOpacity(0.2)
+                      ? AppColors.splashBackgroundColorEnd.withValues(
+                          alpha: 0.2,
+                        )
                       : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
@@ -68,7 +71,7 @@ class FilterSortChipBar extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Filter',
+                      'filter'.tr(),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -102,7 +105,9 @@ class FilterSortChipBar extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: hasActiveSorts
-                      ? AppColors.splashBackgroundColorEnd.withOpacity(0.2)
+                      ? AppColors.splashBackgroundColorEnd.withValues(
+                          alpha: 0.2,
+                        )
                       : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
@@ -122,7 +127,7 @@ class FilterSortChipBar extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Sort',
+                      'sort'.tr(),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -237,13 +242,24 @@ class FilterSortChipBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                // Airline name from API
-                Text(
-                  carrier.airLineName,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.splashBackgroundColorEnd,
-                  ),
+                // Airline name with Arabic support - FIXED
+                Builder(
+                  builder: (context) {
+                    final isArabic = context.locale.languageCode == 'ar';
+                    final airlineName = isArabic
+                        ? (carrier.airlineNameAr.isNotEmpty == true
+                              ? carrier.airlineNameAr
+                              : carrier.airLineName)
+                        : carrier.airLineName;
+
+                    return Text(
+                      airlineName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.splashBackgroundColorEnd,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -345,39 +361,39 @@ class FilterSortChipBar extends StatelessWidget {
   String _getSortLabel(SortOption sort) {
     switch (sort) {
       case SortOption.cheapest:
-        return 'Cheapest';
+        return 'cheapest'.tr();
       case SortOption.shortest:
-        return 'Shortest';
+        return 'shortest'.tr();
       case SortOption.earliestTakeoff:
-        return 'Earliest Departure';
+        return 'earliest_departure'.tr();
       case SortOption.earliestArrival:
-        return 'Earliest Arrival';
+        return 'earliest_arrival'.tr();
     }
   }
 
   String _getStopLabel(StopFilter stop) {
     switch (stop) {
       case StopFilter.any:
-        return 'Any Stops';
+        return 'any_stops'.tr();
       case StopFilter.direct:
-        return 'Direct';
+        return 'direct'.tr();
       case StopFilter.oneStop:
-        return '1 Stop';
+        return 'one_stop'.tr();
       case StopFilter.twoPlusStops:
-        return '2+ Stops';
+        return 'two_plus_stops'.tr();
     }
   }
 
   String _getTimeLabel(DepartureTimeFilter time) {
     switch (time) {
       case DepartureTimeFilter.before6am:
-        return 'Before 6am';
+        return 'before_6am'.tr();
       case DepartureTimeFilter.sixToTwelve:
-        return '6am-12pm';
+        return '6am_to_12pm'.tr();
       case DepartureTimeFilter.twelveToSix:
-        return '12pm-6pm';
+        return '12pm_to_6pm'.tr();
       case DepartureTimeFilter.after6pm:
-        return 'After 6pm';
+        return 'after_6pm'.tr();
     }
   }
 }

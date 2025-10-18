@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_state.dart';
 import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
@@ -44,12 +45,6 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
       FocusScope.of(context).requestFocus(_searchFocusNode);
     });
   }
-
-  // void _switchSelection() {
-  //   setState(() {
-  //     _isOrigin = !_isOrigin;
-  //   });
-  // }
 
   void _onAirportSelected(AirportModel airport) {
     if (widget.onAirportSelected != null) {
@@ -144,8 +139,8 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
                     children: [
                       Text(
                         _isOrigin
-                            ? 'Select Origin Airport'
-                            : 'Select Destination Airport',
+                            ? 'select_origin_airport'.tr()
+                            : 'select_destination_airport'.tr(),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
@@ -155,8 +150,8 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
                       const SizedBox(height: 4),
                       Text(
                         _isOrigin
-                            ? 'Where will you depart from?'
-                            : 'Where will you arrive?',
+                            ? 'where_will_you_depart_from'.tr()
+                            : 'where_will_you_arrive'.tr(),
                         style: TextStyle(
                           fontSize: 14,
                           color: isDarkMode ? Colors.white70 : Colors.grey[600],
@@ -164,69 +159,6 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
                       ),
                     ],
                   ),
-                  // if (widget.segmentId == null)
-                  // //   InkWell(
-                  //     onTap: _switchSelection,
-                  //     borderRadius: BorderRadius.circular(20),
-                  //     child: Container(
-                  //       padding: const EdgeInsets.symmetric(
-                  //         horizontal: 12,
-                  //         vertical: 8,
-                  //       ),
-                  //       decoration: BoxDecoration(
-                  //         color: _isOrigin
-                  //             ? (isDarkMode
-                  //                   ? Colors.blue[800]!
-                  //                   : Colors.blue[50]!)
-                  //             : (isDarkMode
-                  //                   ? Colors.green[800]!
-                  //                   : Colors.green[50]!),
-                  //         borderRadius: BorderRadius.circular(20),
-                  //         border: Border.all(
-                  //           color: _isOrigin
-                  //               ? (isDarkMode
-                  //                     ? Colors.blue[400]!
-                  //                     : Colors.blue[200]!)
-                  //               : (isDarkMode
-                  //                     ? Colors.green[400]!
-                  //                     : Colors.green[200]!),
-                  //           width: 1.5,
-                  //         ),
-                  //       ),
-                  //       child: Row(
-                  //         children: [
-                  //           Icon(
-                  //             _isOrigin
-                  //                 ? Icons.flight_takeoff
-                  //                 : Icons.flight_land,
-                  //             size: 16,
-                  //             color: _isOrigin
-                  //                 ? (isDarkMode
-                  //                       ? Colors.blue[100]!
-                  //                       : Colors.blue[600]!)
-                  //                 : (isDarkMode
-                  //                       ? Colors.green[100]!
-                  //                       : Colors.green[600]!),
-                  //           ),
-                  //           const SizedBox(width: 6),
-                  //           Text(
-                  //             _isOrigin ? 'Origin' : 'Destination',
-                  //             style: TextStyle(
-                  //               fontSize: 12,
-                  //               fontWeight: FontWeight.w600,
-                  //               color: _isOrigin
-                  //                   ? (isDarkMode
-                  //                         ? Colors.blue[100]!
-                  //                         : Colors.blue[700]!)
-                  //                   : (isDarkMode
-                  //                         ? Colors.green[100]!
-                  //                         : Colors.green[700]!),
-                  //             ),
-                  //           ),
-                  //         ],
-                  //       ),
-                  //     ),
-                  //   ),
                 ],
               ),
 
@@ -250,8 +182,8 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
                   focusNode: _searchFocusNode,
                   decoration: InputDecoration(
                     hintText: _isOrigin
-                        ? 'Search origin airport...'
-                        : 'Search destination airport...',
+                        ? 'search_origin_airport'.tr()
+                        : 'search_destination_airport'.tr(),
                     prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -297,8 +229,8 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
                     const SizedBox(width: 8),
                     Text(
                       _isOrigin
-                          ? 'Selecting origin airport'
-                          : 'Selecting destination airport',
+                          ? 'selecting_origin_airport'.tr()
+                          : 'selecting_destination_airport'.tr(),
                       style: TextStyle(
                         fontSize: 12,
                         color: _isOrigin
@@ -346,12 +278,12 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
           Icon(Icons.search, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 12),
           Text(
-            'Search for airports',
+            'search_for_airports'.tr(),
             style: TextStyle(color: Colors.grey[500], fontSize: 16),
           ),
           const SizedBox(height: 8),
           Text(
-            'Type airport name or code',
+            'type_airport_name_or_code'.tr(),
             style: TextStyle(color: Colors.grey[400], fontSize: 14),
           ),
         ],
@@ -367,7 +299,7 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
           Text(
-            'Searching airports...',
+            'searching_airports'.tr(),
             style: TextStyle(color: Colors.grey[500], fontSize: 16),
           ),
         ],
@@ -383,7 +315,7 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
           Icon(Icons.error_outline, size: 48, color: Colors.red[400]),
           const SizedBox(height: 12),
           Text(
-            'Error loading airports',
+            'error_loading_airports'.tr(),
             style: TextStyle(color: Colors.red[500], fontSize: 16),
           ),
           const SizedBox(height: 8),
@@ -400,7 +332,7 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
             onPressed: () {
               _airportSearchCubit.searchAirports(_searchController.text);
             },
-            child: const Text('Try Again'),
+            child: Text('try_again'.tr()),
           ),
         ],
       ),
@@ -416,12 +348,12 @@ class _AirportBottomSheetState extends State<AirportBottomSheet> {
             Icon(Icons.airplanemode_on, size: 48, color: Colors.grey[400]),
             const SizedBox(height: 12),
             Text(
-              'No airports found',
+              'no_airports_found'.tr(),
               style: TextStyle(color: Colors.grey[500], fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
-              'Try a different search term',
+              'try_different_search_term'.tr(),
               style: TextStyle(color: Colors.grey[400], fontSize: 14),
             ),
           ],

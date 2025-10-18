@@ -8,6 +8,8 @@ class FlightState {
   final String to;
   final String departureDate;
   final String returnDate;
+  final String departureDateEnglish;
+  final String returnDateEnglish;
   final int adults;
   final int children;
   final int infants;
@@ -23,6 +25,8 @@ class FlightState {
     this.to = "",
     this.departureDate = "",
     this.returnDate = "",
+    this.departureDateEnglish = "",
+    this.returnDateEnglish = "",
     this.adults = 1,
     this.children = 0,
     this.infants = 0,
@@ -41,6 +45,8 @@ class FlightState {
     String? to,
     String? departureDate,
     String? returnDate,
+    String? departureDateEnglish,
+    String? returnDateEnglish,
     int? adults,
     int? children,
     int? infants,
@@ -56,6 +62,8 @@ class FlightState {
       to: to ?? this.to,
       departureDate: departureDate ?? this.departureDate,
       returnDate: returnDate ?? this.returnDate,
+      departureDateEnglish: departureDateEnglish ?? this.departureDateEnglish,
+      returnDateEnglish: returnDateEnglish ?? this.returnDateEnglish,
       adults: adults ?? this.adults,
       children: children ?? this.children,
       infants: infants ?? this.infants,
@@ -77,6 +85,8 @@ class FlightState {
         other.to == to &&
         other.departureDate == departureDate &&
         other.returnDate == returnDate &&
+        other.departureDateEnglish == departureDateEnglish &&
+        other.returnDateEnglish == returnDateEnglish &&
         other.adults == adults &&
         other.children == children &&
         other.infants == infants &&
@@ -94,6 +104,8 @@ class FlightState {
         to.hashCode ^
         departureDate.hashCode ^
         returnDate.hashCode ^
+        departureDateEnglish.hashCode ^
+        returnDateEnglish.hashCode ^
         adults.hashCode ^
         children.hashCode ^
         infants.hashCode ^

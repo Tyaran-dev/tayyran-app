@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
@@ -79,8 +80,8 @@ class _OnboardingScreenContentState extends State<OnboardingScreenContent> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         GradientButton(
-                          text: 'Skip all',
-                          width: 100,
+                          text: 'skip_all'.tr(),
+                          width: 110,
                           borderRadius: 50,
                           onPressed: state.isLoading
                               ? null
@@ -125,8 +126,8 @@ class _OnboardingScreenContentState extends State<OnboardingScreenContent> {
                       text:
                           state.activeIndex ==
                               OnBoardingModel.onBoardingList.length - 1
-                          ? 'Get Started'
-                          : 'Next',
+                          ? 'get_started'.tr()
+                          : 'next'.tr(),
                       height: 45,
                       width: MediaQuery.of(context).size.width * 0.85,
                       onPressed: () {

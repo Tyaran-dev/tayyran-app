@@ -36,7 +36,7 @@ class ModifySearchState {
       infants: initialData['infants'] is int ? initialData['infants'] : 0,
       cabinClass: initialData['cabinClass'] is String
           ? initialData['cabinClass']
-          : 'Economy',
+          : 'economy',
       hasReturnDate: (initialData['returnDate'] ?? '').isNotEmpty,
       showDateError: false,
     );

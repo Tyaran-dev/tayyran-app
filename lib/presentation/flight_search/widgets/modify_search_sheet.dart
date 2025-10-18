@@ -1,8 +1,10 @@
 // modify_search_sheet.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/core/utils/widgets/airport_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/date_text_field.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
@@ -104,7 +106,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
                 ),
@@ -119,9 +121,9 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const SizedBox(width: 48),
-                    const Text(
-                      'Modify Search',
-                      style: TextStyle(
+                    Text(
+                      'modifySearch.title'.tr(),
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -156,7 +158,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                                 children: [
                                   AirportTextField(
                                     isOrigin: true,
-                                    label: "From",
+                                    label: 'modifySearch.from'.tr(),
                                     value: state.from,
                                     icon: Icons.flight_takeoff,
                                     onTap: () => _showAirportBottomSheet(
@@ -168,7 +170,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                                   const SizedBox(height: 12),
                                   AirportTextField(
                                     isOrigin: false,
-                                    label: "To",
+                                    label: 'modifySearch.to'.tr(),
                                     value: state.to,
                                     icon: Icons.flight_land,
                                     onTap: () => _showAirportBottomSheet(
@@ -180,7 +182,8 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                                 ],
                               ),
                               Positioned(
-                                right: 0,
+                                right: isRTL(context) ? null : 0,
+                                left: isRTL(context) ? 16 : null,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
@@ -191,7 +194,9 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         blurRadius: 6,
                                         offset: const Offset(0, 3),
                                       ),
@@ -226,7 +231,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
 
                           // Departure Date
                           DateTextField(
-                            label: "Departure",
+                            label: 'modifySearch.departure'.tr(),
                             value: state.departureDate,
                             icon: Icons.calendar_today,
                             onTap: () =>
@@ -240,7 +245,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                               key: _returnDateKey,
                               children: [
                                 DateTextField(
-                                  label: "Return",
+                                  label: 'modifySearch.return'.tr(),
                                   value: state.returnDate,
                                   icon: Icons.calendar_today,
                                   onTap: () => _selectDate(
@@ -252,8 +257,9 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                                   hasError: state.showDateError,
                                 ),
                                 Positioned(
-                                  right: 8,
-                                  top: 8,
+                                  right: isRTL(context) ? null : 0,
+                                  left: isRTL(context) ? 16 : null,
+                                  top: 14,
                                   child: Row(
                                     children: [
                                       if (state.showDateError)
@@ -287,7 +293,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                               Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
-                                  "Return date must be after departure date",
+                                  'modifySearch.returnDateError'.tr(),
                                   style: TextStyle(
                                     color: Colors.red[700],
                                     fontSize: 12,
@@ -332,7 +338,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                                   }
                                 },
                                 icon: const Icon(Icons.add, size: 18),
-                                label: const Text('Add Return Date'),
+                                label: Text('modifySearch.addReturnDate'.tr()),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor:
                                       AppColors.splashBackgroundColorEnd,
@@ -360,7 +366,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                 // Apply button
                 GradientButton(
                   onPressed: () => _applySearch(context, state),
-                  text: 'Apply Changes',
+                  text: 'modifySearch.applyChanges'.tr(),
                   height: 50,
                 ),
                 SizedBox(height: MediaQuery.of(context).viewInsets.bottom + 30),
@@ -425,7 +431,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "$totalPassengers Passenger${totalPassengers > 1 ? 's' : ''} • ${state.cabinClass.toCabinClassDisplayName}",
+                    _getPassengerSummary(totalPassengers, state.cabinClass),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -433,9 +439,11 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "${state.adults} Adult${state.adults != 1 ? 's' : ''}, "
-                    "${state.children} Child${state.children != 1 ? 'ren' : ''}, "
-                    "${state.infants} Infant${state.infants != 1 ? 's' : ''}",
+                    _getPassengerBreakdown(
+                      state.adults,
+                      state.children,
+                      state.infants,
+                    ),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
@@ -446,6 +454,46 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
         ),
       ),
     );
+  }
+
+  // Helper methods for passenger text
+  String _getPassengerSummary(int totalPassengers, String cabinClass) {
+    if (totalPassengers == 1) {
+      return 'modifySearch.passengerSummarySingle'.tr(
+        namedArgs: {'class': cabinClass.toCabinClassDisplayName.tr()},
+      );
+    } else {
+      return 'modifySearch.passengerSummaryMultiple'.tr(
+        namedArgs: {
+          'count': totalPassengers.toString(),
+          'class': cabinClass.toCabinClassDisplayName.tr(),
+        },
+      );
+    }
+  }
+
+  String _getPassengerBreakdown(int adults, int children, int infants) {
+    final parts = <String>[];
+
+    if (adults > 0) {
+      parts.add(
+        'modifySearch.adults'.tr(namedArgs: {'count': adults.toString()}),
+      );
+    }
+
+    if (children > 0) {
+      parts.add(
+        'modifySearch.children'.tr(namedArgs: {'count': children.toString()}),
+      );
+    }
+
+    if (infants > 0) {
+      parts.add(
+        'modifySearch.infants'.tr(namedArgs: {'count': infants.toString()}),
+      );
+    }
+
+    return parts.join(', ');
   }
 
   Future<void> _selectDate(
@@ -601,7 +649,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
 
     try {
       // Call loadFlights WITHOUT context parameter
-      widget.flightSearchCubit.loadFlights(state.toSearchData());
+      widget.flightSearchCubit.loadFlights(state.toSearchData(), context);
 
       // Close the modal sheet
       Navigator.pop(context);
@@ -609,7 +657,7 @@ class _ModifySearchSheetState extends State<ModifySearchSheet>
       // Show error message if loading fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to search flights: $e'),
+          content: Text('modifySearch.searchFailed'.tr(args: [e.toString()])),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),

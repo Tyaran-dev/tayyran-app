@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
@@ -8,6 +9,7 @@ import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_state
 import 'package:tayyran_app/presentation/flight_search/widgets/filter_bottom_sheet.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/flight_ticket_card.dart';
 import 'package:tayyran_app/presentation/flight_search/widgets/filter_sort_chip_bar.dart';
+import 'package:tayyran_app/presentation/flight_search/widgets/modify_search_sheet.dart';
 
 class FlightSearchScreen extends StatefulWidget {
   final Map<String, dynamic> searchData;
@@ -27,20 +29,32 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       final cubit = context.read<FlightSearchCubit>();
       // Only load if we don't have data or it's different
       if (cubit.state.originalSearchData.isEmpty) {
-        cubit.loadFlights(widget.searchData);
+        cubit.loadFlights(widget.searchData, context);
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<FlightSearchCubit>();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: GradientAppBar(
         height: 120,
-        title: 'Flight Results',
+        title: '',
         showBackButton: true,
         isFlightResults: true,
+        onDestinationTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => ModifySearchSheet(
+              initialData: cubit.state.searchData,
+              flightSearchCubit: cubit,
+            ),
+          );
+        },
       ),
       body: BlocBuilder<FlightSearchCubit, FlightSearchState>(
         builder: (context, state) {
@@ -96,7 +110,11 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${state.filteredTickets.length} flights found',
+                  'flights_found'.tr(
+                    namedArgs: {
+                      'count': state.filteredTickets.length.toString(),
+                    },
+                  ),
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 // Show current search summary
@@ -116,7 +134,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   }
 
   String _buildSearchSummary(Map<String, dynamic> searchData) {
-    if (searchData.isEmpty) return 'Searching...';
+    if (searchData.isEmpty) return 'searching'.tr();
 
     final tripType = searchData['flightType'] ?? 'oneway';
 
@@ -131,7 +149,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
         }).toList();
         return 'Multi: ${segments.join(' • ')}';
       }
-      return 'Multi-City Journey';
+      return 'multi_city_journey'.tr();
     } else {
       final from = searchData['from']?.toString().split(' - ')[0] ?? '';
       final to = searchData['to']?.toString().split(' - ')[0] ?? '';
@@ -174,7 +192,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Searching for flights...',
+            'searching_flights'.tr(),
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
@@ -200,11 +218,11 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             ),
             const SizedBox(height: 24),
             GradientButton(
-              text: 'Try Again',
+              text: 'try_again'.tr(),
               height: 50,
               width: MediaQuery.of(context).size.width * 0.6,
               onPressed: () {
-                cubit.loadFlights(state.originalSearchData);
+                cubit.loadFlights(state.originalSearchData, context);
               },
             ),
             const SizedBox(height: 12),
@@ -212,8 +230,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text(
-                'Modify Search',
+              child: Text(
+                'modify_search'.tr(),
                 style: TextStyle(
                   color: AppColors.splashBackgroundColorEnd,
                   fontSize: 16,
@@ -238,7 +256,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             Icon(Icons.flight, size: 64, color: Colors.grey[300]),
             const SizedBox(height: 16),
             Text(
-              'No flights found',
+              'no_flights_found'.tr(),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -248,8 +266,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             const SizedBox(height: 8),
             Text(
               state.searchData['flightType'] == 'multi'
-                  ? 'Try modifying your multi-city route or search again'
-                  : 'Try modifying your search criteria or search again',
+                  ? 'modify_multi_city'.tr()
+                  : 'modify_search_criteria'.tr(),
               style: TextStyle(fontSize: 14, color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
@@ -257,11 +275,11 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
 
             // Retry button
             GradientButton(
-              text: 'Search Again',
+              text: 'search_again'.tr(),
               height: 50,
               width: MediaQuery.of(context).size.width * 0.6,
               onPressed: () {
-                cubit.loadFlights(state.originalSearchData);
+                cubit.loadFlights(state.originalSearchData, context);
               },
             ),
             const SizedBox(height: 16),
@@ -271,8 +289,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text(
-                'Modify Search',
+              child: Text(
+                'modify_search'.tr(),
                 style: TextStyle(
                   color: AppColors.splashBackgroundColorEnd,
                   fontSize: 16,

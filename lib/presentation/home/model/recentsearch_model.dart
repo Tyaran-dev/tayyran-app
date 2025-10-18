@@ -1,6 +1,4 @@
 // recentsearch_model.dart
-import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
-
 class RecentSearchModel {
   final String from;
   final String to;
@@ -44,7 +42,7 @@ class RecentSearchModel {
       'adults': adults,
       'children': children,
       'infants': infants,
-      'flightClass': flightClass.toCabinClassBackendValue,
+      'flightClass': flightClass,
       'timestamp': timestamp.toIso8601String(),
       'type': type,
       'tripType': tripType,
@@ -63,7 +61,7 @@ class RecentSearchModel {
       adults: json['adults'] ?? 1,
       children: json['children'] ?? 0,
       infants: json['infants'] ?? 0,
-      flightClass: json['flightClass'] ?? 'Economy',
+      flightClass: json['flightClass'] ?? 'ECONOMY',
       timestamp: DateTime.parse(json['timestamp']),
       type: json['type'] ?? 'flight',
       tripType: json['tripType'],

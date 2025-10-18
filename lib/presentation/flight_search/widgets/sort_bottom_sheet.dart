@@ -1,4 +1,5 @@
-// sort_bottom_sheet.dart - Updated with multi-select
+// sort_bottom_sheet.dart - Updated with translations
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
@@ -47,8 +48,8 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const SizedBox(width: 48),
-              const Text(
-                'Sort by',
+              Text(
+                'sort_by'.tr(),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               IconButton(
@@ -80,7 +81,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
               widget.onSortSelected(_selectedSorts);
               Navigator.pop(context);
             },
-            text: 'Apply Sort',
+            text: 'apply_sort'.tr(),
           ),
           const SizedBox(height: 16),
         ],
@@ -162,26 +163,26 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
   String _getSortTitle(SortOption sort) {
     switch (sort) {
       case SortOption.cheapest:
-        return 'Price (Lowest first)';
+        return 'price_lowest_first'.tr();
       case SortOption.shortest:
-        return 'Duration (Shortest first)';
+        return 'duration_shortest_first'.tr();
       case SortOption.earliestTakeoff:
-        return 'Departure (Earliest first)';
+        return 'departure_earliest_first'.tr();
       case SortOption.earliestArrival:
-        return 'Arrival (Earliest first)';
+        return 'arrival_earliest_first'.tr();
     }
   }
 
   String _getSortDescription(SortOption sort) {
     switch (sort) {
       case SortOption.cheapest:
-        return 'Sort by lowest price';
+        return 'sort_by_lowest_price'.tr();
       case SortOption.shortest:
-        return 'Sort by shortest flight duration';
+        return 'sort_by_shortest_duration'.tr();
       case SortOption.earliestTakeoff:
-        return 'Sort by earliest departure time';
+        return 'sort_by_earliest_departure'.tr();
       case SortOption.earliestArrival:
-        return 'Sort by earliest arrival time';
+        return 'sort_by_earliest_arrival'.tr();
     }
   }
 }

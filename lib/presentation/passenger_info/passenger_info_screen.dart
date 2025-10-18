@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
@@ -32,7 +33,7 @@ class PassengerInfoScreen extends StatelessWidget {
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 4),
               action: SnackBarAction(
-                label: 'Retry',
+                label: 'passengerInfo.retry'.tr(),
                 textColor: Colors.white,
                 onPressed: () {
                   context.read<PassengerInfoCubit>().retryPricingUpdate();
@@ -48,7 +49,7 @@ class PassengerInfoScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: GradientAppBar(
-          title: 'Passenger Information',
+          title: 'passengerInfo.title'.tr(),
           height: 120,
           showBackButton: true,
         ),
@@ -88,7 +89,8 @@ class PassengerInfoScreen extends StatelessWidget {
 
           // Passenger list title
           Text(
-            'Passengers (${state.passengers.length})',
+            '${'passengerInfo.passengers'.tr()} (${state.passengers.length})',
+
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -125,7 +127,7 @@ class PassengerInfoScreen extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Failed to update prices. Showing cached prices.',
+              'passengerInfo.priceUpdateFailed'.tr(),
               style: TextStyle(color: Colors.red[700], fontSize: 14),
             ),
           ),
@@ -151,11 +153,13 @@ class PassengerInfoScreen extends StatelessWidget {
     String getText() {
       switch (tripType) {
         case FlightTripType.roundTrip:
-          return 'Round Trip';
+          return 'passengerInfo.tripTypes.roundTrip'.tr();
         case FlightTripType.multiCity:
-          return 'Multi-City (${state.currentFlightOffer.itineraries.length} flights)';
+          return 'passengerInfo.tripTypes.multiCity'.tr(
+            args: [state.currentFlightOffer.itineraries.length.toString()],
+          );
         case FlightTripType.oneWay:
-          return 'One Way';
+          return 'passengerInfo.tripTypes.oneWay'.tr();
       }
     }
 
@@ -321,17 +325,18 @@ class PassengerInfoScreen extends StatelessWidget {
     final returnSegment = returnItinerary.segments.isNotEmpty
         ? returnItinerary.segments.first
         : null;
+    final currentLang = getCurrentLang(context);
 
     // Get airline info for each segment
     final outboundAirlineName = outboundSegment != null
-        ? cubit.getAirlineNameForSegment(outboundSegment)
+        ? cubit.getAirlineNameForSegment(outboundSegment, currentLang)
         : flightOffer.airlineName;
     final outboundAirlineLogo = outboundSegment != null
         ? cubit.getAirlineLogoForSegment(outboundSegment)
         : flightOffer.airlineLogo;
 
     final returnAirlineName = returnSegment != null
-        ? cubit.getAirlineNameForSegment(returnSegment)
+        ? cubit.getAirlineNameForSegment(returnSegment, currentLang)
         : flightOffer.airlineName;
     final returnAirlineLogo = returnSegment != null
         ? cubit.getAirlineLogoForSegment(returnSegment)
@@ -385,7 +390,7 @@ class PassengerInfoScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Round Trip',
+                        'passengerInfo.tripTypes.roundTrip'.tr(),
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
@@ -406,7 +411,7 @@ class PassengerInfoScreen extends StatelessWidget {
           _buildFlightSegment(
             itinerary: outboundItinerary,
             segment: outboundSegment,
-            title: 'Outbound',
+            title: 'passengerInfo.flightSegments.outbound'.tr(),
             icon: Icons.flight_takeoff,
             airlineName: outboundAirlineName,
             airlineLogo: outboundAirlineLogo,
@@ -418,7 +423,7 @@ class PassengerInfoScreen extends StatelessWidget {
           _buildFlightSegment(
             itinerary: returnItinerary,
             segment: returnSegment,
-            title: 'Return',
+            title: 'passengerInfo.flightSegments.return'.tr(),
             icon: Icons.flight_land,
             airlineName: returnAirlineName,
             airlineLogo: returnAirlineLogo,
@@ -433,7 +438,7 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Total Duration',
+                    'passengerInfo.flightSummary.totalDuration'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
@@ -448,13 +453,13 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Class',
+                    'passengerInfo.flightSummary.class'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
-                    flightOffer.cabinClass.toUpperCase(),
+                    flightOffer.cabinClass.toLowerCase().tr(),
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -463,7 +468,7 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Passengers',
+                    'passengerInfo.flightSummary.passengers'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
@@ -514,7 +519,7 @@ class PassengerInfoScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Multi-City Journey',
+                      'passengerInfo.flightSummary.multiCityJourney'.tr(),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -547,9 +552,9 @@ class PassengerInfoScreen extends StatelessWidget {
             final firstSegment = itinerary.segments.isNotEmpty
                 ? itinerary.segments.first
                 : null;
-
+            final currentLang = getCurrentLang(context);
             final airlineName = firstSegment != null
-                ? cubit.getAirlineNameForSegment(firstSegment)
+                ? cubit.getAirlineNameForSegment(firstSegment, currentLang)
                 : flightOffer.airlineName;
             final airlineLogo = firstSegment != null
                 ? cubit.getAirlineLogoForSegment(firstSegment)
@@ -580,7 +585,7 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Total Flights',
+                    'passengerInfo.flightSummary.totalFlights'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
@@ -595,11 +600,11 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Class',
+                    'passengerInfo.flightSummary.class'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
-                    flightOffer.cabinClass.toUpperCase(),
+                    flightOffer.cabinClass.toLowerCase().tr(),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -610,7 +615,7 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Passengers',
+                    'passengerInfo.flightSummary.passengers'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
@@ -644,8 +649,9 @@ class PassengerInfoScreen extends StatelessWidget {
         : null;
 
     // Get airline info
+    final currentLang = getCurrentLang(context);
     final airlineName = firstSegment != null
-        ? cubit.getAirlineNameForSegment(firstSegment)
+        ? cubit.getAirlineNameForSegment(firstSegment, currentLang)
         : flightOffer.airlineName;
     final airlineLogo = firstSegment != null
         ? cubit.getAirlineLogoForSegment(firstSegment)
@@ -699,7 +705,7 @@ class PassengerInfoScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Flight ${firstSegment?.carrierCode ?? ''}${firstSegment?.number ?? ''}',
+                        'passengerInfo.tripTypes.oneWay'.tr(),
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
@@ -781,7 +787,7 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Date',
+                    'passengerInfo.flightSummary.date'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
@@ -796,11 +802,11 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Class',
+                    'passengerInfo.flightSummary.class'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
-                    flightOffer.cabinClass.toUpperCase(),
+                    flightOffer.cabinClass.toLowerCase().tr(),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -811,7 +817,7 @@ class PassengerInfoScreen extends StatelessWidget {
               Column(
                 children: [
                   Text(
-                    'Passengers',
+                    'passengerInfo.flightSummary.passengers'.tr(),
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Text(
@@ -949,7 +955,7 @@ class PassengerInfoScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${segment?.carrierCode ?? ''}${segment?.number ?? ''} • ${itinerary.segments.length} segment${itinerary.segments.length > 1 ? 's' : ''}',
+            '${segment?.carrierCode ?? ''}${segment?.number ?? ''} • ${itinerary.segments.length} ${itinerary.segments.length > 1 ? 'segments' : 'segment'}',
             style: TextStyle(fontSize: 10, color: Colors.grey[500]),
           ),
         ],
@@ -1084,7 +1090,7 @@ class PassengerInfoScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${formatDate(firstSegment?.departure.at ?? DateTime.now())} • ${itinerary.segments.length} segment${itinerary.segments.length > 1 ? 's' : ''}',
+                '${formatDate(firstSegment?.departure.at ?? DateTime.now())} • ${itinerary.segments.length} ${itinerary.segments.length > 1 ? 'segments' : 'segment'}',
                 style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ],
@@ -1093,8 +1099,6 @@ class PassengerInfoScreen extends StatelessWidget {
       ],
     );
   }
-
-  // ... (all other methods remain exactly the same as in your original code)
 
   // Helper methods
   String _formatTime(DateTime dateTime) {
@@ -1187,7 +1191,7 @@ class PassengerInfoScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Contact Information',
+            'passengerInfo.contactInfo.title'.tr(),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1199,10 +1203,10 @@ class PassengerInfoScreen extends StatelessWidget {
           // Email
           TextFormField(
             initialValue: state.contactEmail,
-            decoration: const InputDecoration(
-              labelText: 'Email Address *',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(
+            decoration: InputDecoration(
+              labelText: 'passengerInfo.contactInfo.email'.tr(),
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(
                 Icons.email,
                 color: AppColors.splashBackgroundColorEnd,
               ),
@@ -1221,10 +1225,10 @@ class PassengerInfoScreen extends StatelessWidget {
                 child: InkWell(
                   onTap: () => _showCountryCodeSelection(context),
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Country Code',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
+                    decoration: InputDecoration(
+                      labelText: 'passengerInfo.contactInfo.countryCode'.tr(),
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 16,
                       ),
@@ -1250,9 +1254,9 @@ class PassengerInfoScreen extends StatelessWidget {
               Expanded(
                 child: TextFormField(
                   initialValue: state.contactPhone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number *',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'passengerInfo.contactInfo.phone'.tr(),
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.phone,
                   onChanged: (value) => cubit.updateContactPhone(value),
@@ -1313,8 +1317,8 @@ class PassengerInfoScreen extends StatelessWidget {
       cubit.submitPassengerInfo();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill all passenger information correctly'),
+        SnackBar(
+          content: Text('passengerInfo.validation.fillAllInfo'.tr()),
           backgroundColor: Colors.orange,
         ),
       );
@@ -1348,7 +1352,7 @@ class PassengerInfoScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Total Price',
+                      'passengerInfo.totalPrice'.tr(),
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 4),
@@ -1401,7 +1405,9 @@ class PassengerInfoScreen extends StatelessWidget {
                   onPressed: state.isFormValid && !state.isLoading
                       ? () => _handleContinueToPayment(context)
                       : null,
-                  text: state.isLoading ? 'Updating...' : 'Continue to Payment',
+                  text: state.isLoading
+                      ? 'passengerInfo.updating'.tr()
+                      : 'passengerInfo.continueToPayment'.tr(),
                   height: 50,
                 ),
               ),

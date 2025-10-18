@@ -1,9 +1,11 @@
 // lib/presentation/flight/cubit/flight_cubit.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/models/flight_segment.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
@@ -92,18 +94,20 @@ class FlightCubit extends Cubit<FlightState> {
           date: currentState.departureDate.isNotEmpty
               ? currentState.departureDate
               : "",
+          englishDate: currentState.departureDateEnglish.isNotEmpty
+              ? currentState.departureDateEnglish
+              : _currentDateFormattedEnglish,
         ),
         FlightSegment(
           id: "2_$timestamp",
           from: "",
           to: "",
           date: currentState.departureDate.isNotEmpty
-              ? _formatDate(
-                  _parseDate(
-                    currentState.departureDate,
-                  ).add(const Duration(days: 1)),
-                )
-              : "",
+              ? _getNextDayFormatted(currentState.departureDate)
+              : _getNextDayFormatted(_currentDateFormattedEnglish),
+          englishDate: currentState.departureDateEnglish.isNotEmpty
+              ? _getNextDayEnglish(currentState.departureDateEnglish)
+              : _getNextDayEnglish(_currentDateFormattedEnglish),
         ),
       ];
 
@@ -114,15 +118,30 @@ class FlightCubit extends Cubit<FlightState> {
         type == "round" &&
         currentState.departureDate.isNotEmpty) {
       // Parse the departure date and add one day
-      final departure = _parseDate(currentState.departureDate);
-      final nextDay = departure.add(const Duration(days: 1));
-      final formattedReturnDate = _formatDate(nextDay);
+      final nextDayEnglish = _getNextDayEnglish(
+        currentState.departureDateEnglish.isNotEmpty
+            ? currentState.departureDateEnglish
+            : currentState.departureDate,
+      );
 
-      emit(state.copyWith(tripType: type, returnDate: formattedReturnDate));
+      emit(
+        state.copyWith(
+          tripType: type,
+          returnDate: _getNextDayFormatted(currentState.departureDate),
+          returnDateEnglish: nextDayEnglish,
+        ),
+      );
     }
     // If switching from round-trip to one-way, clear return date
     else if (currentState.tripType == "round" && type == "oneway") {
-      emit(state.copyWith(tripType: type, returnDate: "", flightSegments: []));
+      emit(
+        state.copyWith(
+          tripType: type,
+          returnDate: "",
+          returnDateEnglish: "",
+          flightSegments: [],
+        ),
+      );
     }
     // For other cases, just change the trip type
     else {
@@ -130,39 +149,63 @@ class FlightCubit extends Cubit<FlightState> {
     }
   }
 
-  // Helper methods for date parsing and formatting
-  DateTime _parseDate(String dateString) {
+  // Helper methods for date calculations
+  String _getNextDayFormatted(String dateString) {
     try {
-      final parts = dateString.split('-');
-      if (parts.length == 3) {
-        final monthNames = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        final day = int.parse(parts[0]);
-        final month = monthNames.indexOf(parts[1]) + 1;
-        final year = int.parse(parts[2]);
-        return DateTime(year, month, day);
-      }
+      final date = parseDate(dateString);
+      final nextDay = date.add(const Duration(days: 1));
+      // For display format, we'll use a simple format since this is internal
+      final monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return "${nextDay.day}-${monthNames[nextDay.month - 1]}-${nextDay.year}";
     } catch (e) {
-      if (kDebugMode) {
-        print('Error parsing date: $e');
-      }
+      print('❌ Error getting next day formatted: $e');
+      return _currentDateFormattedEnglish;
     }
-    return DateTime.now();
   }
 
-  String _formatDate(DateTime date) {
+  String _getNextDayEnglish(String dateString) {
+    try {
+      final date = parseDate(dateString);
+      final nextDay = date.add(const Duration(days: 1));
+      return formatDateForBackend(nextDay);
+    } catch (e) {
+      print('❌ Error getting next day English: $e');
+      return _getNextDayEnglish(_currentDateFormattedEnglish);
+    }
+  }
+
+  // Check if a date string is in the past
+  bool _isDateInPast(String dateString) {
+    try {
+      final date = parseDate(dateString);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return date.isBefore(today);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking if date is in past: $e');
+      }
+      return false;
+    }
+  }
+
+  // Get current date formatted - NOW USING HELPER FUNCTIONS
+  String get _currentDateFormatted {
+    // For internal use, use simple English format
+    final now = DateTime.now();
     final monthNames = [
       "Jan",
       "Feb",
@@ -177,27 +220,11 @@ class FlightCubit extends Cubit<FlightState> {
       "Nov",
       "Dec",
     ];
-    return "${date.day}-${monthNames[date.month - 1]}-${date.year}";
+    return "${now.day}-${monthNames[now.month - 1]}-${now.year}";
   }
 
-  // Check if a date string is in the past
-  bool _isDateInPast(String dateString) {
-    try {
-      final date = _parseDate(dateString);
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      return date.isBefore(today);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error checking if date is in past: $e');
-      }
-      return false;
-    }
-  }
-
-  // Get current date formatted
-  String get _currentDateFormatted {
-    return _formatDate(DateTime.now());
+  String get _currentDateFormattedEnglish {
+    return formatDateForBackend(DateTime.now());
   }
 
   void initializeFlightSegments() {
@@ -208,17 +235,23 @@ class FlightCubit extends Cubit<FlightState> {
           id: "1_$timestamp",
           from: "",
           to: "",
-          date: state.departureDate.isNotEmpty ? state.departureDate : "",
+          date: state.departureDate.isNotEmpty
+              ? state.departureDate
+              : _currentDateFormatted,
+          englishDate: state.departureDateEnglish.isNotEmpty
+              ? state.departureDateEnglish
+              : _currentDateFormattedEnglish,
         ),
         FlightSegment(
           id: "2_$timestamp",
           from: "",
           to: "",
           date: state.departureDate.isNotEmpty
-              ? _formatDate(
-                  _parseDate(state.departureDate).add(const Duration(days: 1)),
-                )
-              : "",
+              ? _getNextDayFormatted(state.departureDate)
+              : _getNextDayFormatted(_currentDateFormatted),
+          englishDate: state.departureDateEnglish.isNotEmpty
+              ? _getNextDayEnglish(state.departureDateEnglish)
+              : _getNextDayEnglish(_currentDateFormattedEnglish),
         ),
       ];
       emit(state.copyWith(flightSegments: segments));
@@ -227,16 +260,20 @@ class FlightCubit extends Cubit<FlightState> {
 
   void addFlightSegment() {
     if (state.flightSegments.length < 8) {
-      String nextDate = "";
+      String nextDate = _currentDateFormatted;
+      String nextDateEnglish = _currentDateFormattedEnglish;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
       // Set the date to the day after the last segment if available
       if (state.flightSegments.isNotEmpty) {
         final lastSegment = state.flightSegments.last;
         if (lastSegment.date.isNotEmpty) {
-          final lastDate = _parseDate(lastSegment.date);
-          final nextDay = lastDate.add(const Duration(days: 1));
-          nextDate = _formatDate(nextDay);
+          nextDate = _getNextDayFormatted(lastSegment.date);
+          nextDateEnglish = _getNextDayEnglish(
+            lastSegment.englishDate.isNotEmpty
+                ? lastSegment.englishDate
+                : lastSegment.date,
+          );
         }
       }
 
@@ -248,6 +285,7 @@ class FlightCubit extends Cubit<FlightState> {
         from: "",
         to: "",
         date: nextDate,
+        englishDate: nextDateEnglish,
       );
 
       final updatedSegments = List<FlightSegment>.from(state.flightSegments)
@@ -269,10 +307,27 @@ class FlightCubit extends Cubit<FlightState> {
     }
   }
 
-  void updateFlightSegment(String id, String from, String to, String date) {
+  void updateFlightSegment(
+    String id,
+    String from,
+    String to,
+    String date, {
+    String? englishDate,
+  }) {
+    print('🔄 Updating flight segment:');
+    print('   ID: $id');
+    print('   From: $from, To: $to');
+    print('   Date Display: $date');
+    print('   Date English: $englishDate');
+
     final updatedSegments = state.flightSegments.map((segment) {
       if (segment.id == id) {
-        return segment.copyWith(from: from, to: to, date: date);
+        return segment.copyWith(
+          from: from,
+          to: to,
+          date: date,
+          englishDate: englishDate ?? _convertToEnglishFormat(date),
+        );
       }
       return segment;
     }).toList();
@@ -289,15 +344,19 @@ class FlightCubit extends Cubit<FlightState> {
       final previousSegment = segments[i - 1];
 
       if (currentSegment.date.isNotEmpty && previousSegment.date.isNotEmpty) {
-        final currentDate = _parseDate(currentSegment.date);
-        final previousDate = _parseDate(previousSegment.date);
+        final currentDate = parseDate(currentSegment.date);
+        final previousDate = parseDate(previousSegment.date);
 
         // If current date is before or same as previous date, adjust it
         if (!currentDate.isAfter(previousDate)) {
           final nextDay = previousDate.add(const Duration(days: 1));
-          final formattedNextDay = _formatDate(nextDay);
+          final formattedNextDay = _getNextDayFormatted(previousSegment.date);
+          final formattedNextDayEnglish = formatDateForBackend(nextDay);
 
-          segments[i] = currentSegment.copyWith(date: formattedNextDay);
+          segments[i] = currentSegment.copyWith(
+            date: formattedNextDay,
+            englishDate: formattedNextDayEnglish,
+          );
         }
       }
     }
@@ -319,7 +378,7 @@ class FlightCubit extends Cubit<FlightState> {
     // If previous segment has a date, return the day after that date
     if (previousSegment.date.isNotEmpty) {
       try {
-        final previousDate = _parseDate(previousSegment.date);
+        final previousDate = parseDate(previousSegment.date);
         return previousDate.add(const Duration(days: 1));
       } catch (e) {
         if (kDebugMode) {
@@ -347,8 +406,8 @@ class FlightCubit extends Cubit<FlightState> {
       final previousSegment = state.flightSegments[i - 1];
 
       if (currentSegment.date.isNotEmpty && previousSegment.date.isNotEmpty) {
-        final currentDate = _parseDate(currentSegment.date);
-        final previousDate = _parseDate(previousSegment.date);
+        final currentDate = parseDate(currentSegment.date);
+        final previousDate = parseDate(previousSegment.date);
 
         if (!currentDate.isAfter(previousDate)) {
           return false;
@@ -387,13 +446,26 @@ class FlightCubit extends Cubit<FlightState> {
       // Multi-city segment
       final segment = state.flightSegments.firstWhere(
         (s) => s.id == segmentId,
-        orElse: () => FlightSegment(id: '', from: '', to: '', date: ''),
+        orElse: () =>
+            FlightSegment(id: '', from: '', to: '', date: '', englishDate: ''),
       );
 
       if (isOrigin) {
-        updateFlightSegment(segmentId, airportCode, segment.to, segment.date);
+        updateFlightSegment(
+          segmentId,
+          airportCode,
+          segment.to,
+          segment.date,
+          englishDate: segment.englishDate,
+        );
       } else {
-        updateFlightSegment(segmentId, segment.from, airportCode, segment.date);
+        updateFlightSegment(
+          segmentId,
+          segment.from,
+          airportCode,
+          segment.date,
+          englishDate: segment.englishDate,
+        );
       }
     } else {
       // Regular search
@@ -427,12 +499,65 @@ class FlightCubit extends Cubit<FlightState> {
     emit(state.copyWith(from: state.to, to: state.from));
   }
 
-  void setDepartureDate(String date) {
-    emit(state.copyWith(departureDate: date));
+  void setDepartureDate(String date, {String? englishDate}) {
+    print('✈️ Setting departure date:');
+    print('   Display: $date');
+    print('   English provided: $englishDate');
+
+    final finalEnglishDate = englishDate ?? _convertToEnglishFormat(date);
+    print('   English final: $finalEnglishDate');
+
+    emit(
+      state.copyWith(
+        departureDate: date,
+        departureDateEnglish: finalEnglishDate,
+      ),
+    );
   }
 
-  void setReturnDate(String date) {
-    emit(state.copyWith(returnDate: date));
+  void setReturnDate(String date, {String? englishDate}) {
+    print('✈️ Setting return date:');
+    print('   Display: $date');
+    print('   English provided: $englishDate');
+
+    final finalEnglishDate = englishDate ?? _convertToEnglishFormat(date);
+    print('   English final: $finalEnglishDate');
+
+    emit(state.copyWith(returnDate: date, returnDateEnglish: finalEnglishDate));
+  }
+
+  // Helper to convert display date to English format
+  String _convertToEnglishFormat(String displayDate) {
+    if (displayDate.isEmpty) {
+      print('❌ Empty display date provided for conversion');
+      return "";
+    }
+
+    try {
+      print('🔄 Converting display date to English: "$displayDate"');
+      final date = parseDate(displayDate);
+      final englishDate = formatDateForBackend(date);
+      print('✅ Conversion successful: "$displayDate" -> "$englishDate"');
+      return englishDate;
+    } catch (e) {
+      print('❌ Error converting "$displayDate" to English format: $e');
+      // Fallback: try to extract date parts manually
+      try {
+        final parts = displayDate.split('-');
+        if (parts.length == 3) {
+          final day = int.parse(parts[0]);
+          final month = getMonthNumberFromLocalizedName(parts[1]);
+          final year = int.parse(parts[2]);
+          final date = DateTime(year, month, day);
+          final englishDate = formatDateForBackend(date);
+          print('✅ Manual conversion successful: "$englishDate"');
+          return englishDate;
+        }
+      } catch (e2) {
+        print('❌ Manual conversion also failed: $e2');
+      }
+      return displayDate; // Last resort fallback
+    }
   }
 
   void setPassengers(int adults, int children, int infants) {
@@ -447,8 +572,10 @@ class FlightCubit extends Cubit<FlightState> {
     emit(state.copyWith(cabinClass: cabinClass));
   }
 
-  // MAIN SEARCH METHOD - CLEAR SEPARATION BETWEEN MULTI-CITY AND REGULAR SEARCHES
+  // MAIN SEARCH METHOD
   Future<void> search(BuildContext context) async {
+    print('🚀 Starting search process...');
+
     if (state.tripType == "multi") {
       await _handleMultiCitySearch(context);
     } else {
@@ -461,7 +588,7 @@ class FlightCubit extends Cubit<FlightState> {
     for (final segment in state.flightSegments) {
       if (segment.from.isEmpty || segment.to.isEmpty || segment.date.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please fill all flight segments")),
+          SnackBar(content: Text("Please fill all flight segments".tr())),
         );
         return;
       }
@@ -470,32 +597,33 @@ class FlightCubit extends Cubit<FlightState> {
     // Validate date sequence
     if (!validateMultiCityDates()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Flight dates must be in chronological order"),
+        SnackBar(
+          content: Text("Flight dates must be in chronological order".tr()),
         ),
       );
       return;
     }
 
-    // SKIP RECENT SEARCHES FOR MULTI-CITY - JUST NAVIGATE TO RESULTS
     print('🔍 Multi-city search - skipping recent searches');
     navigateToSearchResults(context);
   }
 
   Future<void> _handleRegularSearch(BuildContext context) async {
+    print('🔍 Handling regular search...');
+
     // Validate required fields
     if (state.from.isEmpty || state.to.isEmpty || state.departureDate.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all required fields")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("fill_required_fields".tr())));
       return;
     }
 
     // Validate return date for round trips
     if (state.tripType == "round" && state.returnDate.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select return date")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("select_return_date".tr())));
       return;
     }
 
@@ -503,15 +631,13 @@ class FlightCubit extends Cubit<FlightState> {
     if (state.tripType == "round" &&
         state.departureDate.isNotEmpty &&
         state.returnDate.isNotEmpty) {
-      final departure = _parseDate(state.departureDate);
-      final returnDate = _parseDate(state.returnDate);
+      final departure = parseDate(state.departureDate);
+      final returnDate = parseDate(state.returnDate);
 
       if (returnDate.isBefore(departure.add(const Duration(days: 1)))) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Return date must be after departure date"),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("return_date_error".tr())));
         return;
       }
     }
@@ -574,7 +700,7 @@ class FlightCubit extends Cubit<FlightState> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Search error: $e')));
+      ).showSnackBar(SnackBar(content: Text('Search error: $e'.tr())));
     }
   }
 
@@ -606,7 +732,37 @@ class FlightCubit extends Cubit<FlightState> {
     }
   }
 
-  void prefillFromRecentSearch(RecentSearchModel search) {
+  // void prefillFromRecentSearch(RecentSearchModel search) {
+  //   // Check if dates are in past and replace with current date if needed
+  //   String departureDate = search.date;
+  //   String returnDate = search.returnDate;
+
+  //   if (_isDateInPast(departureDate)) {
+  //     departureDate = _currentDateFormatted;
+  //   }
+
+  //   if (returnDate.isNotEmpty && _isDateInPast(returnDate)) {
+  //     final departure = parseDate(departureDate);
+  //     final nextDay = departure.add(const Duration(days: 1));
+  //     returnDate = _getNextDayFormatted(departureDate);
+  //   }
+
+  //   emit(
+  //     state.copyWith(
+  //       from: search.from,
+  //       to: search.to,
+  //       departureDate: departureDate,
+  //       returnDate: returnDate,
+  //       adults: search.adults,
+  //       children: search.children,
+  //       infants: search.infants,
+  //       cabinClass: search.flightClass,
+  //       tripType: search.tripType ?? "oneway",
+  //     ),
+  //   );
+  // }
+  // In FlightCubit - quick fix version
+  void prefillFromRecentSearch(RecentSearchModel search, BuildContext context) {
     // Check if dates are in past and replace with current date if needed
     String departureDate = search.date;
     String returnDate = search.returnDate;
@@ -616,17 +772,23 @@ class FlightCubit extends Cubit<FlightState> {
     }
 
     if (returnDate.isNotEmpty && _isDateInPast(returnDate)) {
-      final departure = _parseDate(departureDate);
+      final departure = parseDate(departureDate);
       final nextDay = departure.add(const Duration(days: 1));
-      returnDate = _formatDate(nextDay);
+      returnDate = formatDateForDisplay(nextDay, context);
     }
+
+    // Convert dates to current app locale using helper functions
+    final formattedDepartureDate = _convertToAppLocale(departureDate, context);
+    final formattedReturnDate = returnDate.isNotEmpty
+        ? _convertToAppLocale(returnDate, context)
+        : '';
 
     emit(
       state.copyWith(
         from: search.from,
         to: search.to,
-        departureDate: departureDate,
-        returnDate: returnDate,
+        departureDate: formattedDepartureDate,
+        returnDate: formattedReturnDate,
         adults: search.adults,
         children: search.children,
         infants: search.infants,
@@ -634,6 +796,19 @@ class FlightCubit extends Cubit<FlightState> {
         tripType: search.tripType ?? "oneway",
       ),
     );
+  }
+
+  String _convertToAppLocale(String dateString, BuildContext context) {
+    if (dateString.isEmpty) return "";
+
+    try {
+      final dateTime = parseDate(dateString);
+      // This will use your existing helper function that respects the current locale
+      return formatDateForDisplay(dateTime, context);
+    } catch (e) {
+      print('❌ Error converting date to app locale: $e');
+      return dateString;
+    }
   }
 
   void showAirportBottomSheet(BuildContext context, bool isOrigin) {
@@ -651,17 +826,39 @@ class FlightCubit extends Cubit<FlightState> {
   }
 
   void navigateToSearchResults(BuildContext context) {
+    print('🎯 Navigating to search results...');
+
     Map<String, dynamic> searchData;
+
+    // Debug print to check what dates we have
+    print('🔍 Checking dates before sending to backend:');
+    print('   Departure Display: "${state.departureDate}"');
+    print('   Departure English: "${state.departureDateEnglish}"');
+    print('   Return Display: "${state.returnDate}"');
+    print('   Return English: "${state.returnDateEnglish}"');
+
+    for (final segment in state.flightSegments) {
+      print('   Segment ${segment.id}:');
+      print('     Display: "${segment.date}"');
+      print('     English: "${segment.englishDate}"');
+    }
 
     if (state.tripType == "multi") {
       searchData = {
         "flightType": "multi",
         "segments": state.flightSegments.map((segment) {
+          // ALWAYS use englishDate for backend
+          final backendDate = segment.englishDate.isNotEmpty
+              ? segment.englishDate
+              : _convertToEnglishFormat(segment.date);
+
+          print('🚀 Sending segment ${segment.id} to backend: "$backendDate"');
+
           return {
             "id": segment.id,
             "from": segment.from,
             "to": segment.to,
-            "date": segment.date,
+            "date": backendDate,
           };
         }).toList(),
         "adults": state.adults,
@@ -670,18 +867,33 @@ class FlightCubit extends Cubit<FlightState> {
         "cabinClass": state.cabinClass,
       };
     } else {
+      // For regular searches, also ensure we use English dates
+      final departureBackendDate = state.departureDateEnglish.isNotEmpty
+          ? state.departureDateEnglish
+          : _convertToEnglishFormat(state.departureDate);
+
+      final returnBackendDate = state.returnDateEnglish.isNotEmpty
+          ? state.returnDateEnglish
+          : _convertToEnglishFormat(state.returnDate);
+
+      print('🚀 Sending to backend:');
+      print('   Departure: "$departureBackendDate"');
+      print('   Return: "$returnBackendDate"');
+
       searchData = {
         "flightType": state.tripType,
         "from": state.from,
         "to": state.to,
-        "departureDate": state.departureDate,
-        "returnDate": state.returnDate,
+        "departureDate": departureBackendDate,
+        "returnDate": state.tripType == "round" ? returnBackendDate : "",
         "adults": state.adults,
         "children": state.children,
         "infants": state.infants,
         "cabinClass": state.cabinClass,
       };
     }
+
+    print('🔍 Final search data for backend: $searchData');
 
     Navigator.push(
       context,

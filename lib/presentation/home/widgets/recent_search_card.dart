@@ -1,6 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
+import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/presentation/home/model/recentsearch_model.dart';
 
 class RecentSearchCard extends StatelessWidget {
@@ -46,9 +48,11 @@ class RecentSearchCard extends StatelessWidget {
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: ticket.type == 'flight'
-                          ? AppColors.splashBackgroundColorEnd.withOpacity(0.1)
-                          : AppColors.splashBackgroundColorStart.withOpacity(
-                              0.1,
+                          ? AppColors.splashBackgroundColorEnd.withValues(
+                              alpha: 0.1,
+                            )
+                          : AppColors.splashBackgroundColorStart.withValues(
+                              alpha: 0.1,
                             ),
                       shape: BoxShape.circle,
                     ),
@@ -96,7 +100,7 @@ class RecentSearchCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                _buildDateText(ticket),
+                                _buildDateText(context, ticket),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[700],
@@ -123,7 +127,7 @@ class RecentSearchCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${ticket.passengers} ${ticket.passengers > 1 ? 'Passengers' : 'Passenger'}',
+                                  '${ticket.passengers} ${ticket.passengers > 1 ? 'Passengers'.tr() : 'Passenger'.tr()}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.grey[700],
@@ -144,7 +148,8 @@ class RecentSearchCard extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    ticket.flightClass.toCabinClassDisplayName,
+                                    ticket.flightClass.toCabinClassDisplayName
+                                        .tr(),
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey[700],
@@ -165,7 +170,8 @@ class RecentSearchCard extends StatelessWidget {
             if (onDelete != null)
               Positioned(
                 top: 40,
-                right: 8,
+                right: isRTL(context) ? null : 0,
+                left: isRTL(context) ? 16 : null,
                 child: IconButton(
                   icon: Icon(Icons.close, color: Colors.grey[500], size: 18),
                   onPressed: onDelete,
@@ -235,22 +241,33 @@ class RecentSearchCard extends StatelessWidget {
     );
   }
 
-  String _buildDateText(RecentSearchModel ticket) {
-    if (ticket.date.isEmpty) return 'No date selected';
+  String _buildDateText(BuildContext context, RecentSearchModel ticket) {
+    if (ticket.date.isEmpty) return 'No date selected'.tr();
 
     final bool isRoundTrip = ticket.tripType?.toLowerCase() == 'round';
     if (isRoundTrip && ticket.returnDate.isNotEmpty) {
-      return '${_formatDate(ticket.date)} - ${_formatDate(ticket.returnDate)}';
+      return '${_formatDateForDisplay(context, ticket.date)} - ${_formatDateForDisplay(context, ticket.returnDate)}';
     }
 
-    return _formatDate(ticket.date);
+    return _formatDateForDisplay(context, ticket.date);
   }
 
-  String _formatDate(String date) {
-    if (date.length > 10) {
-      return date.substring(0, 10);
+  String _formatDateForDisplay(BuildContext context, String date) {
+    if (date.isEmpty) return '';
+
+    try {
+      // Parse the date using helper function
+      final dateTime = parseDate(date);
+
+      // Format for display using helper function with context
+      final fullFormattedDate = formatDateForDisplay(dateTime, context);
+
+      return fullFormattedDate;
+    } catch (e) {
+      print('❌ Error formatting date in RecentSearchCard: $e');
+      // Fallback: return original date
+      return date;
     }
-    return date;
   }
 
   String _getAirportCode(String airportString) {
@@ -261,7 +278,7 @@ class RecentSearchCard extends StatelessWidget {
   }
 
   String _getAirportName(String airportString) {
-    if (airportString.isEmpty) return 'Not specified';
+    if (airportString.isEmpty) return 'Not specified'.tr();
     final parts = airportString.split(' - ');
     if (parts.length < 2) return airportString;
     return parts[1];

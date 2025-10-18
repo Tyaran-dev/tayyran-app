@@ -1,4 +1,5 @@
 // lib/presentation/passenger_info/widgets/country_code_selection_bottom_sheet.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/data/country_data.dart';
 
@@ -45,14 +46,16 @@ class _CountryCodeSelectionBottomSheetState
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = context.locale.languageCode == 'ar';
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Header
-          const Text(
-            'Select Country Code',
+          Text(
+            'selectCountryCode'.tr(),
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -61,7 +64,7 @@ class _CountryCodeSelectionBottomSheetState
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
-              labelText: 'Search country or code',
+              labelText: 'searchCountryOrCode'.tr(),
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -79,8 +82,10 @@ class _CountryCodeSelectionBottomSheetState
                   _filteredCountries[index]['flag']!,
                   style: const TextStyle(fontSize: 24),
                 ),
-                title: Text(_filteredCountries[index]['name_en']!),
-                subtitle: Text(_filteredCountries[index]['name_ar']!),
+                title: isArabic
+                    ? Text(_filteredCountries[index]['name_ar']!)
+                    : Text(_filteredCountries[index]['name_en']!),
+                // subtitle: Text(_filteredCountries[index]['name_ar']!),
                 trailing: Text(_filteredCountries[index]['dial_code']!),
 
                 onTap: () => Navigator.pop(context, _filteredCountries[index]),

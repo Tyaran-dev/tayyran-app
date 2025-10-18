@@ -1,5 +1,6 @@
-// filter_bottom_sheet.dart - ENHANCED with airline logos and time icons
+// filter_bottom_sheet.dart - UPDATED with Arabic airline names
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
@@ -11,17 +12,17 @@ import 'package:tayyran_app/presentation/flight_search/models/filter_options.dar
 class FilterBottomSheet extends StatefulWidget {
   final FilterOptions currentFilters;
   final Function(FilterOptions) onApplyFilters;
-  final List<Carrier> availableCarriers; // ADD THIS
-  final double minAvailablePrice; // ADD THIS
-  final double maxAvailablePrice; // ADD THIS
+  final List<Carrier> availableCarriers;
+  final double minAvailablePrice;
+  final double maxAvailablePrice;
 
   const FilterBottomSheet({
     super.key,
     required this.currentFilters,
     required this.onApplyFilters,
-    required this.availableCarriers, // ADD THIS
-    required this.minAvailablePrice, // ADD THIS
-    required this.maxAvailablePrice, // ADD THIS
+    required this.availableCarriers,
+    required this.minAvailablePrice,
+    required this.maxAvailablePrice,
   });
 
   @override
@@ -30,9 +31,9 @@ class FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late FilterOptions _currentFilters;
-  late double _minPriceRange; // ADD THIS
-  late double _maxPriceRange; // ADD THIS
-  late bool _hasUserChangedPrice; // ADD THIS
+  late double _minPriceRange;
+  late double _maxPriceRange;
+  late bool _hasUserChangedPrice;
 
   @override
   void initState() {
@@ -57,6 +58,14 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
+  String _getAirlineName(Carrier carrier) {
+    final isArabic = context.locale.languageCode == 'ar';
+    if (isArabic) {
+      return carrier.airlineNameAr;
+    }
+    return carrier.airLineName;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -77,8 +86,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const SizedBox(width: 42),
-              const Text(
-                'Filter',
+              Text(
+                'filter'.tr(),
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -142,8 +151,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Clear All',
+                  child: Text(
+                    'clear_all'.tr(),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -157,7 +166,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 child: GradientButton(
                   height: 52,
                   onPressed: _applyFilters,
-                  text: 'Apply Filters',
+                  text: 'apply_filters'.tr(),
                 ),
               ),
             ],
@@ -173,8 +182,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       children: [
         Row(
           children: [
-            const Text(
-              'Price Range',
+            Text(
+              'price_range'.tr(),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -197,8 +206,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           activeColor: AppColors.splashBackgroundColorEnd,
           inactiveColor: Colors.grey[300],
           labels: RangeLabels(
-            'SAR ${_currentFilters.minPrice.round()}',
-            'SAR ${_currentFilters.maxPrice.round()}',
+            '${'sar'.tr()} ${_currentFilters.minPrice.round()}',
+            '${'sar'.tr()} ${_currentFilters.maxPrice.round()}',
           ),
           onChanged: (values) {
             setState(() {
@@ -213,17 +222,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'SAR ${_currentFilters.minPrice.round()}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              '${'sar'.tr()} ${_currentFilters.minPrice.round()}',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             Text(
-              'SAR ${_currentFilters.maxPrice.round()}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              '${'sar'.tr()} ${_currentFilters.maxPrice.round()}',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
         ),
         Text(
-          'Range: SAR ${_minPriceRange.round()} - SAR ${_maxPriceRange.round()}',
+          'price_range_hint'
+              .tr()
+              .replaceAll('{min}', _minPriceRange.round().toString())
+              .replaceAll('{max}', _maxPriceRange.round().toString()),
           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
           textAlign: TextAlign.center,
         ),
@@ -235,8 +247,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Flight Stops',
+        Text(
+          'flight_stops'.tr(),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -296,8 +308,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Airlines',
+        Text(
+          'airlines'.tr(),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -342,9 +354,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  // Airline name from API
+                  // Airline name with Arabic support
                   Text(
-                    carrier.airLineName,
+                    _getAirlineName(carrier),
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.black87,
                       fontWeight: FontWeight.w500,
@@ -387,8 +399,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Departure Time',
+        Text(
+          'departure_time'.tr(),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -402,25 +414,25 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           children: [
             _buildTimeChip(
               DepartureTimeFilter.before6am,
-              'Before 6am',
+              'before_6am'.tr(),
               Icons.nightlight_round, // Moon icon for early morning
               Colors.blue,
             ),
             _buildTimeChip(
               DepartureTimeFilter.sixToTwelve,
-              '6am - 12pm',
+              '6am_to_12pm'.tr(),
               Icons.wb_sunny, // Sun icon for morning
               Colors.orange,
             ),
             _buildTimeChip(
               DepartureTimeFilter.twelveToSix,
-              '12pm - 6pm',
+              '12pm_to_6pm'.tr(),
               Icons.wb_sunny_outlined, // Sun outline for afternoon
               Colors.amber,
             ),
             _buildTimeChip(
               DepartureTimeFilter.after6pm,
-              'After 6pm',
+              'after_6pm'.tr(),
               Icons.nightlight_round_outlined, // Moon outline for evening
               Colors.purple,
             ),
@@ -478,48 +490,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  // Widget _buildBaggageSection() {
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-  //     decoration: BoxDecoration(
-  //       color: Colors.grey[50],
-  //       borderRadius: BorderRadius.circular(12),
-  //       border: Border.all(color: Colors.grey[200]!),
-  //     ),
-  //     child: Row(
-  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //       children: [
-  //         Row(
-  //           children: [
-  //             const Icon(Icons.luggage, size: 20, color: Colors.black87),
-  //             const SizedBox(width: 8),
-  //             const Text(
-  //               'Baggage Included',
-  //               style: TextStyle(
-  //                 fontSize: 16,
-  //                 fontWeight: FontWeight.w500,
-  //                 color: Colors.black87,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         Switch(
-  //           value: _currentFilters.hasBaggageOnly,
-  //           onChanged: (value) {
-  //             setState(() {
-  //               _currentFilters.hasBaggageOnly = value;
-  //             });
-  //           },
-  //           activeThumbColor: AppColors.splashBackgroundColorEnd,
-  //           activeTrackColor: AppColors.splashBackgroundColorEnd.withValues(
-  //             alpha: 0.3,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   void _clearAllFilters() {
     setState(() {
       _currentFilters = FilterOptions(
@@ -546,13 +516,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   String _getStopFilterLabel(StopFilter stop) {
     switch (stop) {
       case StopFilter.any:
-        return 'Any';
+        return 'any_stops'.tr();
       case StopFilter.direct:
-        return 'Direct';
+        return 'direct'.tr();
       case StopFilter.oneStop:
-        return '1 Stop';
+        return 'one_stop'.tr();
       case StopFilter.twoPlusStops:
-        return '2+ Stops';
+        return 'two_plus_stops'.tr();
     }
   }
 }

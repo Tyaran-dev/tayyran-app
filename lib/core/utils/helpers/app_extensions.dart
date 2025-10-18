@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -203,31 +204,68 @@ extension CabinClassExtensions on String {
   String get toCabinClassDisplayName {
     switch (this) {
       case 'PREMIUM_ECONOMY':
-        return 'Premium Economy';
+        return 'premium_economy'.tr();
       case 'BUSINESS':
-        return 'Business';
+        return 'business'.tr();
       case 'FIRST':
-        return 'First';
+        return 'first'.tr();
       case 'ECONOMY':
       default:
-        return 'Economy';
+        return 'economy'.tr();
     }
   }
 
-  String get toCabinClassBackendValue {
-    switch (this) {
-      case 'Premium Economy':
-        return 'PREMIUM_ECONOMY';
-      case 'Business':
-        return 'BUSINESS';
-      case 'First':
-        return 'FIRST';
-      case 'Economy':
-      default:
-        return 'ECONOMY';
-    }
-  }
+  //   String get toCabinClassBackendValue {
+  //     switch (this) {
+  //       case 'premium_economy': // This is the translation key, not the translated text
+  //       case 'Premium Economy':
+  //       case 'اقتصادية متميزة': // Arabic translation
+  //         return 'PREMIUM_ECONOMY';
+  //       case 'business': // Translation key
+  //       case 'Business':
+  //       case 'رجال الأعمال': // Arabic translation
+  //         return 'BUSINESS';
+  //       case 'first': // Translation key
+  //       case 'First':
+  //       case 'درجة أولى': // Arabic translation
+  //         return 'FIRST';
+  //       case 'economy': // Translation key
+  //       case 'Economy':
+  //       case 'اقتصادي': // Arabic translation
+  //       default:
+  //         return 'ECONOMY';
+  //     }
+  //   }
 }
+// extension CabinClassExtensions on String {
+//   String get toCabinClassDisplayName {
+//     switch (this) {
+//       case 'PREMIUM_ECONOMY':
+//         return 'premium_economy';
+//       case 'BUSINESS':
+//         return 'Business';
+//       case 'FIRST':
+//         return 'first';
+//       case 'ECONOMY':
+//       default:
+//         return 'economy';
+//     }
+//   }
+
+//   String get toCabinClassBackendValue {
+//     switch (this) {
+//       case 'Premium Economy':
+//         return 'PREMIUM_ECONOMY';
+//       case 'Business':
+//         return 'BUSINESS';
+//       case 'First':
+//         return 'FIRST';
+//       case 'Economy':
+//       default:
+//         return 'ECONOMY';
+//     }
+//   }
+// }
 
 extension ElevationToBoxDecoration on double {
   BoxDecoration toBoxDecoration({

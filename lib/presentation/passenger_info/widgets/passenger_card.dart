@@ -1,5 +1,6 @@
 // lib/presentation/passenger_info/widgets/passenger_card.dart
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/data/models/passenger_model.dart';
 
@@ -42,18 +43,29 @@ class PassengerCard extends StatelessWidget {
       }
     }
 
+    String getPassengerTypeDisplayName() {
+      switch (passenger.type) {
+        case TravelerType.ADULT:
+          return 'passengerCard.passengerTypes.adult'.tr();
+        case TravelerType.CHILD:
+          return 'passengerCard.passengerTypes.child'.tr();
+        case TravelerType.INFANT:
+          return 'passengerCard.passengerTypes.infant'.tr();
+      }
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isCompleted
-              ? getColorForPassengerType().withOpacity(0.3)
+              ? getColorForPassengerType().withValues(alpha: 0.3)
               : Colors.grey[300]!,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -65,7 +77,7 @@ class PassengerCard extends StatelessWidget {
           height: 40,
           decoration: BoxDecoration(
             color: isCompleted
-                ? getColorForPassengerType().withOpacity(0.1)
+                ? getColorForPassengerType().withValues(alpha: 0.1)
                 : Colors.grey[200],
             shape: BoxShape.circle,
           ),
@@ -77,7 +89,7 @@ class PassengerCard extends StatelessWidget {
         title: Text(
           isCompleted
               ? '${passenger.title} ${passenger.firstName} ${passenger.lastName}'
-              : 'Passenger ${index + 1} - ${passenger.type.displayName}',
+              : '${'passengerCard.passenger'.tr()} ${index + 1} - ${getPassengerTypeDisplayName()}',
           style: TextStyle(
             fontWeight: isCompleted ? FontWeight.w600 : FontWeight.normal,
             color: isCompleted ? Colors.black : Colors.grey[600],
@@ -86,12 +98,12 @@ class PassengerCard extends StatelessWidget {
         subtitle: isCompleted
             ? Text(
                 passenger.passportNumber.isNotEmpty
-                    ? 'Passport: ${passenger.passportNumber}'
-                    : 'Tap to complete details',
+                    ? '${'passengerCard.passport'.tr()}: ${passenger.passportNumber}'
+                    : 'passengerCard.tapToComplete'.tr(),
                 style: const TextStyle(fontSize: 12),
               )
             : Text(
-                'Tap to add details',
+                'passengerCard.tapToAdd'.tr(),
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
         trailing: IconButton(
