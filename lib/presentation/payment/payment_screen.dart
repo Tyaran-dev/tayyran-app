@@ -10,10 +10,38 @@ import 'package:tayyran_app/core/utils/widgets/gradient_button.dart';
 import 'package:tayyran_app/presentation/payment/cubit/payment_cubit.dart';
 import 'package:tayyran_app/presentation/payment/model/payment_arguments.dart';
 
-class PaymentScreen extends StatelessWidget {
+class PaymentScreen extends StatefulWidget {
   final PaymentArguments args;
 
   const PaymentScreen({super.key, required this.args});
+
+  @override
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
+
+class _PaymentScreenState extends State<PaymentScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _animationController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +185,8 @@ class PaymentScreen extends StatelessWidget {
   }
 
   Widget _buildPaymentInterface(BuildContext context, PaymentReady state) {
+    // Determine if card view is still loading - you'll need to track this in your state
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -170,7 +200,7 @@ class PaymentScreen extends StatelessWidget {
           _buildCardPaymentTitle(),
           const SizedBox(height: 16),
 
-          // Card payment view
+          // Card payment view with loading underneath
           Container(
             height: 200,
             decoration: BoxDecoration(
@@ -178,7 +208,41 @@ class PaymentScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               color: const Color(0xFFf9fafb),
             ),
-            child: state.cardView,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Loading indicator - always there but hidden under card
+                ...[
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.splashBackgroundColorEnd,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'loading_card'.tr(),
+                        style: TextStyle(
+                          color: AppColors.splashBackgroundColorEnd,
+                          fontSize: 14,
+                          fontFamily: "Almarai",
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Card view - appears on top when ready
+                state.cardView,
+              ],
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -212,13 +276,12 @@ class PaymentScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 40), // Extra padding for keyboard
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  // Card payment section title
   Widget _buildCardPaymentTitle() {
     return Text(
       'payment.cardDetails'.tr(),

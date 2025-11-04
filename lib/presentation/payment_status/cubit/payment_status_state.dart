@@ -1,3 +1,4 @@
+// lib/presentation/payment_status/cubit/payment_status_state.dart
 part of 'payment_status_cubit.dart';
 
 abstract class PaymentStatusState {
@@ -41,7 +42,7 @@ class PaymentStatusPending extends PaymentStatusState {
 }
 
 class PaymentStatusConfirmed extends PaymentStatusState {
-  final OrderData orderData;
+  final Order orderData;
   final int totalDuration;
 
   PaymentStatusConfirmed({

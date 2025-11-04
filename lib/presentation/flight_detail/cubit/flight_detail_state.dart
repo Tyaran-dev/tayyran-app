@@ -158,9 +158,10 @@ class FlightDetailState {
   }
 
   // Helper method to get airline name for a specific segment
-  String getAirlineNameForSegment(Segment segment) {
+  String? getAirlineNameForSegment(Segment segment) {
+    final isArabic = AppLocale().isArabic;
     final carrier = filters.findCarrierByCode(segment.carrierCode);
-    return carrier?.airLineName ?? segment.carrierCode;
+    return isArabic ? carrier?.airlineNameAr : carrier?.airLineName;
   }
 
   // Helper method to get airline logo for a specific segment

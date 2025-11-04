@@ -1,9 +1,9 @@
-// lib/cubits/language_cubit.dart
+// lib/presentation/settings/cubit/language_cubit.dart
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
-import 'package:tayyran_app/core/services/shared_preferences_service.dart';
+import 'package:tayyran_app/core/services/app_locale.dart';
 
 part 'language_state.dart';
 
@@ -12,25 +12,29 @@ class LanguageCubit extends Cubit<LanguageState> {
 
   Future<void> initializeLanguage(BuildContext context) async {
     try {
-      // 🎯 FIRST: Get saved language from SharedPreferences
-      final savedLanguage = await SharedPreferencesService.getLanguage();
+      // Initialize AppLocale first
+      await AppLocale().initialize();
+
+      // Get saved language from AppLocale (which uses SharedPreferences)
+      final savedLanguage = AppLocale().languageCode;
       print('🔍 Initializing with saved language: $savedLanguage');
-      // 🧠 Update helper cache
-      // 🎯 SECOND: Update Dio client with saved language
+
+      // Update Dio client
       updateDioClientLanguage(savedLanguage);
 
-      // 🎯 THIRD: Update EasyLocalization if different from current
+      // Sync with EasyLocalization context
+      AppLocale().syncWithEasyLocalization(context);
+
+      // Update EasyLocalization if different from current
       if (context.locale.languageCode != savedLanguage) {
         print('🔄 Updating EasyLocalization to: $savedLanguage');
         await context.setLocale(Locale(savedLanguage));
       }
 
-      // 🎯 FINALLY: Emit the state
       emit(LanguageChanged(savedLanguage));
       print('✅ Language initialized: $savedLanguage');
     } catch (e) {
       print('❌ Error initializing language: $e');
-      // Fallback to Arabic
       updateDioClientLanguage('ar');
       emit(LanguageChanged('ar'));
     }
@@ -44,19 +48,13 @@ class LanguageCubit extends Cubit<LanguageState> {
       emit(LanguageChanging());
       print('🔄 Changing language to: $languageCode');
 
-      // 🎯 FIRST: Save to SharedPreferences
-      await SharedPreferencesService.saveLanguage(languageCode);
+      // Update AppLocale
+      await AppLocale().setLocale(Locale(languageCode), context: context);
 
-      // 🧠 SECOND: Update helper cache immediately
-
-      // 🎯 SECOND: Update Dio client
+      // Update Dio client
       updateDioClientLanguage(languageCode);
 
-      // 🎯 THIRD: Update EasyLocalization
-      final newLocale = Locale(languageCode);
-      await context.setLocale(newLocale);
-
-      // 🎯 FINALLY: Emit state after UI updates
+      // Emit state after UI updates
       WidgetsBinding.instance.addPostFrameCallback((_) {
         emit(LanguageChanged(languageCode));
         print('✅ Language changed successfully: $languageCode');
@@ -67,25 +65,16 @@ class LanguageCubit extends Cubit<LanguageState> {
     }
   }
 
-  // Your existing methods remain the same...
-  void refreshLanguage() {
-    if (state is LanguageChanged) {
-      final currentLang = (state as LanguageChanged).languageCode;
-      emit(LanguageRefreshed(currentLang));
-    }
-  }
-
+  // Get current language without context
   String getCurrentLanguage() {
-    return state is LanguageChanged
-        ? (state as LanguageChanged).languageCode
-        : 'ar';
+    return AppLocale().languageCode;
   }
 
   bool isArabic() {
-    return getCurrentLanguage() == 'ar';
+    return AppLocale().isArabic;
   }
 
   bool isEnglish() {
-    return getCurrentLanguage() == 'en';
+    return AppLocale().isEnglish;
   }
 }

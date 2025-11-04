@@ -206,7 +206,7 @@ class _SearchFormWidgetState extends State<SearchFormWidget> {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: isSelected ? Colors.white : Colors.grey[700],
                   fontFamily: "Almarai",
-                  fontSize: 14.5,
+                  fontSize: 12.5,
                 ),
               ),
             ],

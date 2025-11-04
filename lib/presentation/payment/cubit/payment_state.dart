@@ -22,16 +22,11 @@ class PaymentReady extends PaymentState {
   PaymentReady(super.args, this.cardView, this.sessionId);
 }
 
-// NEW: Payment validation state
-class PaymentValidating extends PaymentState {
-  PaymentValidating(super.args);
-}
+class CardViewReady extends PaymentState {
+  final MFCardPaymentView cardView;
+  final String? sessionId;
 
-// NEW: Payment validation failed state
-class PaymentValidationFailed extends PaymentState {
-  final String message;
-
-  PaymentValidationFailed(super.args, this.message);
+  CardViewReady(super.args, this.cardView, this.sessionId);
 }
 
 class PaymentProcessing extends PaymentState {

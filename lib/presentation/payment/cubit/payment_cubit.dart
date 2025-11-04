@@ -1,5 +1,5 @@
-// lib/presentation/payment/cubit/payment_cubit.dart
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:myfatoorah_flutter/MFUtils.dart';
@@ -21,12 +21,48 @@ class PaymentCubit extends Cubit<PaymentState> {
   bool _isProcessing = false;
   PaymentCubit(this._paymentRepository, this.args)
     : super(PaymentInitial(args)) {
+    mfCardView = MFCardPaymentView(cardViewStyle: _cardViewStyle());
     _initPayment();
   }
-  void _initPayment() {
-    PaymentService.init();
-    _initiateSession();
-    mfCardView = MFCardPaymentView(cardViewStyle: _cardViewStyle());
+
+  void _initPayment() async {
+    emit(PaymentReady(state.args, mfCardView, sessionId));
+
+    await PaymentService.init(env: PaymentEnvironment.live);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _initiateSession();
+    });
+  }
+
+  Future<void> _initiateSession() async {
+    MFInitiateSessionRequest initiateSessionRequest =
+        MFInitiateSessionRequest();
+    try {
+      await MFSDK
+          .initSession(initiateSessionRequest, MFLanguage.ENGLISH)
+          .then((value) => loadEmbeddedPayment(value))
+          .catchError((error) => debugPrint(error.message));
+    } catch (error) {
+      debugPrint(error.toString());
+      emit(PaymentError(state.args, error.toString()));
+    }
+  }
+
+  void loadCardView(MFInitiateSessionResponse session) {
+    mfCardView.load(session, (bin) {
+      debugPrint("BIN: $bin");
+      emit(CardViewReady(state.args, mfCardView, sessionId));
+      emit(PaymentReady(state.args, mfCardView, sessionId));
+    });
+  }
+
+  Future<void> loadEmbeddedPayment(MFInitiateSessionResponse session) async {
+    MFExecutePaymentRequest executePaymentRequest = MFExecutePaymentRequest(
+      invoiceValue: 10,
+    );
+    executePaymentRequest.displayCurrencyIso = MFCurrencyISO.SAUDIARABIA_SAR;
+    executePaymentRequest.processingDetails?.autoCapture = false;
+    loadCardView(session);
   }
 
   MFCardViewStyle _cardViewStyle() {
@@ -40,29 +76,6 @@ class PaymentCubit extends Cubit<PaymentState> {
     cardViewStyle.savedCardText?.addCardText = MFFontWeight.Heavy;
     cardViewStyle.backgroundColor = getColorHexFromStr("#f9fafb");
     return cardViewStyle;
-  }
-
-  Future<void> _initiateSession() async {
-    emit(PaymentLoading(state.args));
-
-    MFInitiateSessionRequest request = MFInitiateSessionRequest();
-
-    try {
-      await MFSDK
-          .initiateSession(request, (bin) {
-            debugPrint("BIN: $bin");
-          })
-          .then((sessionResponse) {
-            sessionId = sessionResponse.sessionId;
-            mfCardView.load(sessionResponse, (bin) {
-              debugPrint("Card BIN: $bin");
-            });
-            emit(PaymentReady(state.args, mfCardView, sessionId));
-          });
-    } catch (error) {
-      debugPrint(error.toString());
-      emit(PaymentError(state.args, error.toString()));
-    }
   }
 
   Future<void> processPayment() async {
@@ -79,7 +92,7 @@ class PaymentCubit extends Cubit<PaymentState> {
     _isProcessing = true;
     // emit(PaymentProcessing(state.args));
     try {
-      var request = MFExecutePaymentRequest(invoiceValue: args.amount);
+      var request = MFExecutePaymentRequest(invoiceValue: 2);
       request.sessionId = sessionId;
       request.processingDetails?.autoCapture = false;
       request.displayCurrencyIso = MFCurrencyISO.SAUDIARABIA_SAR;
@@ -102,8 +115,8 @@ class PaymentCubit extends Cubit<PaymentState> {
             debugPrint("✅ MyFatoorah Invoice ID: $mfInvoiceId");
           })
           .then((MFGetPaymentStatusResponse value) async {
-            emit(PaymentProcessing(state.args));
-
+            // emit(PaymentProcessing(state.args));
+            _handlePaymentSuccess(value);
             debugPrint(
               "🎉 Payment authorization completed with status: ${value.invoiceStatus}",
             );
@@ -138,7 +151,10 @@ class PaymentCubit extends Cubit<PaymentState> {
             }
           })
           .catchError((error, stackTrace) {
+            _handleMFError(error);
+
             debugPrint("❌ Payment error: ${error.message}");
+            debugPrint("❌ Payment error: ${error.toString()}");
 
             // Handle specific error cases without emitting error states
             if (error.message == "Card details are invalid or missing!") {
@@ -171,6 +187,52 @@ class PaymentCubit extends Cubit<PaymentState> {
     } finally {
       _isProcessing = false;
       debugPrint("🏁 Payment process finished");
+    }
+  }
+
+  void logObject(Object object) {
+    var json = const JsonEncoder.withIndent('  ').convert(object);
+    debugPrint(json);
+  }
+
+  void _handlePaymentSuccess(MFGetPaymentStatusResponse response) {
+    debugPrint("💰 PAYMENT SUCCESS HANDLER:");
+    debugPrint("   Invoice ID: ${response.invoiceId}");
+    debugPrint("   Is Direct Payment: ${response.depositStatus}");
+    debugPrint("   invoiceStatus: ${response.invoiceStatus}");
+    debugPrint("   Customer Reference: ${response.customerReference}");
+    debugPrint("   logObject------------------------------!------------------");
+
+    logObject(response);
+  }
+
+  void _handleMFError(MFError error) {
+    debugPrint("🛑 MFError Handler:");
+    debugPrint("   Code: ${error.code}");
+    debugPrint("   Message: ${error.message}");
+    debugPrint(
+      "   logerrorObject------------------------------!------------------",
+    );
+
+    logObject(error);
+
+    switch (error.code) {
+      case '100':
+        debugPrint("   ❌ Invalid session ID");
+        // Handle session expiration
+        break;
+      case '200':
+        debugPrint("   ❌ Payment method not available");
+        break;
+      case '300':
+        debugPrint("   ❌ Insufficient funds");
+        break;
+      case '400':
+        debugPrint("   ❌ Card declined");
+        break;
+      default:
+        debugPrint("   ❌ Unknown error code: ${error.code}");
+        break;
     }
   }
 

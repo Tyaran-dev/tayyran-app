@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/services/shared_preferences_service.dart';
+import 'package:tayyran_app/core/utils/helpers/app_extensions.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
 import 'package:tayyran_app/presentation/onboarding/cubit/onboarding_cubit.dart';
 import 'package:tayyran_app/presentation/onboarding/model/onboarding_model.dart';
@@ -81,7 +82,8 @@ class _OnboardingScreenContentState extends State<OnboardingScreenContent> {
                       children: [
                         GradientButton(
                           text: 'skip_all'.tr(),
-                          width: 110,
+                          width: context.widthPct(0.40),
+                          height: 45,
                           borderRadius: 50,
                           onPressed: state.isLoading
                               ? null

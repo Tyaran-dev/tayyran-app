@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
-  myfatoorah_flutter: ^3.2.1
+  myfatoorah_flutter: 3.2.4
   equatable: ^2.0.5
   flutter_launcher_icons: "^0.14.4"
   names_launcher: ^0.0.2
@@ -25,11 +25,13 @@ dependencies:
   geocoding: ^4.0.0
   get_it: ^8.2.0
   dio: ^5.4.0
-  logger: ^1.1.0
+  logger: ^2.6.2
   cached_network_image: ^3.3.0
   easy_localization: ^3.0.8
 
   intl: 
+  url_launcher: ^6.3.2
+  bloc: ^9.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

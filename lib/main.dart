@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/routes/app_routes.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
-import 'package:tayyran_app/core/services/shared_preferences_service.dart';
+import 'package:tayyran_app/core/services/app_locale.dart';
 import 'package:tayyran_app/core/theme/app_theme.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight/cubit/flight_cubit.dart';
@@ -18,8 +18,8 @@ void main() async {
 
   setupDependencies();
 
-  // Get saved language before running app
-  final savedLanguage = await SharedPreferencesService.getLanguage();
+  await AppLocale().initialize();
+  final savedLanguage = AppLocale().languageCode;
   print('🚀 App starting with language: $savedLanguage');
 
   runApp(
@@ -27,7 +27,7 @@ void main() async {
       supportedLocales: const [Locale('en'), Locale('ar')],
       path: 'assets/translations',
       fallbackLocale: const Locale('ar'),
-      startLocale: Locale(savedLanguage), // Use saved language
+      startLocale: Locale(savedLanguage),
       child: MyApp(),
     ),
   );
@@ -56,7 +56,8 @@ class MyApp extends StatelessWidget {
             locale: context.locale,
             onGenerateRoute: AppRoutes.generateRoute,
             initialRoute: RouteNames.splash,
-            // home: PaymentStatusScreen(invoiceId: "58288833"),
+            // home: PaymentScreen(),
+            //  home: PaymentStatusScreen(invoiceId: "invoiceId"),
             builder: (context, child) {
               // Initialize language when app starts
               WidgetsBinding.instance.addPostFrameCallback((_) {

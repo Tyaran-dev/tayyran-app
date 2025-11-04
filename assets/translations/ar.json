@@ -310,7 +310,7 @@
     "mayTakeMoment": "قد يستغرق هذا بضع لحظات",
     "pending": "الدفع معلق",
     "nextCheck": "الفحص التالي خلال {seconds} ثانية",
-    "bookingConfirmed": "تم تأكيد الحجز!",
+    "bookingConfirmed": "تم تأكيد الحجز",
     "successfullyBooked": "تم حجز رحلتك بنجاح وإصدار التذاكر",
     "confirmationEmail": "ستتلقى بريدًا إلكترونيًا للتأكيد قريبًا",
     "eTicket": "تذكرة إلكترونية",
@@ -322,7 +322,7 @@
     "flight": "الرحلة",
     "class": "الفئة",
     "priceSummary": "ملخص السعر",
-    "baseFare": "أجرة الأساس",
+    "baseFare": "السعر الأساسي",
     "tax": "الضريبة ({code})",
     "totalAmount": "المبلغ الإجمالي",
     "passengerDetails": "تفاصيل المسافر",
@@ -330,7 +330,9 @@
     "paymentFailed": "فشل الدفع",
     "tryAgain": "حاول مرة أخرى",
     "errorOccurred": "حدث خطأ",
-    "retry": "إعادة المحاولة"
+    "retry": "إعادة المحاولة",
+    "status": "الحالة",
+    "orderId": "رقم الطلب"
   },
     "paymentStatusCubit": {
     "paymentProcessing": "جاري معالجة الدفع",
@@ -361,5 +363,9 @@
 "اقتصادية متميزة": "اقتصادية متميزة",
 "رجال الأعمال":"رجال الأعمال",
 "درجة أولى":"درجة أولى",
-"":""
+"":"",
+"payment_failed": " فشل الدفع. سيتم رد أموالك ",
+"Payment_pending": "جاري معالجة الدفع",
+"confirmed":"تم التأكيد",
+"loading_card":"جاري تحميل الكارت..."
 }

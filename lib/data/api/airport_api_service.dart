@@ -13,7 +13,7 @@ class AirportApiService {
   Future<List<AirportModel>> searchAirports(String query) async {
     try {
       final detectedLanguage = LanguageDetector.detectLanguage(query);
-      _dioClient.setLanguage(detectedLanguage);
+      // _dioClient.setLanguage(detectedLanguage);
 
       print('🔍 API Call: keyword=$query');
       print('🌐 Language Header: $detectedLanguage');

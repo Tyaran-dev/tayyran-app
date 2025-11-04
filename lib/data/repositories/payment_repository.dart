@@ -59,4 +59,20 @@ class PaymentRepository {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>> sendConfirmationEmail({
+    required Map<String, dynamic> emailData,
+  }) async {
+    try {
+      debugPrint("📤 Sending confirmation email:");
+      debugPrint("  - To: ${emailData['to']}");
+      debugPrint("  - Ticket info keys: ${emailData['ticketInfo']?.keys}");
+      debugPrint("  - Full email data type: ${emailData.runtimeType}");
+
+      return await _apiService.sendConfirmationEmail(emailData: emailData);
+    } catch (e) {
+      debugPrint("❌ Error in sendConfirmationEmail: $e");
+      rethrow;
+    }
+  }
 }

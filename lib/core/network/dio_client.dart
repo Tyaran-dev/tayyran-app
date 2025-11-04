@@ -86,15 +86,29 @@ class DioClient {
     }
   }
 
-  // POST method
   Future<Response> post(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
     CancelToken? cancelToken,
+    String? baseUrl, // Add this parameter
   }) async {
     try {
+      // If baseUrl is provided, create a temporary Dio instance
+      if (baseUrl != null) {
+        return await _requestWithCustomBaseUrl(
+          baseUrl: baseUrl,
+          path: path,
+          method: 'POST',
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      }
+
+      // Otherwise use the default Dio instance
       return await _dio.post(
         path,
         data: data,
@@ -160,6 +174,132 @@ class DioClient {
     try {
       return await _dio.patch(
         path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Response> _requestWithCustomBaseUrl({
+    required String baseUrl,
+    required String path,
+    required String method,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    // Create a temporary Dio instance with the custom base URL
+    final tempDio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        headers: {'Content-Type': 'application/json', 'lng': _currentLanguage},
+      ),
+    );
+
+    // Set up interceptors for the temporary instance
+    _setupInterceptorsOnDio(tempDio);
+
+    switch (method.toUpperCase()) {
+      case 'GET':
+        return await tempDio.get(
+          path,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      case 'POST':
+        return await tempDio.post(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      case 'PUT':
+        return await tempDio.put(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      case 'DELETE':
+        return await tempDio.delete(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      case 'PATCH':
+        return await tempDio.patch(
+          path,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: cancelToken,
+        );
+      default:
+        throw ApiException(
+          message: 'Unsupported HTTP method: $method',
+          statusCode: 0,
+          errorCode: 'UNSUPPORTED_METHOD',
+        );
+    }
+  }
+
+  void _setupInterceptorsOnDio(Dio dio) {
+    dio.interceptors.clear();
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          options.headers['lng'] = _currentLanguage;
+          print(
+            '🌐 [DEBUG] Custom BaseURL Request Language: $_currentLanguage',
+          );
+          print('🌐 [DEBUG] Custom BaseURL: ${options.baseUrl}');
+          print(
+            '🌐 [DEBUG] Custom Request URL: ${options.baseUrl}${options.path}',
+          );
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print('🌐 [DEBUG] Custom Dio Error with language: $_currentLanguage');
+          return handler.next(error);
+        },
+      ),
+    );
+
+    dio.interceptors.add(
+      LogInterceptor(
+        request: true,
+        requestBody: true,
+        responseBody: true,
+        error: true,
+        requestHeader: true,
+      ),
+    );
+  }
+
+  // Alternative approach: Use full URL path instead of baseUrl
+  Future<Response> postWithFullUrl(
+    String fullUrl, { // Use full URL instead of path + baseUrl
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      return await _dio.post(
+        fullUrl, // Use the full URL directly
         data: data,
         queryParameters: queryParameters,
         options: options,

@@ -386,7 +386,7 @@ class FlightDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                airlineName,
+                airlineName ?? "",
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -707,7 +707,7 @@ class FlightDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${hours}h ${minutes}m layover • ${'change_to'.tr(namedArgs: {'airline': nextAirlineName})}',
+                  '${hours}h ${minutes}m layover • ${'change_to'.tr(namedArgs: {'airline': nextAirlineName ?? ""})}',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.splashBackgroundColorEnd,

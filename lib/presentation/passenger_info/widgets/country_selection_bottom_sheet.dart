@@ -68,54 +68,71 @@ class _CountrySelectionBottomSheetState
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Text(
-            widget.showNationality
-                ? 'select_nationality'.tr()
-                : 'select_country'.tr(),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
-          // Search bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              labelText: 'search'.tr(),
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                widget.showNationality
+                    ? 'select_nationality'.tr()
+                    : 'select_country'.tr(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // Country list
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredCountries.length,
-              itemBuilder: (context, index) => ListTile(
-                leading: Text(
-                  _filteredCountries[index]['flag']!,
-                  style: const TextStyle(fontSize: 24),
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'search'.tr(),
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                title: Text(
-                  _getLocalizedCountryName(_filteredCountries[index]),
-                ),
-                subtitle: widget.showNationality
-                    ? Text(
-                        _filteredCountries[index]['name_${context.locale.languageCode}']!,
-                      )
-                    : null,
-                onTap: () => Navigator.pop(context, _filteredCountries[index]),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // Country list
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filteredCountries.length,
+                itemBuilder: (context, index) => ListTile(
+                  leading: Text(
+                    _filteredCountries[index]['flag']!,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  title: Text(
+                    _getLocalizedCountryName(_filteredCountries[index]),
+                  ),
+                  subtitle: widget.showNationality
+                      ? Text(
+                          _filteredCountries[index]['name_${context.locale.languageCode}']!,
+                        )
+                      : null,
+                  onTap: () =>
+                      Navigator.pop(context, _filteredCountries[index]),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

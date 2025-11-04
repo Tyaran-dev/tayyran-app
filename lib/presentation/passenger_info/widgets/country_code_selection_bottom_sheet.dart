@@ -49,50 +49,62 @@ class _CountryCodeSelectionBottomSheetState
     final isArabic = context.locale.languageCode == 'ar';
 
     return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Text(
-            'selectCountryCode'.tr(),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
-          // Search bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              labelText: 'searchCountryOrCode'.tr(),
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'selectCountryCode'.tr(),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // Country code list
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredCountries.length,
-              itemBuilder: (context, index) => ListTile(
-                leading: Text(
-                  _filteredCountries[index]['flag']!,
-                  style: const TextStyle(fontSize: 24),
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'searchCountryOrCode'.tr(),
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                title: isArabic
-                    ? Text(_filteredCountries[index]['name_ar']!)
-                    : Text(_filteredCountries[index]['name_en']!),
-                // subtitle: Text(_filteredCountries[index]['name_ar']!),
-                trailing: Text(_filteredCountries[index]['dial_code']!),
-
-                onTap: () => Navigator.pop(context, _filteredCountries[index]),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // Country code list
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filteredCountries.length,
+                itemBuilder: (context, index) => ListTile(
+                  leading: Text(
+                    _filteredCountries[index]['flag']!,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  title: isArabic
+                      ? Text(_filteredCountries[index]['name_ar']!)
+                      : Text(_filteredCountries[index]['name_en']!),
+                  trailing: Text(_filteredCountries[index]['dial_code']!),
+                  onTap: () =>
+                      Navigator.pop(context, _filteredCountries[index]),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

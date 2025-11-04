@@ -29,15 +29,13 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       final cubit = context.read<FlightSearchCubit>();
       // Only load if we don't have data or it's different
       if (cubit.state.originalSearchData.isEmpty) {
-        cubit.loadFlights(widget.searchData, context);
+        cubit.loadFlights(widget.searchData); // No context parameter
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<FlightSearchCubit>();
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: GradientAppBar(
@@ -50,8 +48,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
             context: context,
             isScrollControlled: true,
             builder: (_) => ModifySearchSheet(
-              initialData: cubit.state.searchData,
-              flightSearchCubit: cubit,
+              initialData: context.read<FlightSearchCubit>().state.searchData,
+              flightSearchCubit: context.read<FlightSearchCubit>(),
             ),
           );
         },
@@ -222,7 +220,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               height: 50,
               width: MediaQuery.of(context).size.width * 0.6,
               onPressed: () {
-                cubit.loadFlights(state.originalSearchData, context);
+                cubit.loadFlights(state.originalSearchData); // No context
               },
             ),
             const SizedBox(height: 12),
@@ -279,7 +277,7 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
               height: 50,
               width: MediaQuery.of(context).size.width * 0.6,
               onPressed: () {
-                cubit.loadFlights(state.originalSearchData, context);
+                cubit.loadFlights(state.originalSearchData); // No context
               },
             ),
             const SizedBox(height: 16),

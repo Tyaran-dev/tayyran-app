@@ -1,3 +1,4 @@
+// lib/presentation/payment_status/payment_status_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -177,15 +178,12 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     BuildContext context,
     PaymentStatusConfirmed state,
   ) {
-    final orderData = state.orderData;
-    final ticket = orderData.tickets.isNotEmpty
-        ? orderData.tickets.first
-        : null;
-    final traveler = orderData.travelers.isNotEmpty
-        ? orderData.travelers.first
-        : null;
-    final flightOffer = orderData.flightOffers.isNotEmpty
-        ? orderData.flightOffers.first
+    final order = state.orderData;
+    final data = order.orderData.data;
+    final ticket = data.tickets.isNotEmpty ? data.tickets.first : null;
+    final traveler = data.travelers.isNotEmpty ? data.travelers.first : null;
+    final flightOffer = data.flightOffers.isNotEmpty
+        ? data.flightOffers.first
         : null;
     final segment = flightOffer?.itineraries.first.segments.first;
 
@@ -194,7 +192,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       child: Column(
         children: [
           // Success Header
-          _buildSuccessHeader(),
+          _buildSuccessHeader(order),
           SizedBox(height: 20),
 
           // Ticket Information
@@ -205,10 +203,10 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
             _buildFlightDetailsCard(segment, flightOffer),
 
           // Price Breakdown
-          if (flightOffer != null) _buildPriceCard(flightOffer),
+          if (flightOffer != null) _buildPriceCard(flightOffer, order),
 
           // Passenger Details
-          _buildPassengerDetailsCard(orderData.travelers),
+          _buildPassengerDetailsCard(data.travelers),
 
           SizedBox(height: 30),
           Row(
@@ -234,7 +232,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     );
   }
 
-  Widget _buildSuccessHeader() {
+  Widget _buildSuccessHeader(Order order) {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -269,9 +267,19 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                   ),
                 ),
                 SizedBox(height: 4),
-                Text(
-                  'paymentStatus.successfullyBooked'.tr(),
-                  style: TextStyle(color: Colors.green[700], fontSize: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'paymentStatus.orderId'.tr(),
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    SizedBox(width: 20),
+                    Text(
+                      order.invoiceId,
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 8),
                 Text(
@@ -313,7 +321,9 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                     border: Border.all(color: Colors.green),
                   ),
                   child: Text(
-                    'paymentStatus.issued'.tr(),
+                    ticket.documentStatus.toLowerCase() == 'issued'
+                        ? 'paymentStatus.issued'.tr()
+                        : ticket.documentStatus,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -419,6 +429,15 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                         formatDateString(segment.departure.at),
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
+                      if (segment.departure.terminal != null &&
+                          segment.departure.terminal!.isNotEmpty)
+                        Text(
+                          'Terminal ${segment.departure.terminal}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -453,6 +472,15 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                         formatDateString(segment.arrival.at),
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
+                      if (segment.arrival.terminal != null &&
+                          segment.arrival.terminal!.isNotEmpty)
+                        Text(
+                          'Terminal ${segment.arrival.terminal}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -468,7 +496,14 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                   'paymentStatus.flight'.tr(),
                   '${segment.carrierCode} ${segment.number}',
                 ),
-                _buildFlightDetailItem('paymentStatus.class'.tr(), 'ECONOMY'),
+                _buildFlightDetailItem(
+                  'paymentStatus.class'.tr(),
+                  segment.co2Emissions.first.cabin.toLowerCase().tr(),
+                ),
+                _buildFlightDetailItem(
+                  'paymentStatus.status'.tr(),
+                  segment.bookingStatus.toLowerCase().tr(),
+                ),
               ],
             ),
           ],
@@ -477,7 +512,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
     );
   }
 
-  Widget _buildPriceCard(FlightOffer flightOffer) {
+  Widget _buildPriceCard(FlightOffer flightOffer, Order order) {
     final price = flightOffer.price;
 
     return Card(
@@ -501,7 +536,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                   'paymentStatus.baseFare'.tr(),
                   style: TextStyle(color: Colors.grey[600]),
                 ),
-                Text('${price.currency} ${price.base}'),
+                Text('${price.currency.toLowerCase().tr()} ${price.base}'),
               ],
             ),
             SizedBox(height: 8),
@@ -515,7 +550,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                       'paymentStatus.tax'.tr(namedArgs: {'code': tax.code}),
                       style: TextStyle(color: Colors.grey[600]),
                     ),
-                    Text('${price.currency} ${tax.amount}'),
+                    Text('${price.currency.toLowerCase().tr()} ${tax.amount}'),
                   ],
                 ),
               ),
@@ -530,7 +565,7 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '${price.currency} ${price.total}',
+                  '${price.currency.toLowerCase().tr()} ${order.invoiceValue.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -588,6 +623,14 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                             traveler.contact.emailAddress,
                             style: TextStyle(fontSize: 12, color: Colors.blue),
                           ),
+                          if (traveler.contact.phones.isNotEmpty)
+                            Text(
+                              '\u200E +${traveler.contact.phones.first.countryCallingCode} ${traveler.contact.phones.first.number}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
                         ],
                       ),
                     ),

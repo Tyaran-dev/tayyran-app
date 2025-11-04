@@ -312,7 +312,7 @@
     "mayTakeMoment": "This may take a few moments",
     "pending": "Payment Pending",
     "nextCheck": "Next check in {seconds} seconds",
-    "bookingConfirmed": "Booking Confirmed!",
+    "bookingConfirmed": "Booking Confirmed",
     "successfullyBooked": "Your flight has been successfully booked and tickets issued",
     "confirmationEmail": "You will receive a confirmation email shortly",
     "eTicket": "E-Ticket",
@@ -332,7 +332,9 @@
     "paymentFailed": "Payment Failed",
     "tryAgain": "Try Again",
     "errorOccurred": "Error Occurred",
-    "retry": "Retry"
+    "retry": "Retry",
+    "status": "Status",
+    "orderId": "Order id"
   },
  "paymentStatusCubit": {
     "paymentProcessing": "Payment is being processed",
@@ -363,12 +365,10 @@
 "اقتصادية متميزة": "Premium Economy",
 "رجال الأعمال":"Business",
 "درجة أولى":"First",
-"":""
-
-  
-
-
-          
-
+"":"",
+"payment_failed":"Payment failed. Your money will be refunded",
+"Payment_pending":"Payment is being processed",
+"confirmed":"Confirmed",
+"loading_card":"Loading card..."
 
 }

@@ -1,6 +1,7 @@
 // lib/presentation/flight_detail/cubit/flight_detail_cubit.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/services/app_locale.dart';
 import 'package:tayyran_app/core/utils/helpers/helpers.dart';
 import 'package:tayyran_app/data/models/flight_pricing_response.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';

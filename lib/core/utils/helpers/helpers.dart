@@ -364,3 +364,8 @@ Future<String> getAirlineName(Carrier carrier) async {
   final isArabic = savedLanguage == 'ar';
   return isArabic ? carrier.airlineNameAr : carrier.airLineName;
 }
+
+void logObject(Object object) {
+  var json = const JsonEncoder.withIndent('  ').convert(object);
+  debugPrint(json);
+}

@@ -1274,6 +1274,7 @@ class PassengerInfoScreen extends StatelessWidget {
     final cubit = context.read<PassengerInfoCubit>();
     showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       builder: (context) => const CountryCodeSelectionBottomSheet(),
     ).then((selectedCountry) {
