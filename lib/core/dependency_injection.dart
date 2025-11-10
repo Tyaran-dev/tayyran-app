@@ -1,22 +1,25 @@
-// lib/core/dependency_injection.dart - UPDATED
+// lib/core/dependency_injection.dart
 import 'package:get_it/get_it.dart';
 import 'package:tayyran_app/core/network/api_endpoints.dart';
 import 'package:tayyran_app/core/network/dio_client.dart';
 import 'package:tayyran_app/data/api/airport_api_service.dart';
+import 'package:tayyran_app/data/api/city_api_service.dart';
 import 'package:tayyran_app/data/api/flight_pricing_api_service.dart';
 import 'package:tayyran_app/data/api/flight_search_api_service.dart';
 import 'package:tayyran_app/data/api/payment_api_service.dart';
 import 'package:tayyran_app/data/repositories/airport_repository.dart';
+import 'package:tayyran_app/data/repositories/city_repository.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
 import 'package:tayyran_app/data/repositories/flight_search_repository.dart';
 import 'package:tayyran_app/data/repositories/payment_repository.dart';
 import 'package:tayyran_app/presentation/airport_search/cubit/airport_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
+import 'package:tayyran_app/presentation/hotels/widgets/city_selection/cubit/city_cubit.dart'; // Add this import
 
 final getIt = GetIt.instance;
 
 void setupDependencies() {
-  // 1. Register DioClient first as LazySingleton (not Singleton)
+  // 1. Register DioClient first as LazySingleton
   getIt.registerLazySingleton<DioClient>(
     () => DioClient(baseUrl: ApiEndpoints.baseUrl),
   );
@@ -28,6 +31,7 @@ void setupDependencies() {
     () => FlightPricingApiService(getIt<DioClient>()),
   );
   getIt.registerLazySingleton(() => PaymentApiService(getIt<DioClient>()));
+  getIt.registerLazySingleton(() => CityApiService(getIt<DioClient>()));
 
   // 3. Register Repositories
   getIt.registerLazySingleton(
@@ -42,12 +46,18 @@ void setupDependencies() {
   getIt.registerLazySingleton(
     () => PaymentRepository(getIt<PaymentApiService>()),
   );
+  getIt.registerLazySingleton(
+    () => CityRepository(getIt<CityApiService>()), // Add this line - FIXED
+  );
 
   // 4. Register Cubits/Blocs
   getIt.registerFactory(() => AirportSearchCubit(getIt<AirportRepository>()));
   getIt.registerFactory(
     () => FlightSearchCubit(getIt<FlightSearchRepository>()),
   );
+  getIt.registerFactory(
+    () => CityCubit(getIt<CityRepository>()),
+  ); // Add this line
 }
 
 // Helper method to update DioClient language from anywhere

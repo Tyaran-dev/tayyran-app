@@ -19,13 +19,31 @@ class ApiException implements Exception {
     return 'ApiException: $message (Status: $statusCode, Code: $errorCode)';
   }
 
+  // User-friendly message for UI
+  String get userFriendlyMessage {
+    if (isNetworkError) {
+      return 'No internet connection. Please check your network and try again.';
+    } else if (isServerError) {
+      return 'Server is temporarily unavailable. Please try again later.';
+    } else if (isTimeout) {
+      return 'Request timeout. Please check your connection and try again.';
+    } else {
+      return message;
+    }
+  }
+
   bool get isNetworkError =>
-      errorCode == 'NO_INTERNET' ||
-      errorCode == 'CONNECTION_TIMEOUT' ||
-      errorCode == 'CONNECTION_ERROR';
+      errorCode == 'NO_INTERNET' || errorCode == 'CONNECTION_ERROR';
 
   bool get isServerError =>
-      statusCode != null && statusCode! >= 500 && statusCode! < 600;
+      statusCode != null && statusCode! >= 500 && statusCode! < 600 ||
+      errorCode == 'SERVER_ERROR' ||
+      errorCode == 'SERVER_HTML_ERROR';
+
+  bool get isTimeout =>
+      errorCode == 'CONNECTION_TIMEOUT' ||
+      errorCode == 'SEND_TIMEOUT' ||
+      errorCode == 'RECEIVE_TIMEOUT';
 
   bool get isClientError =>
       statusCode != null && statusCode! >= 400 && statusCode! < 500;

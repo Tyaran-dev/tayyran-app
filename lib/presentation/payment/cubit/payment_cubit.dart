@@ -92,7 +92,7 @@ class PaymentCubit extends Cubit<PaymentState> {
     _isProcessing = true;
     // emit(PaymentProcessing(state.args));
     try {
-      var request = MFExecutePaymentRequest(invoiceValue: 2);
+      var request = MFExecutePaymentRequest(invoiceValue: args.amount);
       request.sessionId = sessionId;
       request.processingDetails?.autoCapture = false;
       request.displayCurrencyIso = MFCurrencyISO.SAUDIARABIA_SAR;

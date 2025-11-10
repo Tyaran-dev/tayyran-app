@@ -1,4 +1,8 @@
 {
+     "hometabs": {
+    "flight": "Flight",
+    "hotels":"Hotels"
+  },
   "app_title": "Tayyran",
   "skip_all": "Skip all",
   "get_started": "Get Started",
@@ -305,24 +309,26 @@
       "failed": "Payment failed: {0}"
     }
   },
-   "paymentStatus": {
+  "paymentStatus": {
     "title": "Payment Status",
-    "processing": "Processing Payment...",
-    "confirmingDetails": "We are confirming your payment details",
-    "mayTakeMoment": "This may take a few moments",
+    "processing": "Processing Payment",
+    "confirmingDetails": "Confirming your payment details",
+    "mayTakeMoment": "This may take a moment...",
     "pending": "Payment Pending",
+    "authorized": "Payment Authorized",
     "nextCheck": "Next check in {seconds} seconds",
-    "bookingConfirmed": "Booking Confirmed",
-    "successfullyBooked": "Your flight has been successfully booked and tickets issued",
-    "confirmationEmail": "You will receive a confirmation email shortly",
+    "bookingConfirmed": "Booking Confirmed!",
+    "orderId": "Order ID:",
+    "confirmationEmail": "Confirmation email has been sent",
     "eTicket": "E-Ticket",
-    "issued": "ISSUED",
+    "issued": "Issued",
     "ticketNumber": "Ticket Number",
     "passenger": "Passenger",
-    "saveTicketNumber": "Please save this ticket number for your records",
+    "saveTicketNumber": "Please save your ticket number for reference",
     "flightDetails": "Flight Details",
     "flight": "Flight",
     "class": "Class",
+    "status": "Status",
     "priceSummary": "Price Summary",
     "baseFare": "Base Fare",
     "tax": "Tax ({code})",
@@ -333,13 +339,13 @@
     "tryAgain": "Try Again",
     "errorOccurred": "Error Occurred",
     "retry": "Retry",
-    "status": "Status",
-    "orderId": "Order id"
-  },
- "paymentStatusCubit": {
-    "paymentProcessing": "Payment is being processed",
-    "paymentFailedRefund": "Payment failed. Your money will be refunded.",
-    "failedToCheckStatus": "Failed to check payment status. Please try again."
+    "payment_pending": "Your payment is being processed. Please wait while we confirm your transaction.",
+  "payment_authorized": "Your payment has been authorized. Waiting for final confirmation.",
+  "payment_failed": "Your payment could not be processed. Please try again or use a different payment method.",
+  "payment_failed_status":"Failed to check payment status. Please try again",
+  "timeout": "Payment status check timed out. Please check your email for confirmation or contact support.",
+    "invalidStatus": "Received invalid payment status. Please contact support."
+  
   },
   "modifySearch": {
     "title": "Modify Search",
@@ -369,6 +375,46 @@
 "payment_failed":"Payment failed. Your money will be refunded",
 "Payment_pending":"Payment is being processed",
 "confirmed":"Confirmed",
-"loading_card":"Loading card..."
+"loading_card":"Loading card...",
+  "hotels": {
+    "search_hotels": "Search Hotels",
+    "fill_required_fields": "Please fill all required fields",
+    "checkout_date_error": "Check-out date must be at least one day after check-in",
+    "check_in": "Check-in",
+    "check_out": "Check-out",
+    "select_country": "Select Country",
+    "select_city": "Select City",
+    "select_country_first": "Please select country first",
+    "select_nationality": "Select Nationality",
+    "default_country_will_be_used": "Country will be used as default",
+    "rooms": "Rooms",
+    "adults": "Adults",
+    "children": "Children",
+    "room": "Room",
+    "rooms_guests": "Rooms & Guests",
+    "add_another_room": "Add Another Room",
+    "apply": "Apply",
+    "children_ages": "Children Ages",
+    "child": "Child",
+    "years": "years",
+    "ages_0_17": "Ages 0-17",
+    "nationality": "Nationality",
+    "destination": "Destination",
+    "select_destination": "Select Country",
+    "recent_searches": "Recent Searches",
+    "clear_all": "Clear All",
+    "search_country": "Search countries...",
+    "search_nationality": "Search nationalities...",
+    "search_city": "Search cities...",
+    "no_cities_found": "No cities found",
+    "select_age_for":"Select age for",
+    "infant": "Infant",
+    "teen":"Teen",
+    "select_exact_age":"Select exact age",
+    "select_age":"Select age",
+    "age_18_plus":"Age 18 plus"
 
+  },
+    "loading_cities": "Loading cities...",
+    "no_results_found": "No results found"
 }

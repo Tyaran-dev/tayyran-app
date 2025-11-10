@@ -1,7 +1,8 @@
 // lib/presentation/payment_status/cubit/payment_status_state.dart
 part of 'payment_status_cubit.dart';
 
-abstract class PaymentStatusState {
+@immutable
+sealed class PaymentStatusState {
   final String invoiceId;
   final int timerCount;
   final int checkAttempts;
@@ -16,12 +17,14 @@ abstract class PaymentStatusState {
 }
 
 class PaymentStatusInitial extends PaymentStatusState {
-  PaymentStatusInitial({required super.invoiceId, required super.timerCount})
-    : super(checkAttempts: 0);
+  const PaymentStatusInitial({
+    required super.invoiceId,
+    required super.timerCount,
+  }) : super(checkAttempts: 0);
 }
 
 class PaymentStatusChecking extends PaymentStatusState {
-  PaymentStatusChecking({
+  const PaymentStatusChecking({
     required super.invoiceId,
     required super.timerCount,
     required super.checkAttempts,
@@ -32,7 +35,19 @@ class PaymentStatusChecking extends PaymentStatusState {
 class PaymentStatusPending extends PaymentStatusState {
   final String message;
 
-  PaymentStatusPending({
+  const PaymentStatusPending({
+    required super.invoiceId,
+    required this.message,
+    required super.timerCount,
+    required super.checkAttempts,
+    required super.startTime,
+  });
+}
+
+class PaymentStatusAuthorized extends PaymentStatusState {
+  final String message;
+
+  const PaymentStatusAuthorized({
     required super.invoiceId,
     required this.message,
     required super.timerCount,
@@ -45,7 +60,7 @@ class PaymentStatusConfirmed extends PaymentStatusState {
   final Order orderData;
   final int totalDuration;
 
-  PaymentStatusConfirmed({
+  const PaymentStatusConfirmed({
     required super.invoiceId,
     required this.orderData,
     required super.timerCount,
@@ -59,7 +74,7 @@ class PaymentStatusFailed extends PaymentStatusState {
   final String reason;
   final int totalDuration;
 
-  PaymentStatusFailed({
+  const PaymentStatusFailed({
     required super.invoiceId,
     required this.reason,
     required super.timerCount,
@@ -72,7 +87,7 @@ class PaymentStatusFailed extends PaymentStatusState {
 class PaymentStatusError extends PaymentStatusState {
   final String errorMessage;
 
-  PaymentStatusError({
+  const PaymentStatusError({
     required super.invoiceId,
     required this.errorMessage,
     required super.timerCount,
@@ -82,7 +97,7 @@ class PaymentStatusError extends PaymentStatusState {
 }
 
 class PaymentStatusCancelled extends PaymentStatusState {
-  PaymentStatusCancelled({
+  const PaymentStatusCancelled({
     required super.invoiceId,
     required super.timerCount,
     required super.checkAttempts,

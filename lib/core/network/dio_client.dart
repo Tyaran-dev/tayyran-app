@@ -425,6 +425,16 @@ class DioClient {
     final statusCode = response?.statusCode;
     final data = response?.data;
 
+    // Check if response is HTML instead of JSON
+    if (_isHtmlResponse(data)) {
+      return ApiException(
+        message: 'Server error. Please try again later.',
+        statusCode: statusCode,
+        errorCode: 'SERVER_HTML_ERROR',
+        responseData: data,
+      );
+    }
+
     switch (statusCode) {
       case 400:
         return ApiException(
@@ -483,6 +493,22 @@ class DioClient {
           responseData: data,
         );
 
+      case 502:
+        return ApiException(
+          message: 'Bad gateway. Please try again later.',
+          statusCode: statusCode,
+          errorCode: 'BAD_GATEWAY',
+          responseData: data,
+        );
+
+      case 503:
+        return ApiException(
+          message: 'Service unavailable. Please try again later.',
+          statusCode: statusCode,
+          errorCode: 'SERVICE_UNAVAILABLE',
+          responseData: data,
+        );
+
       default:
         return ApiException(
           message: _getErrorMessage(
@@ -494,6 +520,15 @@ class DioClient {
           responseData: data,
         );
     }
+  }
+
+  bool _isHtmlResponse(dynamic data) {
+    if (data is String) {
+      return data.trim().toLowerCase().startsWith('<!doctype html') ||
+          data.contains('<html') ||
+          data.contains('</html>');
+    }
+    return false;
   }
 
   String _getErrorMessage(dynamic responseData, String defaultMessage) {

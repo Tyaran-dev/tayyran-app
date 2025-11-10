@@ -52,6 +52,8 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
       return _buildLoadingStatus(context, state);
     } else if (state is PaymentStatusPending) {
       return _buildPendingStatus(context, state);
+    } else if (state is PaymentStatusAuthorized) {
+      return _buildAuthorizedStatus(context, state);
     } else if (state is PaymentStatusConfirmed) {
       return _buildConfirmedStatus(context, state);
     } else if (state is PaymentStatusFailed) {
@@ -157,6 +159,78 @@ class _PaymentStatusScreenState extends State<PaymentStatusScreen> {
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Text(
+            'paymentStatus.nextCheck'.tr(
+              namedArgs: {'seconds': secondsUntilNextCheck.toString()},
+            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthorizedStatus(
+    BuildContext context,
+    PaymentStatusAuthorized state,
+  ) {
+    final secondsUntilNextCheck = 8 - (state.timerCount % 8);
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.verified, size: 50, color: Colors.blue),
+          ),
+          SizedBox(height: 24),
+          Text(
+            'paymentStatus.authorized'.tr(),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+            ),
+          ),
+          SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              state.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+            ),
+          ),
+          SizedBox(height: 24),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  strokeWidth: 4,
+                ),
+              ),
+              Text(
+                '$secondsUntilNextCheck',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
                 ),
               ),
             ],
