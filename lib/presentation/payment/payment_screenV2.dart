@@ -254,6 +254,7 @@ class _PaymentScreen extends State<PaymentScreen> {
     await MFSDK
         .initSession(initiateSessionRequest, MFLanguage.ENGLISH)
         .then((value) => {setupGooglePayHelper(value.sessionId)})
+        // ignore: invalid_return_type_for_catch_error
         .catchError((error) => {log(error.message)});
   }
 

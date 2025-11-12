@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/core/services/app_locale.dart';
 import 'package:tayyran_app/data/models/city_model.dart';
 import 'package:tayyran_app/presentation/hotels/model/hotel_room.dart';
 import 'hotel_state.dart';
@@ -84,16 +86,19 @@ class HotelCubit extends Cubit<HotelState> {
         ? state.nationalityCode
         : countryCodeForBackend;
 
+    final savedLanguage = AppLocale().languageCode;
+    print('🔍 Initializing with saved language: $savedLanguage');
+
     // Prepare the data in the required format
     final requestData = {
-      'Country': state.country,
-      'CountryCode': countryCodeForBackend, // Send country code to backend
-      'City': state.city,
+      'CityCode': state.cityCode,
       'CheckIn': state.checkInDate,
       'CheckOut': state.checkOutDate,
-      'Nationality': state.nationality,
-      'NationalityCode':
-          nationalityCodeForBackend, // Send nationality country code to backend
+      'GuestNationality': nationalityCodeForBackend,
+      "PreferredCurrencyCode": "SAR",
+      "Language": savedLanguage,
+      "ResponseTime": 23.0,
+      "IsDetailedResponse": true,
       'PaxRooms': state.rooms.map((room) => room.toJson()).toList(),
     };
 
@@ -113,19 +118,11 @@ class HotelCubit extends Cubit<HotelState> {
     BuildContext context,
     Map<String, dynamic> params,
   ) {
-    // Implement navigation to search results page
-    // Example:
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => HotelSearchResultsPage(searchParams: params),
-    //   ),
-    // ).then((_) {
-    //   emit(state.copyWith(isLoading: false));
-    // });
-
-    // For now, just set loading to false after delay
-    Future.delayed(const Duration(seconds: 2), () {
+    Navigator.pushNamed(
+      context,
+      RouteNames.hotelSearch,
+      arguments: params,
+    ).then((_) {
       emit(state.copyWith(isLoading: false));
     });
   }

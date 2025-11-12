@@ -11,6 +11,11 @@ class ApiEndpoints {
   static const String saveFlight = "/payment/saveData";
   static const String getPaymentStatus = "/payment/bookingStatus";
   static const String sendConfirmationEmail = "/api/flights-email";
+
+  //hotels
+  static const String hotelSearch = "/hotels/HotelsSearch";
+  static const String hotelDetails = "/hotels/HotelDetails";
+
   static const String getCities = '/hotels/CityList';
   // static String getUserById(int id) => '/users/$id';
 }

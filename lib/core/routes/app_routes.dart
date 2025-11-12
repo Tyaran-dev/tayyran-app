@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:tayyran_app/core/dependency_injection.dart';
 import 'package:tayyran_app/core/routes/route_names.dart';
+import 'package:tayyran_app/data/api/hotel_api_service.dart';
 import 'package:tayyran_app/data/repositories/flight_pricing_repository.dart';
 import 'package:tayyran_app/data/repositories/payment_repository.dart';
 import 'package:tayyran_app/presentation/airport_search/airport_bottom_sheet.dart';
@@ -14,6 +15,8 @@ import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit
 import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
+import 'package:tayyran_app/presentation/hotels_search/cubit/hotel_search_cubit.dart';
+import 'package:tayyran_app/presentation/hotels_search/hotel_search_screen.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
 import 'package:tayyran_app/presentation/main_screen/main_app_screen.dart';
 import 'package:tayyran_app/presentation/onboarding/cubit/onboarding_cubit.dart';
@@ -164,6 +167,15 @@ class AppRoutes {
             child: PaymentStatusScreen(invoiceId: arguments['invoiceId']),
           ),
           settings: const RouteSettings(name: RouteNames.paymentStatus),
+        );
+      case RouteNames.hotelSearch:
+        final searchParams = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => HotelSearchCubit(getIt<HotelApiService>()),
+            child: HotelSearchScreen(searchParams: searchParams),
+          ),
+          settings: const RouteSettings(name: RouteNames.hotelSearch),
         );
       default:
         return MaterialPageRoute(

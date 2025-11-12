@@ -406,13 +406,21 @@
     "search_country": "ابحث عن الدول...",
     "search_city": "ابحث في المدن...",
     "no_cities_found": "لم يتم العثور على مدن",
-        "select_age_for":"اختر العمر للطفل ",
-          "infant": "رضيع",
-          "teen":"مراهق",
-              "select_exact_age":"اختر العمر الدقيق",
-              "select_age":"اختر العمر",
-                  "age_18_plus":"العمر 18 فما فوق"
-
+    "select_age_for":"اختر العمر للطفل ",
+    "infant": "رضيع",
+    "teen":"مراهق",
+    "select_exact_age":"اختر العمر الدقيق",
+    "select_age":"اختر العمر",
+    "age_18_plus":"العمر 18 فما فوق",
+    "search_results": "نتائج البحث",
+    "found_hotels": "فنادق تم العثور عليها",
+    "retry": "إعادة المحاولة",
+    "no_hotels_found": "لم يتم العثور على فنادق",
+    "starting_from": "تبدأ من",
+    "per_night": "للليلة",
+    "view_details": "عرض التفاصيل",
+    "star_hotel": "فندق {{number}} نجوم",
+    "facilities": "المرافق"
 
   },
     "loading_cities": "جاري تحميل المدن...",

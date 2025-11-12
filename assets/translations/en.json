@@ -412,9 +412,19 @@
     "teen":"Teen",
     "select_exact_age":"Select exact age",
     "select_age":"Select age",
-    "age_18_plus":"Age 18 plus"
+    "age_18_plus":"Age 18 plus",
+    "search_results": "Search Results",
+    "found_hotels": "Found hotels",
+    "retry": "Retry",
+    "no_hotels_found": "No hotels found",
+    "starting_from": "Starting from",
+    "per_night": "per night",
+    "view_details": "View Details",
+  "star_hotel": "{number} star hotel",
+    "facilities": "Facilities"
 
   },
+  
     "loading_cities": "Loading cities...",
     "no_results_found": "No results found"
 }

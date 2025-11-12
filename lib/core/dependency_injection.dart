@@ -6,6 +6,7 @@ import 'package:tayyran_app/data/api/airport_api_service.dart';
 import 'package:tayyran_app/data/api/city_api_service.dart';
 import 'package:tayyran_app/data/api/flight_pricing_api_service.dart';
 import 'package:tayyran_app/data/api/flight_search_api_service.dart';
+import 'package:tayyran_app/data/api/hotel_api_service.dart';
 import 'package:tayyran_app/data/api/payment_api_service.dart';
 import 'package:tayyran_app/data/repositories/airport_repository.dart';
 import 'package:tayyran_app/data/repositories/city_repository.dart';
@@ -52,6 +53,10 @@ void setupDependencies() {
 
   // 4. Register Cubits/Blocs
   getIt.registerFactory(() => AirportSearchCubit(getIt<AirportRepository>()));
+  getIt.registerFactory<HotelApiService>(
+    () => HotelApiService(getIt<DioClient>()),
+  );
+
   getIt.registerFactory(
     () => FlightSearchCubit(getIt<FlightSearchRepository>()),
   );

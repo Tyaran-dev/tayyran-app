@@ -14,4 +14,5 @@ class RouteNames {
   static const String passengerInfo = '/passenger-info';
   static const String payment = '/payment';
   static const String paymentStatus = '/payment-status';
+  static const String hotelSearch = '/hotelSearch';
 }
