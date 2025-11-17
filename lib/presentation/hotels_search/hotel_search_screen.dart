@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_app_bar.dart';
 import 'package:tayyran_app/core/utils/widgets/loading_shimmer.dart';
+import 'package:tayyran_app/data/models/hotel_search_model.dart';
+import 'package:tayyran_app/presentation/hotel_details/hotel_details_screen.dart';
 import 'package:tayyran_app/presentation/hotels_search/cubit/hotel_search_cubit.dart';
 import 'package:tayyran_app/presentation/hotels_search/widgets/hotel_card.dart';
 
@@ -158,19 +160,12 @@ class _HotelSearchResultsPageState extends State<HotelSearchScreen> {
     );
   }
 
-  void _showHotelDetails(BuildContext context, dynamic hotel) {
-    // For now, show a dialog. We'll implement the full details page later
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(hotel.hotelName),
-        content: Text('Hotel details page coming soon...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('ok'.tr()),
-          ),
-        ],
+  void _showHotelDetails(BuildContext context, HotelData hotel) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            HotelDetailsScreen(hotel: hotel, searchParams: widget.searchParams),
       ),
     );
   }

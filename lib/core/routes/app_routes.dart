@@ -15,6 +15,7 @@ import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit
 import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
+import 'package:tayyran_app/presentation/hotel_details/hotel_details_screen.dart';
 import 'package:tayyran_app/presentation/hotels_search/cubit/hotel_search_cubit.dart';
 import 'package:tayyran_app/presentation/hotels_search/hotel_search_screen.dart';
 import 'package:tayyran_app/presentation/main_screen/cubit/main_app_cubit.dart';
@@ -176,6 +177,15 @@ class AppRoutes {
             child: HotelSearchScreen(searchParams: searchParams),
           ),
           settings: const RouteSettings(name: RouteNames.hotelSearch),
+        );
+      case RouteNames.hotelDetails:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => HotelDetailsScreen(
+            hotel: args['hotel'],
+            searchParams: args['searchParams'],
+          ),
+          settings: const RouteSettings(name: RouteNames.hotelDetails),
         );
       default:
         return MaterialPageRoute(
