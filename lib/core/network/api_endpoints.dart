@@ -17,5 +17,6 @@ class ApiEndpoints {
   static const String hotelDetails = "/hotels/HotelDetails";
 
   static const String getCities = '/hotels/CityList';
+  static const String getHotelPriceDetails = '/hotels/PreBookRoom';
   // static String getUserById(int id) => '/users/$id';
 }

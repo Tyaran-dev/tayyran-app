@@ -15,6 +15,9 @@ import 'package:tayyran_app/presentation/flight_detail/cubit/flight_detail_cubit
 import 'package:tayyran_app/presentation/flight_detail/flight_detail_screen.dart';
 import 'package:tayyran_app/presentation/flight_search/cubit/flight_search_cubit.dart';
 import 'package:tayyran_app/presentation/flight_search/flight_search_screen.dart';
+import 'package:tayyran_app/presentation/hotel_booking/cubit/hotel_booking_cubit.dart';
+import 'package:tayyran_app/presentation/hotel_booking/hotel_booking_summary_screen.dart';
+import 'package:tayyran_app/presentation/hotel_booking/models/hotel_booking_arguments.dart';
 import 'package:tayyran_app/presentation/hotel_details/hotel_details_screen.dart';
 import 'package:tayyran_app/presentation/hotels_search/cubit/hotel_search_cubit.dart';
 import 'package:tayyran_app/presentation/hotels_search/hotel_search_screen.dart';
@@ -186,6 +189,16 @@ class AppRoutes {
             searchParams: args['searchParams'],
           ),
           settings: const RouteSettings(name: RouteNames.hotelDetails),
+        );
+      // Update lib/core/routes/app_routes.dart - add this case
+      case RouteNames.hotelBookingSummary:
+        final args = settings.arguments as HotelBookingArguments;
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider(
+            create: (_) => HotelBookingCubit(getIt<HotelApiService>(), args),
+            child: HotelBookingSummaryScreen(args: args),
+          ),
+          settings: const RouteSettings(name: RouteNames.hotelBookingSummary),
         );
       default:
         return MaterialPageRoute(

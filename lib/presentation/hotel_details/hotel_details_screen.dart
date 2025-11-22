@@ -4,7 +4,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:tayyran_app/core/constants/app_assets.dart';
 import 'package:tayyran_app/core/constants/color_constants.dart';
+import 'package:tayyran_app/core/routes/route_names.dart';
 import 'package:tayyran_app/core/utils/widgets/index.dart';
+import 'package:tayyran_app/presentation/hotel_booking/models/hotel_booking_arguments.dart';
 import 'package:tayyran_app/presentation/hotel_details/widgets/loading_shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:tayyran_app/core/utils/widgets/gradient_app_bar.dart';
@@ -672,93 +674,6 @@ class HotelDetailsScreen extends StatelessWidget {
     );
   }
 
-  // Widget _buildBottomBar() {
-  //   return BlocBuilder<HotelDetailsCubit, HotelDetailsState>(
-  //     builder: (context, state) {
-  //       if (state is HotelDetailsLoaded && state.selectedRoom != null) {
-  //         final selectedRoom = state.selectedRoom!;
-
-  //         return Container(
-  //           padding: const EdgeInsets.all(16),
-  //           decoration: BoxDecoration(
-  //             color: Colors.white,
-  //             border: Border(top: BorderSide(color: Colors.grey[300]!)),
-  //             boxShadow: [
-  //               BoxShadow(
-  //                 color: Colors.black12,
-  //                 blurRadius: 8,
-  //                 offset: const Offset(0, -2),
-  //               ),
-  //             ],
-  //           ),
-  //           child: SafeArea(
-  //             child: Row(
-  //               children: [
-  //                 // Price Info
-  //                 Expanded(
-  //                   child: Column(
-  //                     crossAxisAlignment: CrossAxisAlignment.start,
-  //                     mainAxisSize: MainAxisSize.min,
-  //                     children: [
-  //                       Text(
-  //                         'hotels.total_price'.tr(),
-  //                         style: TextStyle(
-  //                           fontSize: 12,
-  //                           color: Colors.grey[600],
-  //                         ),
-  //                       ),
-  //                       const SizedBox(height: 4),
-  //                       Row(
-  //                         children: [
-  //                           Text(
-  //                             selectedRoom.totalPrice.toStringAsFixed(2),
-  //                             style: TextStyle(
-  //                               fontSize: 20,
-  //                               fontWeight: FontWeight.bold,
-  //                               color: Colors.green[700],
-  //                             ),
-  //                           ),
-  //                           const SizedBox(width: 4),
-  //                           Image.asset(
-  //                             AppAssets.currencyIcon,
-  //                             width: 24,
-  //                             height: 24,
-  //                           ),
-  //                         ],
-  //                       ),
-  //                       Text(
-  //                         'hotels.including_taxes'.tr(),
-  //                         style: TextStyle(
-  //                           fontSize: 12,
-  //                           color: Colors.grey[500],
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                 ),
-
-  //                 // Book Button
-  //                 GradientButton(
-  //                   onPressed: () {
-  //                     _proceedToBooking(state, context);
-  //                   },
-  //                   text: 'hotels.book_now'.tr(),
-  //                   textStyle: const TextStyle(
-  //                     fontSize: 16,
-  //                     color: Colors.white,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //         );
-  //       }
-  //       return const SizedBox();
-  //     },
-  //   );
-  // }
-
   Widget _buildBottomBar() {
     return BlocBuilder<HotelDetailsCubit, HotelDetailsState>(
       builder: (context, state) {
@@ -863,77 +778,42 @@ class HotelDetailsScreen extends StatelessWidget {
   void _proceedToBooking(HotelDetailsLoaded state, BuildContext context) {
     final selectedRoom = state.selectedRoom!;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('hotels.booking_confirmation'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              selectedRoom.displayName,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'hotels.booking_room_message'.tr(
-                namedArgs: {
-                  'price': selectedRoom.totalPrice.toStringAsFixed(2),
-                  'currency': state.hotel.currency,
-                },
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Meal: ${_formatMealType(selectedRoom.mealType)}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            if (selectedRoom.inclusion.isNotEmpty)
-              Text(
-                'Inclusions: ${selectedRoom.inclusion}',
-                style: const TextStyle(color: Colors.grey),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('cancel'.tr()),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _navigateToBookingScreen(state, context);
-            },
-            child: Text('hotels.proceed_to_booking'.tr()),
-          ),
-        ],
-      ),
-    );
-  }
+    // Calculate room counts from search params
+    final rooms = state.searchParams['PaxRooms'] as List<dynamic>;
+    final numberOfRooms = rooms.length;
 
-  String _formatMealType(String mealType) {
-    final mealTypes = {
-      'BreakFast': 'Breakfast',
-      'Half_Board': 'Half Board',
-      'Full_Board': 'Full Board',
-      'All_Inclusive': 'All Inclusive',
-      'Room_Only': 'Room Only',
-      'None': 'No Meals',
-    };
-    return mealTypes[mealType] ?? mealType;
-  }
+    // Calculate total adults and children correctly
+    int totalAdults = 0;
+    int totalChildren = 0;
 
-  void _navigateToBookingScreen(
-    HotelDetailsLoaded state,
-    BuildContext context,
-  ) {
-    // Implement your booking navigation logic here
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Navigating to booking screen...'),
-        duration: const Duration(seconds: 2),
+    for (final room in rooms) {
+      totalAdults += (room['Adults'] as int);
+      totalChildren += (room['Children'] as int);
+    }
+
+    print('📊 Booking Summary Data:');
+    print('   Rooms: $numberOfRooms');
+    print('   Total Adults: $totalAdults');
+    print('   Total Children: $totalChildren');
+
+    // Show room distribution
+    for (int i = 0; i < rooms.length; i++) {
+      final room = rooms[i];
+      print(
+        '   Room ${i + 1}: ${room['Adults']} adults, ${room['Children']} children',
+      );
+    }
+
+    Navigator.pushNamed(
+      context,
+      RouteNames.hotelBookingSummary,
+      arguments: HotelBookingArguments(
+        hotel: state.hotel,
+        selectedRoom: selectedRoom,
+        searchParams: state.searchParams,
+        numberOfRooms: numberOfRooms,
+        totalAdults: totalAdults,
+        totalChildren: totalChildren,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tayyran_app/core/network/api_endpoints.dart';
 import 'package:tayyran_app/core/network/dio_client.dart';
 import 'package:tayyran_app/core/utils/helpers/helpers.dart';
+import 'package:tayyran_app/presentation/hotel_booking/models/hotel_price_details.dart';
 
 class PaymentApiService {
   final DioClient _dioClient;
@@ -30,6 +31,29 @@ class PaymentApiService {
     );
     prettyPrintJson(response.data);
     return response.data;
+  }
+
+  Future<HotelPriceDetails> getBookingPriceDetails(
+    Map<String, dynamic> requestData,
+  ) async {
+    try {
+      final response = await _dioClient.post(
+        ApiEndpoints
+            .getHotelPriceDetails, // Add this endpoint to your ApiEndpoints
+        data: requestData,
+      );
+
+      if (response.statusCode == 200) {
+        return HotelPriceDetails.fromJson(response.data['data']);
+      } else {
+        throw Exception(
+          'Failed to fetch price details: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('🔥 Hotel Price Details API Error: $e');
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> sendConfirmationEmail({
